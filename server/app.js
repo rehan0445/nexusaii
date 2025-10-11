@@ -1645,18 +1645,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
 
-// Serve static assets (JS, CSS, images, etc.)
+console.log('📁 Client dist path:', clientDistPath);
+
+// Serve static assets (JS, CSS, images, etc.) - BEFORE error handlers
 app.use(express.static(clientDistPath, {
-  maxAge: '1y',
+  maxAge: '1d',
   setHeaders: (res, filepath) => {
-    // Cache static assets aggressively
-    if (filepath.endsWith('.html')) {
+    // Set correct MIME types
+    if (filepath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (filepath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (filepath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-cache');
     }
-  }
+  },
+  fallthrough: true // Allow other middleware to run if file not found
 }));
 
-// Error handling middleware
+// Error handling middleware (4 parameters - only catches errors)
 app.use((err, req, res, next) => {
   logError(err, req);
   try { captureError(err, req); } catch {}
@@ -1678,7 +1685,8 @@ app.use((req, res) => {
   res.sendFile(indexPath, (err) => {
     if (err) {
       console.error('Error serving index.html:', err);
-      res.status(404).json({ error: 'Frontend not found. Make sure the build was successful.' });
+      console.error('Tried to serve from:', indexPath);
+      res.status(404).send('Frontend not found. Build may have failed.');
     }
   });
 });
