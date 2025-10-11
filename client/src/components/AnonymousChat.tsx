@@ -263,7 +263,6 @@ const AnonymousChat: React.FC<Props> = ({ group, message, setMessage, alias, onB
                                         <EnhancedChatBubble
                                             content={msg.message}
                                             sender={isUser ? "user" : "anonymous"}
-                                            timestamp={new Date()}
                                             characterName={msg.alias}
                                             genre={genre as any}
                                             responseType={responseType as any}

@@ -25,8 +25,18 @@ export function issueCsrfToken(res) {
 
 export function verifyCsrf(req, res, next) {
   try {
+    // CSRF protection is disabled on Railway (same-origin deployment)
+    // Only enable if explicitly set to 'true' in non-production environments
+    const isRailway = process.env.RAILWAY_ENVIRONMENT || 
+                      (typeof window === 'undefined' && process.env.PORT && !process.env.CSRF_ENABLED);
+    
+    if (isRailway) {
+      return next(); // Skip CSRF on Railway by default
+    }
+    
     const enabled = (process.env.CSRF_ENABLED || 'false') === 'true';
     if (!enabled) return next();
+    
     const method = (req.method || 'GET').toUpperCase();
     if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return next();
     const header = req.headers['x-csrf-token'];
