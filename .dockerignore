@@ -88,5 +88,4 @@ test-*.js
 *.ps1
 *.bat
 *.sh
-!start.sh
 
