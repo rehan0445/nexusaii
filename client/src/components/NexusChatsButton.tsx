@@ -9,7 +9,7 @@ interface NexusChatsButtonProps {
 
 /**
  * NC (Nexus Chats) Button
- * Opens the unified chats view showing all user conversations
+ * Opens Nexus Chats - unified view of all conversations
  */
 export const NexusChatsButton: React.FC<NexusChatsButtonProps> = ({ 
   className = '', 
