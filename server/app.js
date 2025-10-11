@@ -1655,23 +1655,6 @@ app.use(express.static(clientDistPath, {
   }
 }));
 
-// SPA fallback - serve index.html for all non-API routes
-app.get('*', (req, res, next) => {
-  // Skip if it's an API route (let 404 handler catch invalid API routes)
-  if (req.path.startsWith('/api')) {
-    return next();
-  }
-  
-  // Serve index.html for all other routes (React Router handles client-side routing)
-  const indexPath = path.join(clientDistPath, 'index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      console.error('Error serving index.html:', err);
-      res.status(404).json({ error: 'Frontend not found. Make sure the build was successful.' });
-    }
-  });
-});
-
 // Error handling middleware
 app.use((err, req, res, next) => {
   logError(err, req);
@@ -1682,9 +1665,21 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
+// Smart 404 handler - serves index.html for non-API routes, JSON for API routes
 app.use((req, res) => {
-  res.status(404).json({ error: "Route not found" });
+  // API routes get JSON 404 response
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: "Route not found" });
+  }
+  
+  // All other routes serve index.html for React Router (SPA fallback)
+  const indexPath = path.join(clientDistPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error('Error serving index.html:', err);
+      res.status(404).json({ error: 'Frontend not found. Make sure the build was successful.' });
+    }
+  });
 });
 
 if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
