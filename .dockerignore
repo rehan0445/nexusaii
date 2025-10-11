@@ -75,10 +75,6 @@ ui-debug.log
 # TypeScript
 *.tsbuildinfo
 
-# Documentation (optional - comment out if you want to include)
-*.md
-!README.md
-
 # Test files
 *.test.js
 *.test.ts
