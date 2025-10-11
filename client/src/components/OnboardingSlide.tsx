@@ -29,7 +29,15 @@ const OnboardingSlide: React.FC<OnboardingSlideProps> = ({ imageUrl, title, subt
     <div className="relative h-screen overflow-hidden" style={{minHeight: '100svh', height: '100svh'}}>
       {/* Background image */}
       <div className="absolute inset-0">
-        <img src={imageUrl} alt={title} className="w-full h-full object-cover object-center" />
+        <img 
+          src={imageUrl} 
+          alt={title} 
+          className="w-full h-full object-cover object-center"
+          onError={(e) => {
+            console.error('Failed to load onboarding image:', e.currentTarget.src);
+            e.currentTarget.style.backgroundColor = '#1a1a1a';
+          }}
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/80" />
       </div>
 
