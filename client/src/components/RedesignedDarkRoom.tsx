@@ -118,7 +118,7 @@ const RedesignedDarkRoom: React.FC<RedesignedDarkRoomProps> = ({
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1 text-xs bg-[#0c0c0c] text-green-500 rounded-full px-2 py-1 border border-green-500/30">
                       <Users className="w-3 h-3" />
-                      <span>{group.members}</span>
+                      <span>{group.members + 10}</span>
                     </div>
                   </div>
                 </div>

@@ -83,7 +83,7 @@ const AnonymousSidebar: React.FC<Props> = ({
                         <div className="w-2 h-2 bg-green-500 rounded-full" />
                         <span className="truncate flex-1">{group.name}</span>
                         <span className="ml-auto text-xs bg-[#0c0c0c] text-green-500 rounded-full px-2 min-w-[1.75rem] h-6 inline-flex items-center justify-center border border-green-500/30">
-                            {group.members}
+                            {group.members + 10}
                         </span>
                     </button>
                 ))}
