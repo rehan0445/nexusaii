@@ -29,7 +29,7 @@ const CollegeConfessionWrapper: React.FC = () => {
     },
     'iist': {
       name: 'IIST',
-      fullName: 'International Institute of Space Technology',
+      fullName: 'Indore Institute of Technology',
       color: 'from-indigo-600 to-purple-600'
     }
   };

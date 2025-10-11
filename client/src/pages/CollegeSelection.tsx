@@ -41,7 +41,7 @@ const CollegeSelection: React.FC = () => {
     {
       id: 'iist',
       name: 'IIST',
-      fullName: 'International Institute of Space Technology',
+      fullName: 'Indore Institute of Technology',
       image: 'https://i.pinimg.com/736x/f4/b6/fe/f4b6fe3e6d0af5f2b3930c4ed17e4dd8.jpg',
       color: 'from-indigo-600 to-purple-600'
     }
