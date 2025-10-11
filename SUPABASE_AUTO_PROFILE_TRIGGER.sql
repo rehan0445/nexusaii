@@ -21,7 +21,11 @@ DECLARE
   attempt_count INTEGER := 0;
   max_attempts INTEGER := 10;
   stats_record_id INTEGER;
+  user_id_text TEXT;
 BEGIN
+  -- Cast UUID to TEXT for userProfileData table
+  user_id_text := NEW.id::text;
+  
   -- Generate a random suffix for username uniqueness
   random_suffix := LPAD(FLOOR(RANDOM() * 10000)::TEXT, 4, '0');
   
@@ -43,13 +47,13 @@ BEGIN
   
   -- Create user_stats first
   INSERT INTO public.user_stats (user_id, posts, following, followers, numofchar)
-  VALUES (NEW.id, 0, 0, 0, 0)
+  VALUES (user_id_text, 0, 0, 0, 0)
   ON CONFLICT (user_id) DO NOTHING;
   
   -- Get the stats_id
   SELECT id INTO stats_record_id 
   FROM public.user_stats 
-  WHERE user_id = NEW.id;
+  WHERE user_id = user_id_text;
   
   -- Create basic user profile
   INSERT INTO public."userProfileData" (
@@ -70,7 +74,7 @@ BEGIN
     gender
   )
   VALUES (
-    NEW.id,
+    user_id_text,
     COALESCE(NEW.raw_user_meta_data->>'name', NEW.raw_user_meta_data->>'full_name', SPLIT_PART(NEW.email, '@', 1)),
     generated_username,
     NEW.email,
