@@ -1,10 +1,6 @@
 import { useState, useRef } from 'react';
 import { 
-  ArrowLeft, 
-  Image, 
-  BarChart3,
-  Plus,
-  X
+  ArrowLeft
 } from 'lucide-react';
 
 // Get the server URL for API calls
@@ -112,34 +108,21 @@ export function ConfessionComposer({ onBack, onSubmit, alias }: ConfessionCompos
   };
 
   const handleSubmit = async () => {
-    if (isSubmitting || isUploadingImage) return;
+    if (isSubmitting) return;
     
-    // Check if at least one content type is provided
-    const hasValidContent = content.trim() || imageUrl || (showPoll && pollQuestion.trim() && pollOptions.some(opt => opt.trim()));
-    if (!hasValidContent) return;
+    // Check if text content is provided
+    if (!content.trim()) return;
     
     setIsSubmitting(true);
     try {
-      const pollData = showPoll && pollQuestion.trim() && pollOptions.some(opt => opt.trim()) 
-        ? {
-            question: pollQuestion.trim(),
-            options: pollOptions.filter(opt => opt.trim())
-          }
-        : null;
-
       await onSubmit({
-        content: content.trim() || '', // Allow empty content if other media is present
-        imageUrl,
-        poll: pollData
+        content: content.trim(),
+        imageUrl: null,
+        poll: null
       });
       
       // Reset form
       setContent('');
-      setImageUrl(null);
-      setImagePreview(null);
-      setShowPoll(false);
-      setPollQuestion('');
-      setPollOptions(['', '']);
     } catch (error) {
       console.error('Failed to submit confession:', error);
     } finally {
@@ -147,12 +130,10 @@ export function ConfessionComposer({ onBack, onSubmit, alias }: ConfessionCompos
     }
   };
 
-  // Validation: text OR image OR poll is mandatory
+  // Validation: text is mandatory
   const hasText = content.trim().length > 0;
-  const hasImage = imageUrl !== null;
-  const hasPoll = showPoll && pollQuestion.trim().length > 0 && pollOptions.some(opt => opt.trim().length > 0);
   
-  const canSubmit = (hasText || hasImage || hasPoll) && !isSubmitting && !isUploadingImage;
+  const canSubmit = hasText && !isSubmitting;
 
   return (
     <div className="min-h-screen bg-black">
@@ -224,37 +205,7 @@ export function ConfessionComposer({ onBack, onSubmit, alias }: ConfessionCompos
 
       {/* Bottom Section */}
       <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-zinc-800 p-4">
-        <div className="flex items-center justify-between">
-          {/* Media Options */}
-          <div className="flex items-center gap-6">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageUpload}
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors border border-[#F4E3B5]/30 rounded-xl px-3 py-2 hover:border-[#F4E3B5]/60"
-            >
-              <Image className="w-6 h-6" />
-              <span className="text-sm font-medium">Upload</span>
-            </button>
-            
-            <button
-              onClick={() => setShowPoll(!showPoll)}
-              className={`flex items-center gap-2 transition-colors border rounded-xl px-3 py-2 ${
-                showPoll 
-                  ? 'text-[#F4E3B5] border-[#F4E3B5]/60' 
-                  : 'text-zinc-400 hover:text-white border-[#F4E3B5]/30 hover:border-[#F4E3B5]/60'
-              }`}
-            >
-              <BarChart3 className="w-6 h-6" />
-              <span className="text-sm font-medium">Poll</span>
-            </button>
-          </div>
-
+        <div className="flex items-center justify-end">
           {/* Confess Button */}
           <button
             onClick={handleSubmit}
@@ -264,82 +215,11 @@ export function ConfessionComposer({ onBack, onSubmit, alias }: ConfessionCompos
                 ? 'bg-[#F4E3B5] hover:bg-[#F1DEAB] text-black border-[#F4E3B5] hover:border-[#F1DEAB]'
                 : 'bg-black/60 text-zinc-400 cursor-not-allowed border-zinc-600'
             }`}
-            title={!canSubmit ? 'Add text, photo, or poll to confess' : 'Share your confession'}
+            title={!canSubmit ? 'Add text to confess' : 'Share your confession'}
           >
             {isSubmitting ? 'Sharing...' : 'Share'}
           </button>
         </div>
-
-        {/* Poll Section */}
-        {showPoll && (
-          <div className="mt-4 bg-black rounded-2xl p-4 border border-zinc-800">
-            <div className="space-y-4">
-              <input
-                type="text"
-                value={pollQuestion}
-                onChange={(e) => setPollQuestion(e.target.value)}
-                placeholder="Ask a question..."
-                className="w-full bg-black border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-400 focus:border-[#F4E3B5] focus:outline-none"
-                maxLength={200}
-              />
-              
-              <div className="space-y-2">
-                {pollOptions.map((option, index) => (
-                  <div key={`poll-option-${index}`} className="flex items-center gap-3">
-                    <div className="w-6 h-6 bg-[#F4E3B5]/20 rounded-full flex items-center justify-center text-[#F4E3B5] text-xs font-bold">
-                      {index + 1}
-                    </div>
-                    <input
-                      type="text"
-                      value={option}
-                      onChange={(e) => updatePollOption(index, e.target.value)}
-                      placeholder={`Choice ${index + 1}`}
-                      className="flex-1 bg-black border border-zinc-700 rounded-lg px-3 py-2 text-white placeholder-zinc-400 focus:border-[#F4E3B5] focus:outline-none text-sm"
-                      maxLength={100}
-                    />
-                    {pollOptions.length > 2 && (
-                      <button
-                        onClick={() => removePollOption(index)}
-                        className="p-1 text-zinc-400 hover:text-red-400 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-              
-              {pollOptions.length < 4 && (
-                <button
-                  onClick={addPollOption}
-                  className="flex items-center gap-2 px-3 py-2 text-[#F4E3B5] hover:text-[#F1DEAB] hover:bg-[#F4E3B5]/10 rounded-lg transition-colors text-sm"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Choice
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Image Preview */}
-        {imagePreview && (
-          <div className="mt-4 bg-black rounded-2xl p-4 border border-zinc-800">
-            <div className="flex items-center gap-3">
-              <img src={imagePreview} alt="preview" className="w-12 h-12 object-cover rounded-lg" />
-              <div className="flex-1">
-                <p className="text-white text-sm font-medium">Image attached</p>
-                <p className="text-zinc-400 text-xs">Will be displayed with your post</p>
-              </div>
-              <button 
-                onClick={removeImage} 
-                className="text-zinc-400 hover:text-red-400 transition-colors p-2"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
