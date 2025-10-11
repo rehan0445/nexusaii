@@ -799,6 +799,7 @@ const ANNOUNCEMENTS_TABLE_MAP = {
   'mit-adt': 'announcements_mit_adt',
   'mit-wpu': 'announcements_mit_wpu',
   'iict': 'announcements_iict',
+  'iist': 'announcements_iict', // IIST maps to IICT table
   'parul-university': 'announcements_parul_university',
   'vit-vellore': 'announcements_vit_vellore'
 };
@@ -806,6 +807,7 @@ const LOSTFOUND_TABLE_MAP = {
   'mit-adt': 'lost_found_mit_adt',
   'mit-wpu': 'lost_found_mit_wpu',
   'iict': 'lost_found_iict',
+  'iist': 'lost_found_iict', // IIST maps to IICT table
   'parul-university': 'lost_found_parul_university',
   'vit-vellore': 'lost_found_vit_vellore'
 };

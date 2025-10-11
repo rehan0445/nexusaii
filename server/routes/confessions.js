@@ -333,6 +333,7 @@ const CONFESSION_TABLE_MAP = {
   'vit-vellore': 'confessions_vit_vellore',
   'parul-university': 'confessions_parul_university',
   'iict': 'confessions_iict',
+  'iist': 'confessions_iict', // IIST maps to IICT table
 };
 function getConfessionTable(campus) {
   return CONFESSION_TABLE_MAP[campus] || null;
@@ -350,6 +351,7 @@ const COMMENTS_TABLE_MAP = {
   'mit-adt': 'comments_mit_adt',
   'mit-wpu': 'comments_mit_wpu',
   'iict': 'comments_iict',
+  'iist': 'comments_iict', // IIST maps to IICT table
   'parul-university': 'comments_parul_university',
   'vit-vellore': 'comments_vit_vellore'
 };
@@ -357,6 +359,7 @@ const SUBCOMMENTS_TABLE_MAP = {
   'mit-adt': 'sub_comments_mit_adt',
   'mit-wpu': 'sub_comments_mit_wpu',
   'iict': 'sub_comments_iict',
+  'iist': 'sub_comments_iict', // IIST maps to IICT table
   'parul-university': 'sub_comments_parul_university',
   'vit-vellore': 'sub_comments_vit_vellore'
 };
