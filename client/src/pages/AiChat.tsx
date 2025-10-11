@@ -1604,8 +1604,16 @@ function AiChat() {
         <nav className={`fixed left-0 top-0 h-screen w-56 backdrop-blur-sm border-r ${borderColor} ${sideMenuBg} overflow-y-auto`}>
           <div className="p-6">
             <div className="flex items-center space-x-3 mb-8">
-              <div className="w-10 h-10 flex items-center justify-center">
-                <img src="/assets/nexus-logo.png" alt="Nexus Logo" className="w-full h-full object-contain" />
+              <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+                <img 
+                  src="/assets/nexus-logo.png" 
+                  alt="Nexus Logo" 
+                  className="w-full h-full object-contain" 
+                  onError={(e) => {
+                    console.error('Logo failed to load');
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
               </div>
               <span className={`text-xl font-bold ${accentText}`}>Nexus</span>
             </div>
@@ -1810,7 +1818,18 @@ function AiChat() {
                   >
                     <Menu className="w-5 h-5 text-softgold-500" />
                   </button>
-                  <div className="flex items-center">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                      <img 
+                        src="/assets/nexus-logo.png" 
+                        alt="Nexus Logo" 
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          console.error('Logo failed to load on mobile');
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
                     <span className="text-4xl font-bold bg-gradient-to-r from-softgold-400 via-softgold-500 to-softgold-600 bg-clip-text text-transparent" style={{ fontFamily: 'Rouge Script, cursive' }}>
                       {showFavorites ? "My Favorites" : "Nexus"}
                     </span>
@@ -1958,8 +1977,16 @@ function AiChat() {
             <div className="p-6">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 flex items-center justify-center">
-                    <img src="/src/assets/nexus-logo.png" alt="Nexus Logo" className="w-full h-full object-contain" />
+                  <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+                    <img 
+                      src="/assets/nexus-logo.png" 
+                      alt="Nexus Logo" 
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        console.error('Logo failed to load in drawer');
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                   </div>
                   <span className={`text-xl font-bold ${accentText}`}>Nexus</span>
                 </div>
