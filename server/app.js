@@ -474,8 +474,12 @@ io.on('connection', (socket) => {
       // Add user to database with tracking info
       await DarkroomService.addUserToRoom(groupId, socket.id, alias || 'Anonymous', userInfo);
 
-      // Update user count in database
-      const userCountResult = await DarkroomService.updateRoomUserCount(groupId);
+      // Get actual Socket.IO user count (most accurate)
+      const roomSockets = io.sockets.adapter.rooms.get(groupId);
+      const socketCount = roomSockets ? roomSockets.size : 0;
+      
+      // Update user count in database with actual Socket.IO count
+      const userCountResult = await DarkroomService.updateRoomUserCount(groupId, socketCount);
 
       // Get room history from database
       const messagesResult = await DarkroomService.getRoomMessages(groupId);
@@ -486,7 +490,7 @@ io.on('connection', (socket) => {
       // Send updated user count to all users in room
       io.to(groupId).emit('user-count-update', {
         roomId: groupId,
-        count: userCountResult.userCount || 0
+        count: socketCount
       });
 
       // Confirm successful room join to the client
@@ -554,6 +558,9 @@ io.on('connection', (socket) => {
     };
 
     try {
+      // Update user activity timestamp (for accurate member count)
+      await DarkroomService.updateUserActivity(socket.id);
+      
       // 🔧 FIX: Save message to Supabase database (critical for persistence)
       const saveResult = await DarkroomService.saveMessage(msg);
       
@@ -929,13 +936,17 @@ io.on('connection', (socket) => {
         const rooms = Array.from(socket.rooms).filter(r => r !== socket.id);
         
         for (const roomId of rooms) {
+          // Get actual Socket.IO user count
+          const roomSockets = io.sockets.adapter.rooms.get(roomId);
+          const socketCount = roomSockets ? roomSockets.size : 0;
+          
           // Update user count in database
-          const userCountResult = await DarkroomService.updateRoomUserCount(roomId);
+          await DarkroomService.updateRoomUserCount(roomId, socketCount);
           
           // Notify remaining users
           io.to(roomId).emit('user-count-update', {
             roomId,
-            count: userCountResult.userCount || 0
+            count: socketCount
           });
         }
       }
@@ -949,7 +960,7 @@ io.on('connection', (socket) => {
 // DARK ROOM CLEANUP - Periodic inactive user cleanup
 // ============================================
 
-// Clean up inactive users every 5 minutes
+// Clean up inactive users every 1 minute (for accurate member counts)
 setInterval(async () => {
   try {
     console.log('🧹 [Dark Room] Running periodic cleanup of inactive users...');
@@ -957,24 +968,30 @@ setInterval(async () => {
     
     if (result.success && result.cleaned > 0) {
       console.log(`🧹 [Dark Room] Cleaned up ${result.cleaned} inactive users`);
-      
-      // Update user counts for all active rooms
-      const roomsResult = await DarkroomService.getRooms();
-      if (roomsResult.success) {
-        for (const room of roomsResult.data) {
-          const userCountResult = await DarkroomService.updateRoomUserCount(room.id);
-          // Broadcast updated counts to all connected clients
-          io.to(room.id).emit('user-count-update', {
-            roomId: room.id,
-            count: userCountResult.userCount || 0
-          });
-        }
+    }
+    
+    // Always update user counts for all active rooms (even if no cleanup happened)
+    const roomsResult = await DarkroomService.getRooms();
+    if (roomsResult.success) {
+      for (const room of roomsResult.data) {
+        // Get actual Socket.IO user count (most accurate)
+        const roomSockets = io.sockets.adapter.rooms.get(room.id);
+        const socketCount = roomSockets ? roomSockets.size : 0;
+        
+        // Update database with accurate count
+        await DarkroomService.updateRoomUserCount(room.id, socketCount);
+        
+        // Broadcast updated counts to all connected clients
+        io.emit('user-count-update', {
+          roomId: room.id,
+          count: socketCount
+        });
       }
     }
   } catch (error) {
     console.error('❌ [Dark Room] Error in periodic cleanup:', error);
   }
-}, 5 * 60 * 1000); // 5 minutes
+}, 60 * 1000); // 1 minute (for accurate member counts)
 
 // ============================================
 // SUPABASE REALTIME - Cross-Server Message Sync (for horizontal scaling)

@@ -53,16 +53,24 @@ export class DarkroomService {
     }
   }
 
-  static async updateRoomUserCount(roomId) {
+  static async updateRoomUserCount(roomId, socketIoCount = null) {
     try {
-      const { data, error } = await supabase
-        .from('darkroom_room_users')
-        .select('id')
-        .eq('room_id', roomId);
+      // If Socket.IO count is provided, use it (most accurate)
+      let userCount = socketIoCount;
+      
+      // Otherwise, count users who were active in the last 3 minutes
+      if (userCount === null) {
+        const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+        
+        const { data, error } = await supabase
+          .from('darkroom_room_users')
+          .select('id')
+          .eq('room_id', roomId)
+          .gte('last_activity', threeMinutesAgo); // Only count recently active users
 
-      if (error) throw error;
-
-      const userCount = data ? data.length : 0;
+        if (error) throw error;
+        userCount = data ? data.length : 0;
+      }
 
       const { error: updateError } = await supabase
         .from('darkroom_rooms')
@@ -144,6 +152,7 @@ export class DarkroomService {
   // User Management
   static async addUserToRoom(roomId, socketId, alias, userInfo = {}) {
     try {
+      const now = new Date().toISOString();
       const { data, error } = await supabase
         .from('darkroom_room_users')
         .insert([{
@@ -152,7 +161,9 @@ export class DarkroomService {
           alias: alias,
           user_name: userInfo.user_name || null,
           user_email: userInfo.user_email || null,
-          user_id: userInfo.user_id || null
+          user_id: userInfo.user_id || null,
+          last_activity: now, // Set initial activity timestamp
+          joined_at: now
         }])
         .select()
         .single();
