@@ -24,11 +24,18 @@ const Login = () => {
   };
 
   useEffect(() => {
+    // Check if user has seen onboarding intro pages
+    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+    
     if (userLoggedin) {
       localStorage.setItem('hasSeenOnboarding', 'true');
       navigate("/companion");
+    } else if (!hasSeenOnboarding) {
+      // First time user - redirect to onboarding intro
+      console.log('🔄 Redirecting to onboarding intro...');
+      navigate("/onboarding/intro", { replace: true });
     }
-  }, [userLoggedin]);
+  }, [userLoggedin, navigate]);
 
   const handleGmailLogin = async () => {
     if (!formData.email || !formData.password) {
