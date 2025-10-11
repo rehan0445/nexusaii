@@ -1,0 +1,16 @@
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = [
+  "npm ci --include=dev",
+  "cd client && npm ci --include=dev",
+  "cd server && npm ci --include=dev"
+]
+
+[phases.build]
+cmds = ["cd client && npm run build"]
+
+[start]
+cmd = "cd server && npm start"
+
