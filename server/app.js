@@ -1075,8 +1075,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Remove duplicate permissive CORS block
 
-// Health check endpoint
-app.get("/", (req, res) => {
+// Health check endpoint - moved from "/" to "/health" to allow static files at root
+app.get("/health", (req, res) => {
   res.json({ 
     message: "Companion Backend Server", 
     status: "running",
