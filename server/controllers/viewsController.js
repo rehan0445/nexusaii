@@ -157,25 +157,33 @@ export const getCharacterLeaderboard = async (req, res) => {
     
     const orderColumn = type === 'unique' ? 'unique_views' : 'total_views';
     
-    // Get ranked characters by view count
-    const { data: rankedCharacters, error } = await supabase
-      .from("character_view_counts")
-      .select(`
-        character_id,
-        total_views,
-        unique_views,
-        last_viewed_at
-      `)
-      .order(orderColumn, { ascending: false })
-      .limit(parseInt(limit));
+    // Get ranked characters by view count with timeout handling
+    const { data: rankedCharacters, error } = await Promise.race([
+      supabase
+        .from("character_view_counts")
+        .select(`
+          character_id,
+          total_views,
+          unique_views,
+          last_viewed_at
+        `)
+        .order(orderColumn, { ascending: false })
+        .limit(parseInt(limit)),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 5000)
+      )
+    ]).catch(error => {
+      console.error("Error fetching leaderboard:", error.message || error);
+      // Return empty array on error for graceful fallback
+      return { data: [], error: null };
+    });
 
     if (error) {
-      console.error("Error fetching leaderboard:", error);
-      throw error;
+      console.error("Leaderboard query error:", error.message || error);
     }
 
     // Add ranking numbers
-    const leaderboard = rankedCharacters.map((character, index) => ({
+    const leaderboard = (rankedCharacters || []).map((character, index) => ({
       ...character,
       rank: index + 1,
     }));
@@ -184,16 +192,25 @@ export const getCharacterLeaderboard = async (req, res) => {
       success: true,
       data: {
         leaderboard,
-        total_characters: rankedCharacters.length,
+        total_characters: leaderboard.length,
         ranking_type: type,
       },
     });
   } catch (error) {
-    console.error("Error in getCharacterLeaderboard:", error.message);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch character leaderboard",
-      error: error.message,
+    console.error("Error in getCharacterLeaderboard:", {
+      message: error.message,
+      name: error.name,
+      stack: error.stack?.split('\n')[0],
+    });
+    
+    // Return graceful empty response instead of 500 error
+    return res.status(200).json({
+      success: true,
+      data: {
+        leaderboard: [],
+        total_characters: 0,
+        ranking_type: type,
+      },
     });
   }
 };
