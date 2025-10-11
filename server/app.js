@@ -93,33 +93,45 @@ process.on('uncaughtException', (err) => {
   console.error('UncaughtException', err);
 });
 
+// Track Socket.IO CORS logs to avoid spam
+const socketCorsLogCache = new Map();
+
 // Socket.IO setup for Dark Room (credentialed) - Match Express CORS configuration
 const io = new Server(server, {
   cors: {
     origin: (origin, callback) => {
+      const logSocketCorsOnce = (message, key = 'no-origin') => {
+        const now = Date.now();
+        const lastLog = socketCorsLogCache.get(key) || 0;
+        if (now - lastLog > 60000) { // 1 minute
+          console.log(message);
+          socketCorsLogCache.set(key, now);
+        }
+      };
+
       if (ALLOW_ALL_ORIGINS) {
-        console.log('🔌 Socket.IO: Allowing all origins (development mode)');
+        logSocketCorsOnce('🔌 Socket.IO: Allowing all origins (development mode)', 'dev-mode');
         return callback(null, true);
       }
+      // No origin = direct request - don't log to avoid spam
       if (!origin) {
-        console.log('🔌 Socket.IO: No origin (direct request)');
         return callback(null, true);
       }
       if (CORS_ALLOWLIST.includes(origin)) {
-        console.log('🔌 Socket.IO: Allowed origin:', origin);
+        logSocketCorsOnce(`🔌 Socket.IO: Allowed origin: ${origin}`, origin);
         return callback(null, true);
       }
 
       // Allow Railway domains (same-origin deployment)
       if (origin.includes('.railway.app') || origin.includes('.up.railway.app')) {
-        console.log('🔌 Socket.IO: Allowed Railway origin:', origin);
+        logSocketCorsOnce(`🔌 Socket.IO: Allowed Railway origin: ${origin}`, origin);
         return callback(null, true);
       }
 
       // Allow LAN IP patterns (192.168.x.x) for development
       const lanPattern = /^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/;
       if (lanPattern.test(origin)) {
-        console.log('🔌 Socket.IO: Allowed LAN origin:', origin);
+        logSocketCorsOnce(`🔌 Socket.IO: Allowed LAN origin: ${origin}`, origin);
         return callback(null, true);
       }
 
@@ -174,39 +186,53 @@ const CORS_ALLOWLIST = parseCsv(process.env.CORS_ALLOWLIST ||
 const CORS_METHODS = ['GET','POST','PUT','DELETE','OPTIONS'];
 const ALLOW_ALL_ORIGINS = process.env.NODE_ENV !== 'production' || process.env.ALLOW_ALL_ORIGINS === 'true';
 
+// Track CORS logs to avoid spam (only log unique origins once per minute)
+const corsLogCache = new Map();
+const CORS_LOG_INTERVAL = 60000; // 1 minute
+
+const logCorsOnce = (message, origin = 'no-origin') => {
+  const now = Date.now();
+  const lastLog = corsLogCache.get(origin) || 0;
+  if (now - lastLog > CORS_LOG_INTERVAL) {
+    console.log(message);
+    corsLogCache.set(origin, now);
+  }
+};
+
 app.use(cors({
   origin: (origin, callback) => {
     if (ALLOW_ALL_ORIGINS) {
-      console.log('🌐 CORS: Allowing all origins (development mode)');
+      logCorsOnce('🌐 CORS: Allowing all origins (development mode)', 'dev-mode');
       return callback(null, true);
     }
 
+    // No origin = direct request, health checks, or same-origin
+    // Don't log these to avoid spam
     if (!origin) {
-      console.log('🌐 CORS: No origin (direct request)');
       return callback(null, true);
     }
 
     if (CORS_ALLOWLIST.includes(origin)) {
-      console.log('🌐 CORS: Allowed origin:', origin);
+      logCorsOnce(`🌐 CORS: Allowed origin: ${origin}`, origin);
       return callback(null, true);
     }
 
     // Allow Railway domains (same-origin deployment)
     if (origin.includes('.railway.app') || origin.includes('.up.railway.app')) {
-      console.log('🌐 CORS: Allowed Railway origin:', origin);
+      logCorsOnce(`🌐 CORS: Allowed Railway origin: ${origin}`, origin);
       return callback(null, true);
     }
 
     // Enhanced LAN IP pattern matching
     const lanPattern = /^https?:\/\/(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)\d{1,3}:\d+$/;
     if (lanPattern.test(origin)) {
-      console.log('🌐 CORS: Allowed LAN origin:', origin);
+      logCorsOnce(`🌐 CORS: Allowed LAN origin: ${origin}`, origin);
       return callback(null, true);
     }
 
     // Allow public IP addresses in development
     if (process.env.NODE_ENV !== 'production' && origin.match(/^https?:\/\/\d+\.\d+\.\d+\.\d+:\d+$/)) {
-      console.log('🌐 CORS: Allowed public IP origin (development):', origin);
+      logCorsOnce(`🌐 CORS: Allowed public IP origin (development): ${origin}`, origin);
       return callback(null, true);
     }
 
@@ -230,11 +256,15 @@ app.use((req, res, next) => {
 // Production: Per-user limits to handle high concurrency
 const isDev = process.env.NODE_ENV === 'development';
 
+// Track rate limit warnings to avoid log spam
+const rateLimitWarnings = new Map();
+const RATE_LIMIT_WARNING_INTERVAL = 30000; // Only log once per 30 seconds per IP
+
 const globalLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute window
-  // Development: High limit for testing (5000/min)
-  // Production: Per-user limit for 10k users (100/min per user = sustainable for chat apps)
-  max: isDev ? 5000 : Number(process.env.RATE_LIMIT_MAX || 100),
+  // Railway deployment: Very high limit to handle load balancer traffic
+  // Individual routes have their own specific limits
+  max: isDev ? 5000 : Number(process.env.RATE_LIMIT_MAX || 1000),
   standardHeaders: true,
   legacyHeaders: false,
   
@@ -255,11 +285,30 @@ const globalLimiter = rateLimit({
       return true;
     }
     
+    // Skip Railway's internal IPs (100.64.0.0/10 CGNAT range)
+    const ip = req.ip || req.headers['x-forwarded-for'] || '';
+    if (ip.startsWith('100.64.') || ip.startsWith('100.65.') || 
+        ip.startsWith('100.66.') || ip.startsWith('100.67.') ||
+        ip.startsWith('100.68.') || ip.startsWith('100.69.') ||
+        ip.startsWith('100.70.') || ip.startsWith('100.71.') ||
+        ip.startsWith('100.72.') || ip.startsWith('100.73.') ||
+        ip.startsWith('100.74.') || ip.startsWith('100.75.') ||
+        ip.startsWith('100.76.') || ip.startsWith('100.77.')) {
+      return true; // Skip Railway internal traffic
+    }
+    
+    // Skip static files (assets, images, etc.)
+    if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+      return true;
+    }
+    
     // In production, skip for high-frequency endpoints that have their own protection
     const skipPaths = [
       '/api/hangout/rooms',
       '/health',
-      '/api/v1/chat/companion/history' // History fetching is cached
+      '/api/v1/chat/companion/history', // History fetching is cached
+      '/assets', // Vite build assets
+      '/', // Root path for React app
     ];
     
     return skipPaths.some(path => 
@@ -269,7 +318,16 @@ const globalLimiter = rateLimit({
   
   // Custom handler for rate limit exceeded
   handler: (req, res) => {
-    console.warn(`⚠️ Rate limit exceeded for ${req.user?.userId || req.ip}`);
+    const key = req.user?.userId || req.ip || 'unknown';
+    const now = Date.now();
+    const lastWarning = rateLimitWarnings.get(key) || 0;
+    
+    // Only log once per interval to avoid Railway log rate limit
+    if (now - lastWarning > RATE_LIMIT_WARNING_INTERVAL) {
+      console.warn(`⚠️ Rate limit exceeded for ${key}`);
+      rateLimitWarnings.set(key, now);
+    }
+    
     res.status(429).json({
       success: false,
       error: 'Too many requests',
