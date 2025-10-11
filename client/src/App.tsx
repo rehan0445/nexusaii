@@ -38,7 +38,6 @@ import CollegeConfessionWrapper from "./components/CollegeConfessionWrapper";
 // Lazy load non-critical pages for code splitting
 const UserInfoForm = React.lazy(() => import("./pages/UserInfoForm"));
 const SetupProfile = React.lazy(() => import("./pages/SetupProfile"));
-const Onboarding = React.lazy(() => import("./pages/Onboarding"));
 const AiChat = React.lazy(() => import("./pages/AiChat"));
 const AISettings = React.lazy(() => import("./pages/AISettings"));
 const CharacterChat = React.lazy(() => import("./pages/CharacterChat"));
@@ -150,9 +149,6 @@ function App() {
                   <Route path="/onboarding/campus" element={<IntroCampus />} />
                   <Route path="/onboarding/darkroom" element={<IntroDarkRoom />} />
                   <Route path="/onboarding/hangout" element={<IntroHangout />} />
-                  
-                  {/* User details onboarding (after registration) */}
-                  <Route path="/onboarding/user-details" element={<Onboarding />} />
 
                   {/* New mobile-first routes */}
                   <Route path="/arena" element={<Navigate to="/companion" replace />} />

@@ -58,43 +58,9 @@ const Login = () => {
       if (data.user) {
         console.log('✅ Login successful:', data.user.email);
         localStorage.setItem('hasSeenOnboarding', 'true');
+        localStorage.setItem('hasCompletedOnboarding', 'true');
         
-        // Check if user has completed profile creation
-        const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding');
-        
-        if (!hasCompletedOnboarding) {
-          // Check if profile exists in database
-          try {
-            const profileResponse = await fetch('/api/v1/chat/profile-info', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${data.session?.access_token}`,
-              },
-              credentials: 'include',
-              body: JSON.stringify({ uid: data.user.id })
-            });
-            
-            const profileData = await profileResponse.json();
-            
-            if (!profileData.success || !profileData.data || profileData.data.length === 0) {
-              // No profile found - redirect to onboarding
-              console.log('⚠️ No profile found, redirecting to onboarding...');
-              navigate("/onboarding/user-details");
-              return;
-            } else {
-              // Profile exists - mark onboarding as complete
-              localStorage.setItem('hasCompletedOnboarding', 'true');
-            }
-          } catch (error) {
-            console.error('Error checking profile:', error);
-            // On error, assume profile doesn't exist and redirect to onboarding
-            navigate("/onboarding/user-details");
-            return;
-          }
-        }
-        
-        // Navigate to companion page after login
+        // Navigate directly to companion page after login
         navigate("/companion");
       }
     } catch (error: any) {

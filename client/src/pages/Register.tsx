@@ -82,13 +82,14 @@ const Register: React.FC = () => {
 
       if (data.user) {
         console.log('✅ Registration successful:', data.user.email);
-        console.log('📍 Navigating to user details onboarding...');
+        console.log('📍 Navigating to companion page...');
         
         // Check if email confirmation is required
         if (data.session) {
-          // User is automatically logged in - redirect to user details onboarding
-          console.log('✅ Session exists, redirecting to /onboarding/user-details');
-          navigate("/onboarding/user-details", { replace: true });
+          // User is automatically logged in - redirect to companion page
+          console.log('✅ Session exists, redirecting to /companion');
+          localStorage.setItem('hasCompletedOnboarding', 'true');
+          navigate("/companion", { replace: true });
         } else {
           // Email confirmation required - show modal
           setRegisteredEmail(formData.email);
