@@ -96,14 +96,21 @@ export const chatAiClaude = async (req, res) => {
     // Prepare conversation history for Venice AI
     const messages = [];
     
-    // Add conversation history if provided
+    // Add conversation history if provided - keep last 30 messages for better context
     if (conversationHistory && conversationHistory.length > 0) {
-      conversationHistory.slice(-10).forEach(msg => { // Keep last 10 messages for context
+      // Filter out empty messages and keep last 30 for context
+      const validHistory = conversationHistory
+        .filter(msg => msg && (msg.text || msg.message) && msg.sender)
+        .slice(-30); // Increased from 10 to 30 messages for better context retention
+      
+      validHistory.forEach(msg => {
         messages.push({
           role: msg.sender === 'user' ? 'user' : 'assistant',
-          content: msg.text || msg.message
+          content: msg.text || msg.message || ''
         });
       });
+      
+      console.log(`📝 Including ${validHistory.length} previous messages for context`);
     }
 
     // Add current user message
@@ -123,10 +130,19 @@ export const chatAiClaude = async (req, res) => {
       character: modelName,
       hasApiKey: !!process.env.VENICE_API_KEY,
       messageCount: messages.length,
+      conversationHistoryLength: conversationHistory?.length || 0,
+      contextMessagesIncluded: messages.length - 1, // -1 for current message
       hasCharacterData: !!characterData,
+      hasPersistentContext: !!persistentContext,
+      hasAffectionContext: !!affectionContext,
       quirks: characterData?.personality?.quirks?.length || 0,
       traits: characterData?.personality?.traits?.length || 0
     });
+    
+    // Log first 3 messages for debugging context
+    if (messages.length > 1) {
+      console.log('📖 Sample context messages:', messages.slice(0, Math.min(3, messages.length)));
+    }
 
     // Validate character data is present
     if (!characterData || !characterData.personality) {
@@ -363,7 +379,10 @@ IMPORTANT: Use this memory to maintain conversation continuity and show that you
 3. Show personality through your words and actions
 4. Express emotions matching your emotional style
 5. Reference your background and interests naturally
-${!incognitoMode && persistentContext ? '6. Remember and reference past conversations naturally' : ''}
+6. REMEMBER the conversation history - reference what was discussed earlier
+${!incognitoMode && persistentContext ? '7. Use your persistent memory to maintain continuity across sessions' : ''}
+
+CRITICAL: You have access to the conversation history above. Reference previous messages naturally when relevant to show you remember and care about the conversation!
 
 FORMAT:
 [THINKS: ${characterName}'s authentic thoughts]
