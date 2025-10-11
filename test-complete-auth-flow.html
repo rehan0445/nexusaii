@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Auth Flow Test - All 3 Errors Fixed</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .test-section h2 {
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .status-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .status-card.pending { border-color: #ffa500; }
+        .status-card.success { border-color: #00ff00; background: rgba(0, 255, 0, 0.1); }
+        .status-card.error { border-color: #ff0000; background: rgba(255, 0, 0, 0.1); }
+        .status-card h3 {
+            font-size: 1em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-icon {
+            font-size: 1.5em;
+        }
+        .status-message {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        .log-box {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-left: 3px solid transparent;
+            padding-left: 10px;
+        }
+        .log-entry.info { border-left-color: #00bfff; }
+        .log-entry.success { border-left-color: #00ff00; }
+        .log-entry.error { border-left-color: #ff0000; }
+        .log-entry.warning { border-left-color: #ffa500; }
+        .btn {
+            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 Complete Auth Flow Test</h1>
+        <p class="subtitle">Testing All 3 Errors Fixed: Table Creation → Session Bridge → Socket.IO</p>
+
+        <div class="test-section">
+            <h2>📊 System Status</h2>
+            <div class="status-grid">
+                <div class="status-card pending" id="status-table">
+                    <h3><span class="status-icon">⏳</span> Error 3: Table</h3>
+                    <p class="status-message">Checking user_sessions table...</p>
+                </div>
+                <div class="status-card pending" id="status-bridge">
+                    <h3><span class="status-icon">⏳</span> Error 2: Session Bridge</h3>
+                    <p class="status-message">Waiting to test...</p>
+                </div>
+                <div class="status-card pending" id="status-socket">
+                    <h3><span class="status-icon">⏳</span> Error 1: WebSocket</h3>
+                    <p class="status-message">Waiting to connect...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔄 Test Actions</h2>
+            <div class="action-buttons">
+                <button class="btn" onclick="testTableExists()">1. Check Table</button>
+                <button class="btn" onclick="testSessionBridge()" id="btn-bridge" disabled>2. Test Bridge</button>
+                <button class="btn" onclick="testSocketConnection()" id="btn-socket" disabled>3. Test Socket</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 Test Logs</h2>
+            <div class="log-box" id="log-box"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const SERVER_URL = 'http://localhost:8002';
+        let testToken = null;
+        let socket = null;
+
+        function log(message, type = 'info') {
+            const logBox = document.getElementById('log-box');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+            console.log(`[${type.toUpperCase()}]`, message);
+        }
+
+        function updateStatus(cardId, status, message) {
+            const card = document.getElementById(cardId);
+            card.className = `status-card ${status}`;
+            const icon = card.querySelector('.status-icon');
+            const msg = card.querySelector('.status-message');
+            
+            if (status === 'success') {
+                icon.textContent = '✅';
+            } else if (status === 'error') {
+                icon.textContent = '❌';
+            } else if (status === 'pending') {
+                icon.textContent = '⏳';
+            }
+            
+            msg.textContent = message;
+        }
+
+        // Test 1: Check if user_sessions table exists
+        async function testTableExists() {
+            log('🔍 Testing Error 3: Checking user_sessions table...', 'info');
+            updateStatus('status-table', 'pending', 'Checking table existence...');
+
+            try {
+                // We'll check by trying to query the API that uses the table
+                const response = await fetch(`${SERVER_URL}/api/auth/health`);
+                
+                if (response.ok) {
+                    log('✅ Backend is healthy and responding', 'success');
+                    updateStatus('status-table', 'success', 'Table exists (inferred from backend health)');
+                    document.getElementById('btn-bridge').disabled = false;
+                    log('💡 Table check passed! Ready to test session bridge.', 'success');
+                } else {
+                    throw new Error(`Backend returned ${response.status}`);
+                }
+            } catch (error) {
+                log(`❌ Error checking backend: ${error.message}`, 'error');
+                updateStatus('status-table', 'error', `Check failed: ${error.message}`);
+            }
+        }
+
+        // Test 2: Test session bridge
+        async function testSessionBridge() {
+            log('🔐 Testing Error 2: Session Bridge...', 'info');
+            updateStatus('status-bridge', 'pending', 'Attempting session bridge...');
+
+            // Try to get token from localStorage (if user is signed in)
+            const authData = localStorage.getItem('nexus-auth');
+            if (!authData) {
+                log('⚠️  No auth data found. Please sign in to the app first.', 'warning');
+                log('📌 Steps: 1) Go to http://localhost:5173 2) Sign in 3) Return here', 'info');
+                updateStatus('status-bridge', 'error', 'Not signed in - please sign in first');
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(authData);
+                testToken = parsed?.currentSession?.access_token || 
+                           parsed?.access_token || 
+                           parsed?.session?.access_token;
+
+                if (!testToken) {
+                    throw new Error('No access token found in auth data');
+                }
+
+                log(`🔑 Found auth token: ${testToken.substring(0, 20)}...`, 'info');
+
+                // Call session bridge endpoint
+                const response = await fetch(`${SERVER_URL}/api/auth/session/bridge`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${testToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Session bridge successful!', 'success');
+                    log(`📊 Session ID: ${data.sessionId}`, 'info');
+                    log(`👤 User ID: ${data.userId}`, 'info');
+                    updateStatus('status-bridge', 'success', 'Bridge working! Session created.');
+                    document.getElementById('btn-socket').disabled = false;
+                    log('💡 Session bridge passed! Ready to test Socket.IO.', 'success');
+                } else {
+                    const errorText = await response.text();
+                    throw new Error(`${response.status} ${response.statusText}: ${errorText}`);
+                }
+            } catch (error) {
+                log(`❌ Session bridge failed: ${error.message}`, 'error');
+                updateStatus('status-bridge', 'error', `Bridge failed: ${error.message}`);
+            }
+        }
+
+        // Test 3: Test Socket.IO connection
+        async function testSocketConnection() {
+            log('🔌 Testing Error 1: WebSocket Connection...', 'info');
+            updateStatus('status-socket', 'pending', 'Connecting to Socket.IO...');
+
+            try {
+                if (socket && socket.connected) {
+                    socket.disconnect();
+                }
+
+                const socketOptions = {
+                    transports: ['websocket', 'polling'],
+                    timeout: 20000,
+                    auth: {
+                        token: testToken
+                    },
+                    extraHeaders: {
+                        'Authorization': `Bearer ${testToken}`
+                    }
+                };
+
+                log('🔧 Socket options configured', 'info');
+                log(`🔧 Server URL: ${SERVER_URL}`, 'info');
+
+                socket = io(SERVER_URL, socketOptions);
+
+                socket.on('connect', () => {
+                    log('✅ Socket.IO connected successfully!', 'success');
+                    log(`📡 Socket ID: ${socket.id}`, 'info');
+                    updateStatus('status-socket', 'success', 'WebSocket connected!');
+                    
+                    // Test sending a message
+                    log('📤 Sending test message...', 'info');
+                    socket.emit('test', { message: 'Hello from test script!' });
+                });
+
+                socket.on('connect_error', (error) => {
+                    log(`❌ Socket connection error: ${error.message}`, 'error');
+                    updateStatus('status-socket', 'error', `Connection failed: ${error.message}`);
+                });
+
+                socket.on('disconnect', (reason) => {
+                    log(`📡 Socket disconnected: ${reason}`, 'warning');
+                });
+
+                socket.on('error', (error) => {
+                    log(`❌ Socket error: ${error}`, 'error');
+                });
+
+            } catch (error) {
+                log(`❌ Socket.IO setup failed: ${error.message}`, 'error');
+                updateStatus('status-socket', 'error', `Setup failed: ${error.message}`);
+            }
+        }
+
+        // Auto-start table check on load
+        window.addEventListener('load', () => {
+            log('🚀 Test script loaded', 'info');
+            log('📋 This script will test all 3 errors in sequence', 'info');
+            log('─────────────────────────────────────────', 'info');
+            setTimeout(testTableExists, 1000);
+        });
+    </script>
+</body>
+</html>
+

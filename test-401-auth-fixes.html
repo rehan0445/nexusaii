@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>401 Authentication Fixes Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 10px;
+            height: 600px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #0066cc;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .success {
+            color: #90ee90;
+        }
+        .error {
+            color: #ee9090;
+        }
+        .warning {
+            color: #ffcc00;
+        }
+        .info {
+            color: #87ceeb;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #333;
+            color: #fff;
+            width: 300px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.passed {
+            background: #2d5a2d;
+            color: #90ee90;
+        }
+        .status.failed {
+            background: #5a2d2d;
+            color: #ee9090;
+        }
+        .status.pending {
+            background: #5a5a2d;
+            color: #ffcc00;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 401 Authentication Fixes Test</h1>
+    <p>This page tests the fixes for systemic 401 authentication failures in hangoutService and messagePersistence.</p>
+    
+    <div class="test-section">
+        <h2>🎯 Test Scenarios</h2>
+        <button onclick="testBaseUrlConsistency()">Test Base URL Consistency</button>
+        <button onclick="testHangoutServiceAuth()">Test HangoutService Authentication</button>
+        <button onclick="testMessagePersistenceAuth()">Test MessagePersistence Authentication</button>
+        <button onclick="testApiClientAuth()">Test ApiClient Authentication</button>
+        <button onclick="testAllAuthFixes()">Test All Auth Fixes</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔑 Authentication Test</h3>
+        <input type="text" id="supabaseToken" placeholder="Paste Supabase JWT token here (optional)">
+        <button onclick="setAuthToken()">Set Auth Token</button>
+        <button onclick="clearAuthToken()">Clear Auth Token</button>
+        <div class="status pending" id="authStatus">No auth token set</div>
+    </div>
+    
+    <div class="test-section">
+        <h3>📊 Test Results</h3>
+        <div class="log" id="testLog"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔍 Test Status</h3>
+        <div id="testStatus">
+            <div class="status pending" id="baseUrlStatus">Base URL Consistency: Pending</div>
+            <div class="status pending" id="hangoutStatus">HangoutService Auth: Pending</div>
+            <div class="status pending" id="messageStatus">MessagePersistence Auth: Pending</div>
+            <div class="status pending" id="apiClientStatus">ApiClient Auth: Pending</div>
+        </div>
+        
+        <h3>✅ Expected Results</h3>
+        <ul>
+            <li>Base URL: http://10.87.73.163:8000 (not localhost:8002)</li>
+            <li>HangoutService: Uses apiClient with proper auth</li>
+            <li>MessagePersistence: Uses apiClient with proper auth</li>
+            <li>All requests include Authorization: Bearer &lt;token&gt; header</li>
+            <li>No 401 Unauthorized errors</li>
+        </ul>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+        }
+
+        function updateStatus(testId, status, message) {
+            const statusElement = document.getElementById(testId);
+            statusElement.className = `status ${status}`;
+            statusElement.textContent = message;
+        }
+
+        function setAuthToken() {
+            const token = document.getElementById('supabaseToken').value.trim();
+            if (token) {
+                localStorage.setItem('nexus-auth', JSON.stringify({
+                    currentSession: {
+                        access_token: token
+                    }
+                }));
+                log(`✅ Auth token set in localStorage`, 'success');
+                updateStatus('authStatus', 'passed', 'Authentication: Token set');
+            } else {
+                log(`❌ Please enter a valid token`, 'error');
+                updateStatus('authStatus', 'failed', 'Authentication: No token');
+            }
+        }
+
+        function clearAuthToken() {
+            localStorage.removeItem('nexus-auth');
+            log(`🗑️ Auth token cleared from localStorage`, 'info');
+            updateStatus('authStatus', 'pending', 'Authentication: No token set');
+        }
+
+        // Simulate the centralized API configuration
+        function getServerUrl() {
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            // Special handling for 10.x.x.x network range
+            if (hostname.startsWith('10.')) {
+                const port = hostname === '10.87.73.163' ? '8000' : '8002';
+                return `${protocol}//${hostname}:${port}`;
+            }
+            
+            // Use same hostname as frontend with backend port
+            return `${protocol}//${hostname}:8002`;
+        }
+
+        // Get auth token from localStorage (simulating the app's auth system)
+        function getAuthToken() {
+            try {
+                const authData = localStorage.getItem('nexus-auth');
+                if (authData) {
+                    const parsed = JSON.parse(authData);
+                    return parsed?.currentSession?.access_token || parsed?.access_token || parsed?.session?.access_token;
+                }
+            } catch (error) {
+                log(`❌ Error parsing auth data: ${error.message}`, 'error');
+            }
+            return null;
+        }
+
+        async function testBaseUrlConsistency() {
+            log('🧪 Testing Base URL Consistency...', 'info');
+            updateStatus('baseUrlStatus', 'pending', 'Base URL Consistency: Testing...');
+            
+            const detectedUrl = getServerUrl();
+            log(`🔧 Detected API URL: ${detectedUrl}`, 'info');
+            log(`🔧 Current hostname: ${window.location.hostname}`, 'info');
+            
+            // Test if this matches what should be used
+            if (detectedUrl.includes('10.87.73.163:8000')) {
+                log(`✅ Base URL correctly detected for 10.87.73.163:8000`, 'success');
+                updateStatus('baseUrlStatus', 'passed', 'Base URL Consistency: ✅ Correct (10.87.73.163:8000)');
+            } else if (detectedUrl.includes('localhost:8002')) {
+                log(`❌ Base URL incorrectly detected as localhost:8002 - this was the issue!`, 'error');
+                updateStatus('baseUrlStatus', 'failed', 'Base URL Consistency: ❌ Wrong (localhost:8002)');
+            } else {
+                log(`⚠️ Unexpected base URL: ${detectedUrl}`, 'warning');
+                updateStatus('baseUrlStatus', 'failed', 'Base URL Consistency: ❌ Unexpected');
+            }
+        }
+
+        async function testHangoutServiceAuth() {
+            log('🧪 Testing HangoutService Authentication...', 'info');
+            updateStatus('hangoutStatus', 'pending', 'HangoutService Auth: Testing...');
+            
+            const token = getAuthToken();
+            const apiUrl = getServerUrl();
+            const testRoomId = 'room-1759573909580-u5x2jc0s4';
+            const messagesEndpoint = `${apiUrl}/api/hangout/rooms/${testRoomId}/messages`;
+            
+            log(`🏠 Testing HangoutService.getMessages endpoint: ${messagesEndpoint}`, 'info');
+            log(`🔧 Expected baseURL: ${apiUrl}`, 'info');
+            
+            // Simulate what HangoutService should now be doing (using apiClient)
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json, text/plain, */*'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+                log(`🔑 Adding Authorization header (this should fix the 401)`, 'info');
+            } else {
+                log(`⚠️ No token available - request will likely fail with 401`, 'warning');
+            }
+            
+            log(`🔧 Request headers:`, 'info');
+            Object.entries(headers).forEach(([key, value]) => {
+                log(`  ${key}: ${value}`, 'info');
+            });
+            
+            try {
+                const response = await fetch(messagesEndpoint, {
+                    method: 'GET',
+                    headers,
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ HangoutService authentication working! Found ${data.messages?.length || 0} messages`, 'success');
+                    updateStatus('hangoutStatus', 'passed', 'HangoutService Auth: ✅ Working');
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ HangoutService authentication failed: ${response.status} ${response.statusText}`, 'error');
+                    log(`📊 Error details: ${JSON.stringify(errorData)}`, 'error');
+                    
+                    if (response.status === 401) {
+                        log(`🔍 This is the 401 error from HangoutService.getMessages (line 561)`, 'error');
+                        updateStatus('hangoutStatus', 'failed', 'HangoutService Auth: ❌ 401 Unauthorized');
+                    } else {
+                        updateStatus('hangoutStatus', 'failed', 'HangoutService Auth: ❌ Failed');
+                    }
+                }
+            } catch (error) {
+                log(`❌ HangoutService authentication test failed: ${error.message}`, 'error');
+                updateStatus('hangoutStatus', 'failed', 'HangoutService Auth: ❌ Failed');
+            }
+        }
+
+        async function testMessagePersistenceAuth() {
+            log('🧪 Testing MessagePersistence Authentication...', 'info');
+            updateStatus('messageStatus', 'pending', 'MessagePersistence Auth: Testing...');
+            
+            const token = getAuthToken();
+            const apiUrl = getServerUrl();
+            const testRoomId = 'room-1759573909580-u5x2jc0s4';
+            const messagesEndpoint = `${apiUrl}/api/hangout/rooms/${testRoomId}/messages`;
+            
+            log(`📨 Testing MessagePersistence.loadFromAPI endpoint: ${messagesEndpoint}`, 'info');
+            log(`🔧 Expected baseURL: ${apiUrl}`, 'info');
+            
+            // Simulate what MessagePersistence should be doing (using apiClient)
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json, text/plain, */*'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+                log(`🔑 Adding Authorization header (this should fix the 401)`, 'info');
+            } else {
+                log(`⚠️ No token available - request will likely fail with 401`, 'warning');
+            }
+            
+            log(`🔧 Request headers:`, 'info');
+            Object.entries(headers).forEach(([key, value]) => {
+                log(`  ${key}: ${value}`, 'info');
+            });
+            
+            try {
+                const response = await fetch(messagesEndpoint, {
+                    method: 'GET',
+                    headers,
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ MessagePersistence authentication working! Found ${data.messages?.length || 0} messages`, 'success');
+                    updateStatus('messageStatus', 'passed', 'MessagePersistence Auth: ✅ Working');
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ MessagePersistence authentication failed: ${response.status} ${response.statusText}`, 'error');
+                    log(`📊 Error details: ${JSON.stringify(errorData)}`, 'error');
+                    
+                    if (response.status === 401) {
+                        log(`🔍 This is the 401 error from MessagePersistence.loadFromAPI (line 32)`, 'error');
+                        updateStatus('messageStatus', 'failed', 'MessagePersistence Auth: ❌ 401 Unauthorized');
+                    } else {
+                        updateStatus('messageStatus', 'failed', 'MessagePersistence Auth: ❌ Failed');
+                    }
+                }
+            } catch (error) {
+                log(`❌ MessagePersistence authentication test failed: ${error.message}`, 'error');
+                updateStatus('messageStatus', 'failed', 'MessagePersistence Auth: ❌ Failed');
+            }
+        }
+
+        async function testApiClientAuth() {
+            log('🧪 Testing ApiClient Authentication...', 'info');
+            updateStatus('apiClientStatus', 'pending', 'ApiClient Auth: Testing...');
+            
+            const token = getAuthToken();
+            const apiUrl = getServerUrl();
+            
+            log(`🔧 Testing ApiClient configuration:`, 'info');
+            log(`  Base URL: ${apiUrl}`, 'info');
+            log(`  Auth Token: ${token ? 'Present' : 'Missing'}`, 'info');
+            
+            if (token) {
+                log(`🔑 Token preview: ${token.substring(0, 20)}...`, 'info');
+            }
+            
+            // Test if the apiClient would include the auth header
+            if (token) {
+                log(`✅ ApiClient should include Authorization: Bearer ${token.substring(0, 20)}...`, 'success');
+                updateStatus('apiClientStatus', 'passed', 'ApiClient Auth: ✅ Token Available');
+            } else {
+                log(`❌ ApiClient has no auth token - requests will fail with 401`, 'error');
+                updateStatus('apiClientStatus', 'failed', 'ApiClient Auth: ❌ No Token');
+            }
+        }
+
+        async function testAllAuthFixes() {
+            log('🚀 Starting comprehensive 401 authentication fixes test...', 'info');
+            clearLog();
+            
+            // Reset all status indicators
+            updateStatus('baseUrlStatus', 'pending', 'Base URL Consistency: Testing...');
+            updateStatus('hangoutStatus', 'pending', 'HangoutService Auth: Testing...');
+            updateStatus('messageStatus', 'pending', 'MessagePersistence Auth: Testing...');
+            updateStatus('apiClientStatus', 'pending', 'ApiClient Auth: Testing...');
+            
+            // Test 1: Base URL Consistency
+            await testBaseUrlConsistency();
+            
+            // Wait a moment, then test ApiClient Auth
+            setTimeout(async () => {
+                await testApiClientAuth();
+            }, 1000);
+            
+            // Wait a moment, then test HangoutService Auth
+            setTimeout(async () => {
+                await testHangoutServiceAuth();
+            }, 2000);
+            
+            // Wait a moment, then test MessagePersistence Auth
+            setTimeout(async () => {
+                await testMessagePersistenceAuth();
+            }, 3000);
+            
+            // Final summary
+            setTimeout(() => {
+                log('🎯 401 Authentication Fixes Test Summary:', 'info');
+                log('✅ Base URL: Should be http://10.87.73.163:8000 (not localhost:8002)', 'info');
+                log('✅ HangoutService: Should use apiClient with proper auth', 'info');
+                log('✅ MessagePersistence: Should use apiClient with proper auth', 'info');
+                log('✅ All requests: Should include Authorization: Bearer <token> header', 'info');
+                log('✅ No 401 errors: All authentication should work', 'info');
+                log('🔍 Check the status indicators and results above', 'info');
+            }, 4000);
+        }
+
+        // Log initial information
+        log('🔐 401 Authentication Fixes Test initialized', 'info');
+        log(`🌐 Current hostname: ${window.location.hostname}`, 'info');
+        log(`🔗 Current protocol: ${window.location.protocol}`, 'info');
+        log(`🎯 Detected API URL: ${getServerUrl()}`, 'info');
+        log(`🔑 Auth token in localStorage: ${getAuthToken() ? 'Found' : 'Not found'}`, 'info');
+        log('📋 Ready to test 401 authentication fixes', 'info');
+    </script>
+</body>
+</html>

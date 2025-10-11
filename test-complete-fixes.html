@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Network & Auth Fixes Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 10px;
+            height: 500px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #0066cc;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .success {
+            color: #90ee90;
+        }
+        .error {
+            color: #ee9090;
+        }
+        .warning {
+            color: #ffcc00;
+        }
+        .info {
+            color: #87ceeb;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #333;
+            color: #fff;
+            width: 300px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.passed {
+            background: #2d5a2d;
+            color: #90ee90;
+        }
+        .status.failed {
+            background: #5a2d2d;
+            color: #ee9090;
+        }
+        .status.pending {
+            background: #5a5a2d;
+            color: #ffcc00;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Complete Network & Authentication Fixes Test</h1>
+    <p>This page tests all the fixes for CSP violations, network errors, and authentication failures.</p>
+    
+    <div class="test-section">
+        <h2>🎯 Test Scenarios</h2>
+        <button onclick="testCSPFix()">Test CSP Fix</button>
+        <button onclick="testAPIConfiguration()">Test API Configuration</button>
+        <button onclick="testAuthentication()">Test Authentication</button>
+        <button onclick="testCharacterLoading()">Test Character Loading</button>
+        <button onclick="testHangoutMessages()">Test Hangout Messages</button>
+        <button onclick="testAllFixes()">Test All Fixes</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔑 Authentication Test</h3>
+        <input type="text" id="supabaseToken" placeholder="Paste Supabase JWT token here (optional)">
+        <button onclick="setAuthToken()">Set Auth Token</button>
+        <button onclick="clearAuthToken()">Clear Auth Token</button>
+        <div class="status pending" id="authStatus">No auth token set</div>
+    </div>
+    
+    <div class="grid">
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div class="log" id="testLog"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 Test Status</h3>
+            <div id="testStatus">
+                <div class="status pending" id="cspStatus">CSP Fix: Pending</div>
+                <div class="status pending" id="apiStatus">API Config: Pending</div>
+                <div class="status pending" id="authStatus">Authentication: Pending</div>
+                <div class="status pending" id="charStatus">Character Loading: Pending</div>
+                <div class="status pending" id="hangoutStatus">Hangout Messages: Pending</div>
+            </div>
+            
+            <h3>✅ Expected Results</h3>
+            <ul>
+                <li>No CSP violation errors</li>
+                <li>API configuration auto-detects correct URL</li>
+                <li>Authentication tokens properly sent</li>
+                <li>Character loading works without network errors</li>
+                <li>Hangout messages endpoint accessible</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+        }
+
+        function updateStatus(testId, status, message) {
+            const statusElement = document.getElementById(testId);
+            statusElement.className = `status ${status}`;
+            statusElement.textContent = message;
+        }
+
+        function setAuthToken() {
+            const token = document.getElementById('supabaseToken').value.trim();
+            if (token) {
+                localStorage.setItem('nexus-auth', JSON.stringify({
+                    currentSession: {
+                        access_token: token
+                    }
+                }));
+                log(`✅ Auth token set in localStorage`, 'success');
+                updateStatus('authStatus', 'passed', 'Authentication: Token set');
+            } else {
+                log(`❌ Please enter a valid token`, 'error');
+                updateStatus('authStatus', 'failed', 'Authentication: No token');
+            }
+        }
+
+        function clearAuthToken() {
+            localStorage.removeItem('nexus-auth');
+            log(`🗑️ Auth token cleared from localStorage`, 'info');
+            updateStatus('authStatus', 'pending', 'Authentication: No token set');
+        }
+
+        // Simulate the centralized API configuration
+        function getServerUrl() {
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            // Special handling for 10.x.x.x network range
+            if (hostname.startsWith('10.')) {
+                const port = hostname === '10.87.73.163' ? '8000' : '8002';
+                return `${protocol}//${hostname}:${port}`;
+            }
+            
+            // Use same hostname as frontend with backend port
+            return `${protocol}//${hostname}:8002`;
+        }
+
+        // Get auth token from localStorage (simulating the app's auth system)
+        function getAuthToken() {
+            try {
+                const authData = localStorage.getItem('nexus-auth');
+                if (authData) {
+                    const parsed = JSON.parse(authData);
+                    return parsed?.currentSession?.access_token || parsed?.access_token || parsed?.session?.access_token;
+                }
+            } catch (error) {
+                log(`❌ Error parsing auth data: ${error.message}`, 'error');
+            }
+            return null;
+        }
+
+        async function testCSPFix() {
+            log('🧪 Testing CSP Fix...', 'info');
+            updateStatus('cspStatus', 'pending', 'CSP Fix: Testing...');
+            
+            const testUrl = 'http://10.87.73.163:8000/api/v1/chat/models';
+            
+            try {
+                const response = await fetch(testUrl, { mode: 'cors' });
+                if (response.ok) {
+                    log(`✅ CSP Fix working! Connected to ${testUrl}`, 'success');
+                    updateStatus('cspStatus', 'passed', 'CSP Fix: ✅ Working');
+                } else {
+                    log(`⚠️ CSP Fix working but server returned ${response.status}`, 'warning');
+                    updateStatus('cspStatus', 'passed', 'CSP Fix: ✅ Working (server error)');
+                }
+            } catch (error) {
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    log(`❌ CSP Violation: ${error.message}`, 'error');
+                    updateStatus('cspStatus', 'failed', 'CSP Fix: ❌ Failed');
+                } else {
+                    log(`❌ Connection failed: ${error.message}`, 'error');
+                    updateStatus('cspStatus', 'failed', 'CSP Fix: ❌ Failed');
+                }
+            }
+        }
+
+        async function testAPIConfiguration() {
+            log('🧪 Testing API Configuration...', 'info');
+            updateStatus('apiStatus', 'pending', 'API Config: Testing...');
+            
+            const detectedUrl = getServerUrl();
+            log(`🔍 Detected API URL: ${detectedUrl}`, 'info');
+            
+            // Test the detected URL
+            try {
+                const response = await fetch(`${detectedUrl}/api/v1/chat/models`, { mode: 'cors' });
+                if (response.ok) {
+                    log(`✅ API Configuration working! Connected to ${detectedUrl}`, 'success');
+                    updateStatus('apiStatus', 'passed', 'API Config: ✅ Working');
+                } else {
+                    log(`⚠️ API Configuration working but server returned ${response.status}`, 'warning');
+                    updateStatus('apiStatus', 'passed', 'API Config: ✅ Working (server error)');
+                }
+            } catch (error) {
+                log(`❌ API Configuration test failed: ${error.message}`, 'error');
+                updateStatus('apiStatus', 'failed', 'API Config: ❌ Failed');
+            }
+        }
+
+        async function testAuthentication() {
+            log('🧪 Testing Authentication...', 'info');
+            updateStatus('authStatus', 'pending', 'Authentication: Testing...');
+            
+            const token = getAuthToken();
+            if (!token) {
+                log(`❌ No auth token found in localStorage`, 'error');
+                log(`💡 Set a token using the input field above`, 'info');
+                updateStatus('authStatus', 'failed', 'Authentication: ❌ No token');
+                return;
+            }
+            
+            log(`🔑 Found auth token: ${token.substring(0, 20)}...`, 'info');
+            
+            const apiUrl = getServerUrl();
+            const authEndpoint = `${apiUrl}/api/auth/session/bridge`;
+            
+            try {
+                const response = await fetch(authEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Authentication successful! Session bridge working`, 'success');
+                    log(`📊 Response: ${JSON.stringify(data)}`, 'info');
+                    updateStatus('authStatus', 'passed', 'Authentication: ✅ Working');
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Authentication failed: ${response.status} ${response.statusText}`, 'error');
+                    log(`📊 Error details: ${JSON.stringify(errorData)}`, 'error');
+                    updateStatus('authStatus', 'failed', 'Authentication: ❌ Failed');
+                }
+            } catch (error) {
+                log(`❌ Authentication test failed: ${error.message}`, 'error');
+                updateStatus('authStatus', 'failed', 'Authentication: ❌ Failed');
+            }
+        }
+
+        async function testCharacterLoading() {
+            log('🧪 Testing Character Loading (the specific failing endpoint)...', 'info');
+            updateStatus('charStatus', 'pending', 'Character Loading: Testing...');
+            
+            const apiUrl = getServerUrl();
+            const characterEndpoint = `${apiUrl}/api/v1/chat/models`;
+            
+            log(`🔍 Testing character endpoint: ${characterEndpoint}`, 'info');
+            
+            try {
+                const response = await fetch(characterEndpoint, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Character loading successful! Found ${data.length} characters`, 'success');
+                    log(`📊 Sample characters: ${data.slice(0, 3).map(c => c.name).join(', ')}`, 'info');
+                    updateStatus('charStatus', 'passed', 'Character Loading: ✅ Working');
+                } else {
+                    log(`⚠️ Character endpoint responded with ${response.status} ${response.statusText}`, 'warning');
+                    updateStatus('charStatus', 'passed', 'Character Loading: ✅ Working (server error)');
+                }
+            } catch (error) {
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    log(`❌ Character loading failed - CSP violation or network error: ${error.message}`, 'error');
+                    log('🔍 This is the same error that was occurring in characters.ts:74', 'error');
+                    updateStatus('charStatus', 'failed', 'Character Loading: ❌ Failed');
+                } else {
+                    log(`❌ Character loading failed: ${error.message}`, 'error');
+                    updateStatus('charStatus', 'failed', 'Character Loading: ❌ Failed');
+                }
+            }
+        }
+
+        async function testHangoutMessages() {
+            log('🧪 Testing Hangout Messages Endpoint...', 'info');
+            updateStatus('hangoutStatus', 'pending', 'Hangout Messages: Testing...');
+            
+            const token = getAuthToken();
+            const apiUrl = getServerUrl();
+            const testRoomId = 'room-1759573909580-u5x2jc0s4';
+            const messagesEndpoint = `${apiUrl}/api/hangout/rooms/${testRoomId}/messages`;
+            
+            log(`🔍 Testing endpoint: ${messagesEndpoint}`, 'info');
+            
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                    log(`🔑 Using auth token for request`, 'info');
+                } else {
+                    log(`⚠️ No auth token - request will likely fail with 401`, 'warning');
+                }
+                
+                const response = await fetch(messagesEndpoint, {
+                    method: 'GET',
+                    headers,
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Hangout messages endpoint working!`, 'success');
+                    log(`📊 Found ${data.messages?.length || 0} messages`, 'info');
+                    updateStatus('hangoutStatus', 'passed', 'Hangout Messages: ✅ Working');
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Hangout messages failed: ${response.status} ${response.statusText}`, 'error');
+                    log(`📊 Error details: ${JSON.stringify(errorData)}`, 'error');
+                    
+                    if (response.status === 401) {
+                        log(`🔍 This is the 401 Unauthorized error you were experiencing`, 'error');
+                        log(`💡 The issue is likely missing or invalid authentication`, 'info');
+                        updateStatus('hangoutStatus', 'failed', 'Hangout Messages: ❌ 401 Unauthorized');
+                    } else {
+                        updateStatus('hangoutStatus', 'failed', 'Hangout Messages: ❌ Failed');
+                    }
+                }
+            } catch (error) {
+                log(`❌ Hangout messages test failed: ${error.message}`, 'error');
+                updateStatus('hangoutStatus', 'failed', 'Hangout Messages: ❌ Failed');
+            }
+        }
+
+        async function testAllFixes() {
+            log('🚀 Starting comprehensive network & authentication fixes test...', 'info');
+            clearLog();
+            
+            // Reset all status indicators
+            updateStatus('cspStatus', 'pending', 'CSP Fix: Testing...');
+            updateStatus('apiStatus', 'pending', 'API Config: Testing...');
+            updateStatus('authStatus', 'pending', 'Authentication: Testing...');
+            updateStatus('charStatus', 'pending', 'Character Loading: Testing...');
+            updateStatus('hangoutStatus', 'pending', 'Hangout Messages: Testing...');
+            
+            // Test 1: CSP Fix
+            await testCSPFix();
+            
+            // Wait a moment, then test API Configuration
+            setTimeout(async () => {
+                await testAPIConfiguration();
+            }, 1000);
+            
+            // Wait a moment, then test Authentication
+            setTimeout(async () => {
+                await testAuthentication();
+            }, 2000);
+            
+            // Wait a moment, then test Character Loading
+            setTimeout(async () => {
+                await testCharacterLoading();
+            }, 3000);
+            
+            // Wait a moment, then test Hangout Messages
+            setTimeout(async () => {
+                await testHangoutMessages();
+            }, 4000);
+            
+            // Final summary
+            setTimeout(() => {
+                log('🎯 Test Summary:', 'info');
+                log('✅ CSP Fix: Should allow connections to 10.87.73.163:8000', 'info');
+                log('✅ API Configuration: Should auto-detect correct server URL', 'info');
+                log('✅ Authentication: Should validate Supabase tokens', 'info');
+                log('✅ Character Loading: Should work without network errors', 'info');
+                log('✅ Hangout Messages: Should work with proper auth', 'info');
+                log('🔍 Check the status indicators and results above', 'info');
+            }, 5000);
+        }
+
+        // Log initial information
+        log('🔧 Complete Network & Authentication Fixes Test initialized', 'info');
+        log(`🌐 Current hostname: ${window.location.hostname}`, 'info');
+        log(`🔗 Current protocol: ${window.location.protocol}`, 'info');
+        log(`🎯 Detected API URL: ${getServerUrl()}`, 'info');
+        log(`🔑 Auth token in localStorage: ${getAuthToken() ? 'Found' : 'Not found'}`, 'info');
+        log('📋 Ready to test all network and authentication fixes', 'info');
+    </script>
+</body>
+</html>

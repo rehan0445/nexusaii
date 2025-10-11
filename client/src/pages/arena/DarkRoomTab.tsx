@@ -1,0 +1,1128 @@
+import React, { useState, useEffect } from "react";
+import { Shield, X } from "lucide-react";
+import RedesignedDarkRoom from "../../components/RedesignedDarkRoom";
+import AnonymousChat from "../../components/AnonymousChat";
+import { Group } from "../../utils/darkroomData";
+import { Socket } from 'socket.io-client';
+import { apiFetch, getSupabaseAccessToken } from "../../lib/utils";
+import { useAuth } from "../../contexts/AuthContext";
+
+const DarkRoomTab: React.FC = () => {
+  // Get current user for tracking (while maintaining anonymous display)
+  const { currentUser } = useAuth();
+  
+  // Navigation not needed here since bottom bar handles primary navigation
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [showAliasInput, setShowAliasInput] = useState(false);
+  const [darkRoomAlias, setDarkRoomAlias] = useState("");
+  const [inDarkRoom, setInDarkRoom] = useState(false);
+  const [darkroomGroups, setDarkroomGroups] = useState<Group[]>([]);
+  const [selectedDarkroomGroup, setSelectedDarkroomGroup] = useState<Group | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createGroupName, setCreateGroupName] = useState('');
+  const [createGroupDescription, setCreateGroupDescription] = useState('');
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const [darkroomMessage, setDarkroomMessage] = useState('');
+  const [isOpeningModal, setIsOpeningModal] = useState(false);
+
+  // Fetch groups from database API
+  const fetchGroupsFromAPI = async () => {
+    try {
+      console.log('🔄 Fetching groups from API...');
+      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+      const response = await apiFetch(`${serverUrl}/api/v1/darkroom/rooms`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📋 Fetched groups from API:', data);
+        
+        // Convert API data to Group format
+        let groups: Group[] = data.map((room: any) => ({
+          id: room.id,
+          name: room.name || `Group ${room.id}`,
+          description: room.description || 'Anonymous group',
+          members: room.user_count || room.members || 0, // Support both formats
+          messages: [],
+          createdBy: room.created_by || room.createdBy || 'system',
+          createdAt: room.created_at || room.createdAt,
+          isDeleted: false
+        }));
+        // Sort by createdAt descending (newest first)
+        groups = groups.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setDarkroomGroups(groups);
+        console.log('✅ Groups updated from API:', groups.map(g => ({ id: g.id, name: g.name, members: g.members })));
+      } else {
+        console.error('❌ Failed to fetch groups from API:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching groups from API:', error);
+    }
+  };
+
+  // Get next sequential ID for dark room
+
+  // Debug modal state changes
+  useEffect(() => {
+    console.log('showCreateModal changed to:', showCreateModal);
+    
+    // Fallback: if modal should be open but isn't visible, force it
+    if (showCreateModal) {
+      const checkModalVisible = () => {
+        const modal = document.querySelector('[data-modal="create-dark-chat"]');
+        if (!modal) {
+          console.log('Modal not found in DOM, forcing re-render...');
+          setShowCreateModal(false);
+          setTimeout(() => {
+            setShowCreateModal(true);
+          }, 50);
+        }
+      };
+      
+      setTimeout(checkModalVisible, 1000);
+    }
+  }, [showCreateModal]);
+
+  const handleEnterDarkRoom = () => {
+    setShowDisclaimer(true);
+  };
+
+  const handleAcceptDisclaimer = () => {
+    setShowDisclaimer(false);
+    setShowAliasInput(true);
+  };
+
+  const handleSetAlias = async () => {
+    if (darkRoomAlias.trim()) {
+      setShowAliasInput(false);
+      setInDarkRoom(true);
+      
+      // Initialize socket connection using centralized config
+      const { createSocket } = await import('../../lib/socketConfig');
+      const token = getSupabaseAccessToken();
+      const newSocket = await createSocket({
+        token,
+        options: {
+          timeout: 8000,
+          transports: ['websocket', 'polling']
+        }
+      });
+      setSocket(newSocket);
+    }
+  };
+
+  // Fetch groups from API on component mount and after login
+  useEffect(() => {
+    console.log('🔄 [DarkRoomTab] Component mounted, fetching groups...');
+    fetchGroupsFromAPI();
+    
+    // Set up periodic refresh every 30 seconds to keep user counts in sync
+    const refreshInterval = setInterval(() => {
+      if (inDarkRoom) {
+        console.log('🔄 [DarkRoomTab] Periodic refresh of groups...');
+        fetchGroupsFromAPI();
+      }
+    }, 30000); // 30 seconds
+    
+    return () => {
+      clearInterval(refreshInterval);
+    };
+  }, [inDarkRoom]);
+
+  // Fetch messages for a specific room
+  const fetchRoomMessages = async (roomId: string) => {
+    try {
+      console.log('📨 [DarkRoomTab] Fetching messages for room:', roomId);
+      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+      const response = await apiFetch(`${serverUrl}/api/v1/darkroom/rooms/${roomId}/messages`);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('📨 [DarkRoomTab] Received messages from API:', result);
+
+        if (result.success && Array.isArray(result.messages)) {
+          console.log(`✅ [DarkRoomTab] Loaded ${result.messages.length} messages for room ${roomId}`);
+
+          // Update the group with fetched messages in both arrays
+          setDarkroomGroups(prev =>
+            prev.map(group =>
+              group.id === roomId
+                ? { ...group, messages: result.messages }
+                : group
+            )
+          );
+
+          // Also update the selected group if it matches
+          setSelectedDarkroomGroup(prev => {
+            if (prev && prev.id === roomId) {
+              console.log(`📨 [DarkRoomTab] Updated selected group ${roomId} with ${result.messages.length} messages`);
+              return { ...prev, messages: result.messages };
+            }
+            return prev;
+          });
+
+          return result.messages;
+        } else {
+          console.warn('⚠️ [DarkRoomTab] Invalid messages response:', result);
+          return [];
+        }
+      } else {
+        console.error('❌ [DarkRoomTab] Failed to fetch messages:', response.status);
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ [DarkRoomTab] Error fetching messages:', error);
+      return [];
+    }
+  };
+
+  // Socket event handlers
+  useEffect(() => {
+    if (socket) {
+      // Listen to room created events
+      socket.on('room-created', (room: any) => {
+        console.log('🏠 Room created event received:', room);
+        // Refresh groups from API to get the latest data
+        fetchGroupsFromAPI();
+      });
+
+      // Listen to room list updates
+      socket.on('room-list', (rooms: any[]) => {
+        console.log('📋 Room list update received:', rooms);
+        // Convert API data to Group format
+        const groups: Group[] = rooms.map((room: any) => ({
+          id: room.id,
+          name: room.name || `Group ${room.id}`,
+          description: room.description || 'Anonymous group',
+          members: room.user_count || 0,
+          messages: [],
+          createdBy: room.created_by || 'system',
+          createdAt: room.created_at,
+          isDeleted: false
+        }));
+        setDarkroomGroups(groups);
+      });
+
+      // Listen to user count updates
+      socket.on('user-count-update', (data: any) => {
+        console.log('👥 User count update received:', data);
+        setDarkroomGroups(prev => 
+          prev.map(group => 
+            group.id === data.roomId 
+              ? { ...group, members: data.count }
+              : group
+          )
+        );
+        // Also update selected group if it matches
+        setSelectedDarkroomGroup(prev => {
+          if (prev && prev.id === data.roomId) {
+            return { ...prev, members: data.count };
+          }
+          return prev;
+        });
+      });
+
+      // Listen for successful room join confirmations
+      socket.on('room-joined', (data: any) => {
+        console.log('✅ Room joined confirmation:', data);
+        if (data.success && data.roomId) {
+          // Update the group's user count immediately
+          setDarkroomGroups(prev => 
+            prev.map(group => 
+              group.id === data.roomId 
+                ? { ...group, members: data.userCount || group.members }
+                : group
+            )
+          );
+        }
+      });
+
+      // Listen to room history when joining
+      socket.on('room-history', async (messages: any[]) => {
+        console.log('📚 [Dark Room] Received room history:', messages?.length || 0, 'messages');
+
+        if (messages && Array.isArray(messages)) {
+          // Convert database format to frontend format
+          const formattedMessages = messages.map(msg => ({
+            id: msg.id,
+            alias: msg.alias || 'Anonymous',
+            message: msg.message || '',
+            time: msg.timestamp || msg.time || new Date().toISOString()
+          }));
+
+          console.log('📚 [Dark Room] Formatted messages for display:', formattedMessages.slice(0, 3));
+
+          // Update all groups with the room history
+          setDarkroomGroups(prev =>
+            prev.map(group => {
+              // Find which room these messages belong to
+              const roomMessages = messages.filter(msg => msg.room_id === group.id);
+              if (roomMessages.length > 0) {
+                const formattedRoomMessages = roomMessages.map(msg => ({
+                  id: msg.id,
+                  alias: msg.alias || 'Anonymous',
+                  message: msg.message || '',
+                  time: msg.timestamp || msg.time || new Date().toISOString()
+                }));
+
+                console.log(`📚 [Dark Room] Updating group ${group.id} with ${formattedRoomMessages.length} messages`);
+                return {
+                  ...group,
+                  messages: formattedRoomMessages
+                };
+              }
+              return group;
+            })
+          );
+
+          // Also update the selected group if it has messages
+          setSelectedDarkroomGroup(prev => {
+            if (prev) {
+              const roomMessages = messages.filter(msg => msg.room_id === prev.id);
+              if (roomMessages.length > 0) {
+                const formattedRoomMessages = roomMessages.map(msg => ({
+                  id: msg.id,
+                  alias: msg.alias || 'Anonymous',
+                  message: msg.message || '',
+                  time: msg.timestamp || msg.time || new Date().toISOString()
+                }));
+
+                console.log(`📚 [Dark Room] Updating selected group ${prev.id} with ${formattedRoomMessages.length} messages`);
+                return {
+                  ...prev,
+                  messages: formattedRoomMessages
+                };
+              }
+            }
+            return prev;
+          });
+        } else {
+          // If no messages received via socket, try fetching from API as fallback
+          console.log('📚 [Dark Room] No messages received via socket, trying API fallback...');
+          if (selectedDarkroomGroup) {
+            await fetchRoomMessages(selectedDarkroomGroup.id);
+          }
+        }
+      });
+
+      // Listen to incoming messages
+      socket.on('receive-message', (data: any) => {
+        console.log('📨 [Dark Room] Received message in DarkRoomTab:', data);
+        
+        // 🔧 FIX: Prevent duplicate messages by checking if message ID already exists
+        const newMessage = {
+          id: data.id,
+          alias: data.alias,
+          message: data.message,
+          time: data.time
+        };
+        
+        setDarkroomGroups(prev =>
+          prev.map(group => {
+            if (group.id === data.groupId) {
+              const currentMessages = group.messages || [];
+              
+              // Check if message already exists (by ID or by content+time)
+              const messageExists = currentMessages.some(msg => 
+                msg.id === data.id || 
+                (msg.alias === data.alias && msg.message === data.message && 
+                 Math.abs(new Date(msg.time).getTime() - new Date(data.time).getTime()) < 1000)
+              );
+              
+              if (messageExists) {
+                console.log('⚠️ [Dark Room] Duplicate message detected, skipping:', data.id);
+                return group;
+              }
+              
+              console.log(`✅ [Dark Room] Adding new message to group ${group.id}:`, data.message.substring(0, 30));
+              return {
+                ...group,
+                messages: [...currentMessages, newMessage]
+              };
+            }
+            return group;
+          })
+        );
+        
+        // Also update the selected group if it matches
+        setSelectedDarkroomGroup(prev => {
+          if (prev && prev.id === data.groupId) {
+            const currentMessages = prev.messages || [];
+            
+            // Check if message already exists
+            const messageExists = currentMessages.some(msg => 
+              msg.id === data.id || 
+              (msg.alias === data.alias && msg.message === data.message && 
+               Math.abs(new Date(msg.time).getTime() - new Date(data.time).getTime()) < 1000)
+            );
+            
+            if (messageExists) {
+              return prev;
+            }
+            
+            console.log(`✅ [Dark Room] Adding message to selected group ${prev.id}`);
+            return {
+              ...prev,
+              messages: [...currentMessages, newMessage]
+            };
+          }
+          return prev;
+        });
+      });
+    }
+  }, [socket]);
+
+  // Socket cleanup
+  useEffect(() => {
+    return () => {
+      if (socket) {
+        socket.off('room-history');
+        socket.off('receive-message');
+        socket.off('room-created');
+        socket.off('room-list');
+        socket.off('user-count-update');
+        socket.disconnect();
+      }
+    };
+  }, [socket]);
+
+  // Enhanced room joining logic with message fetching
+  const joinRoomWithMessages = async (group: Group) => {
+    console.log('🔗 [DarkRoomTab] Joining room with message fetching:', group.id);
+
+    // Set the selected group first
+    setSelectedDarkroomGroup(group);
+    console.log('🔗 [DarkRoomTab] Set selectedDarkroomGroup to:', group.id);
+
+    // Check if user has an alias
+    if (!darkRoomAlias) {
+      console.error('❌ [DarkRoomTab] Cannot join room: no alias set');
+      setDarkRoomAlias('Anonymous');
+      console.log('🔗 [DarkRoomTab] Set default alias to "Anonymous"');
+    }
+
+    // Initialize socket if not already done
+    if (!socket) {
+      console.log('🔗 [DarkRoomTab] Initializing socket connection...');
+      try {
+        const { createSocket } = await import('../../lib/socketConfig');
+        const token = getSupabaseAccessToken();
+        const newSocket = await createSocket({
+          token,
+          options: {
+            timeout: 8000,
+            transports: ['websocket', 'polling']
+          }
+        });
+        setSocket(newSocket);
+        console.log('✅ [DarkRoomTab] Socket initialized');
+      } catch (error) {
+        console.error('❌ [DarkRoomTab] Failed to initialize socket:', error);
+        return;
+      }
+    }
+
+    // Fetch messages for this room
+    console.log('📨 [DarkRoomTab] Fetching initial messages...');
+    await fetchRoomMessages(group.id);
+
+    // Join the socket room
+    if (socket && darkRoomAlias) {
+      console.log(`🔗 [DarkRoomTab] Joining socket room: ${group.id} with alias: ${darkRoomAlias}`);
+      socket.emit('join-room', { 
+        groupId: group.id, 
+        alias: darkRoomAlias,
+        // Include user info for tracking (not displayed publicly)
+        user_name: currentUser?.displayName || null,
+        user_email: currentUser?.email || null,
+        user_id: currentUser?.uid || null
+      });
+
+      // Set up one-time listener for room join confirmation
+      const handleRoomJoined = (data: { roomId: string; success: boolean }) => {
+        if (data.roomId === group.id) {
+          if (data.success) {
+            console.log(`✅ [DarkRoomTab] Successfully joined room ${group.id}`);
+          } else {
+            console.error(`❌ [DarkRoomTab] Failed to join room ${group.id}:`, data.error);
+          }
+          socket.off('room-joined', handleRoomJoined);
+        }
+      };
+
+      // Listen for room join confirmation
+      socket.on('room-joined', handleRoomJoined);
+
+      // Also request room history explicitly
+      console.log(`📚 [DarkRoomTab] Requesting room history for ${group.id}`);
+      socket.emit('request-room-history', { roomId: group.id });
+
+      // Set a timeout to check if we got messages
+      setTimeout(() => {
+        const currentGroup = darkroomGroups.find(g => g.id === group.id);
+        if (currentGroup && (!currentGroup.messages || currentGroup.messages.length === 0)) {
+          console.log('🔄 [DarkRoomTab] No messages received, fetching from API as fallback...');
+          fetchRoomMessages(group.id);
+        }
+      }, 3000);
+    }
+  };
+
+  // If user selected a group, show the chat interface
+  if (selectedDarkroomGroup) {
+    console.log('🔗 [DarkRoomTab] Rendering AnonymousChat for group:', selectedDarkroomGroup.id);
+    return (
+      <AnonymousChat
+        group={selectedDarkroomGroup}
+        message={darkroomMessage}
+        setMessage={setDarkroomMessage}
+        alias={darkRoomAlias}
+        onBack={() => {
+          console.log('🔗 [DarkRoomTab] Going back from chat');
+          setSelectedDarkroomGroup(null);
+        }}
+        socket={socket}
+        onSend={() => {
+          if (darkroomMessage.trim() && socket) {
+            socket.emit('send-message', {
+              groupId: selectedDarkroomGroup.id,
+              message: darkroomMessage.trim(),
+              alias: darkRoomAlias,
+              time: new Date().toISOString(),
+              // Include user info for tracking (not displayed publicly)
+              user_name: currentUser?.displayName || null,
+              user_email: currentUser?.email || null,
+              user_id: currentUser?.uid || null
+            });
+            setDarkroomMessage('');
+          }
+        }}
+        setGroups={setDarkroomGroups}
+      />
+    );
+  }
+
+  const handleCreateGroup = async () => {
+    if (createGroupName.trim() && !isCreatingGroup) {
+      setIsCreatingGroup(true);
+      
+      try {
+        // Create group via API
+        const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+        const response = await apiFetch(`${serverUrl}/api/v1/darkroom/create-group`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: createGroupName.trim(),
+            description: createGroupDescription.trim() || "User created group",
+            createdBy: darkRoomAlias,
+            tags: [],
+            // Include user info for tracking (not displayed publicly)
+            user_name: currentUser?.displayName || null,
+            user_email: currentUser?.email || null,
+            user_id: currentUser?.uid || null
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Group created via API:', result);
+          
+          // Refresh groups from API to get the latest data
+          await fetchGroupsFromAPI();
+          
+          // Emit to server for real-time updates
+          socket?.emit('create-room', {
+            roomId: result.room.id,
+            roomName: result.room.name,
+            createdBy: result.room.createdBy,
+            // Include user info for tracking
+            user_name: currentUser?.displayName || null,
+            user_email: currentUser?.email || null,
+            user_id: currentUser?.uid || null
+          });
+          
+          // Reset form
+          setCreateGroupName('');
+          setCreateGroupDescription('');
+          setShowCreateModal(false);
+        } else {
+          console.error('❌ Failed to create group via API:', response.status);
+        }
+        
+      } catch (error) {
+        console.error('❌ Error creating group:', error);
+      } finally {
+        setIsCreatingGroup(false);
+      }
+    }
+  };
+
+  // Check if user is in a deleted group
+  const isInDeletedGroup = selectedDarkroomGroup?.isDeleted;
+
+  // If user is in dark room, show the group selection interface
+  if (inDarkRoom) {
+    // Show deleted group disclaimer if in deleted group
+    if (isInDeletedGroup) {
+      return (
+        <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-zinc-900 border border-red-500/30 rounded-lg p-6 text-center">
+            <div className="w-16 h-16 bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/30">
+              <AlertTriangle className="w-8 h-8 text-red-400" />
+            </div>
+            <h2 className="text-red-300 font-mono text-xl font-semibold mb-4">Group Deleted</h2>
+            <p className="text-zinc-300 font-mono text-sm mb-6 leading-relaxed">
+              The creator has deleted this dark chat group. The group will be completely disbanded in 2 minutes.
+              All messages will be permanently removed and all users will be kicked out.
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setSelectedDarkroomGroup(null);
+                  setInDarkRoom(true);
+                }}
+                className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-mono transition-colors"
+              >
+                Find Another Group
+              </button>
+              <button
+                onClick={() => {
+                  setShowCreateModal(true);
+                  setSelectedDarkroomGroup(null);
+                }}
+                className="w-full bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded font-mono transition-colors"
+              >
+                Create New Group
+              </button>
+              <button
+                onClick={() => {
+                  setInDarkRoom(false);
+                  setSelectedDarkroomGroup(null);
+                  if (socket) {
+                    socket.disconnect();
+                    setSocket(null);
+                  }
+                }}
+                className="w-full text-zinc-400 hover:text-zinc-300 px-4 py-2 font-mono transition-colors"
+              >
+                Leave Dark Room
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <RedesignedDarkRoom
+          groups={darkroomGroups}
+          selectedGroup={selectedDarkroomGroup}
+          setSelectedGroup={setSelectedDarkroomGroup}
+          alias={darkRoomAlias}
+          onBack={() => {
+            setInDarkRoom(false);
+            setSelectedDarkroomGroup(null);
+            if (socket) {
+              socket.disconnect();
+              setSocket(null);
+            }
+          }}
+          onJoinGroup={joinRoomWithMessages}
+          onCreateGroup={() => {
+            console.log('onCreateGroup called, current showCreateModal:', showCreateModal);
+            console.log('isOpeningModal:', isOpeningModal);
+            
+            // Prevent multiple rapid clicks
+            if (isOpeningModal || showCreateModal) {
+              console.log('Modal already opening or open, ignoring click');
+              return;
+            }
+            
+            setIsOpeningModal(true);
+            
+            // Direct state update - no delays
+            setShowCreateModal(true);
+            console.log('showCreateModal set to true');
+            
+            // Reset opening flag after a short delay
+            setTimeout(() => {
+              setIsOpeningModal(false);
+            }, 500);
+          }}
+          onJoinById={async (id: string) => {
+            const group = darkroomGroups.find(g => g.id === id);
+            if (group) {
+              // Set the selected group first
+              setSelectedDarkroomGroup(group);
+              // Use the enhanced join logic
+              await joinRoomWithMessages(group);
+              return true;
+            }
+            return false;
+          }}
+        />
+
+        {/* Create Group Modal - rendered on top of the list view */}
+        {showCreateModal && (
+          <div 
+            data-modal="create-dark-chat"
+            className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          >
+            <div className="w-full max-w-md bg-zinc-900 border border-green-500/30 rounded-lg p-6 mx-4 animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-green-400 font-mono text-lg">Create Dark Chat</h3>
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setCreateGroupName('');
+                    setCreateGroupDescription('');
+                  }}
+                  className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-zinc-800 text-zinc-300"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="darkroom-create-name" className="block text-xs text-green-500/80 font-mono mb-1">Group Name *</label>
+                  <input
+                    id="darkroom-create-name"
+                    autoFocus
+                    value={createGroupName}
+                    onChange={(e) => setCreateGroupName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && createGroupName.trim() && !isCreatingGroup) {
+                        handleCreateGroup();
+                      }
+                    }}
+                    placeholder="Enter group name"
+                    className="w-full px-3 py-2 bg-[#0c0c0c] border border-green-500/30 rounded text-green-200 placeholder-green-500/40 focus:outline-none focus:ring-1 focus:ring-green-500 font-mono"
+                    maxLength={50}
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="darkroom-create-desc" className="block text-xs text-green-500/80 font-mono mb-1">Description (Optional)</label>
+                  <textarea
+                    id="darkroom-create-desc"
+                    value={createGroupDescription}
+                    onChange={(e) => setCreateGroupDescription(e.target.value)}
+                    placeholder="Brief description of your group"
+                    className="w-full px-3 py-2 bg-[#0c0c0c] border border-green-500/30 rounded text-green-200 placeholder-green-500/40 focus:outline-none focus:ring-1 focus:ring-green-500 font-mono resize-none"
+                    rows={3}
+                    maxLength={200}
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6 flex gap-2 justify-end">
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setCreateGroupName('');
+                    setCreateGroupDescription('');
+                  }}
+                  className="px-4 py-2 text-zinc-400 hover:text-zinc-300 font-mono"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateGroup}
+                  disabled={!createGroupName.trim() || isCreatingGroup}
+                  className={`px-4 py-2 rounded font-mono transition-colors ${
+                    createGroupName.trim() && !isCreatingGroup
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
+                  }`}
+                >
+                  {isCreatingGroup ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Creating...</span>
+                    </div>
+                  ) : (
+                    'Create'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-black text-white darkroom-scope" style={{fontFamily: 'Roboto Mono, monospace'}}>
+      {/* Header */}
+      <div className="sticky top-0 z-50 bg-black/80 backdrop-blur border-b border-green-500/30">
+        <div className="flex items-center p-4">
+          <h1 className="text-3xl font-bold text-green-400" style={{
+            fontFamily: 'UnifrakturCook, cursive',
+            textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(34, 197, 94, 0.5)',
+            filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.6))',
+            letterSpacing: '2px',
+            textTransform: 'uppercase'
+          }}>Dark Room</h1>
+        </div>
+      </div>
+      
+      {/* Main dark room interface */}
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] p-4">
+        <div className="w-full max-w-4xl">
+          {/* Terminal-like container */}
+          <div className="border border-green-500/30 rounded-md p-1 bg-black">
+            {/* Terminal header */}
+            <div className="flex items-center bg-zinc-900 px-3 py-2 border-b border-green-500/30">
+              <div className="flex space-x-1.5 mr-3">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              </div>
+              <div className="mx-auto text-green-500 text-sm" style={{fontFamily: 'Roboto Mono, monospace'}}>
+                DARKNET_ACCESS_v2.3.7
+              </div>
+            </div>
+
+            {/* Terminal content */}
+            <div className="text-sm text-green-500 p-4 h-[60vh] overflow-y-auto bg-[#0c0c0c]" style={{fontFamily: 'Roboto Mono, monospace'}}>
+              <div className="terminal-text mb-4">
+                <div className="flex">
+                  <span className="text-green-600 mr-2">root@nexus:~$</span>
+                  <span className="typing-effect">
+                    ssh -p 1337 darkroom@nexus.arena
+                  </span>
+                </div>
+                <div className="mt-1 text-zinc-500">
+                  Establishing secure connection...
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <div className="text-red-500 mb-1">
+                  ! WARNING: SECURE ACCESS ONLY !
+                </div>
+                <div className="text-xs glitchy-text">
+                  Connection established through encrypted proxy.
+                  <br />
+                  All activity in the Dark Room is anonymized.
+                  <br />
+                  Your digital fingerprint has been masked.
+                </div>
+              </div>
+
+              <div className="block mb-4 overflow-hidden">
+                <div className="text-center mb-2 glitchy-text">
+                  <span className="text-red-500">
+                    [ UNAUTHORIZED ACCESS WILL BE TRACED ]
+                  </span>
+                </div>
+
+                <div className="nexus-intro text-center my-6 relative overflow-hidden">
+                  {/* Matrix-style background effect */}
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="matrix-rain">
+                      {Array.from({length: 20}).map((_, i) => (
+                        <div key={i} className="absolute text-green-500 text-xs font-mono animate-pulse" 
+                             style={{
+                               left: `${Math.random() * 100}%`,
+                               animationDelay: `${Math.random() * 2}s`,
+                               animationDuration: `${2 + Math.random() * 3}s`
+                             }}>
+                          {String.fromCharCode(0x30A0 + Math.random() * 96)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="relative z-10">
+                    {/* Glitch effect container */}
+                    <div className="relative glitch-container">
+                      <div className="nexus-title text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-500 to-green-600 animate-pulse">
+                        N E X U S
+                      </div>
+                      
+                      {/* Glitch layers */}
+                      <div className="absolute inset-0 nexus-title text-4xl md:text-6xl font-bold text-red-500 opacity-60 blur-sm animate-ping" 
+                           style={{transform: 'translateX(-2px)'}}>
+                        N E X U S
+                      </div>
+                      <div className="absolute inset-0 nexus-title text-4xl md:text-6xl font-bold text-blue-500 opacity-40 blur-sm animate-ping" 
+                           style={{transform: 'translateX(2px)', animationDelay: '0.1s'}}>
+                        N E X U S
+                      </div>
+                      
+                      {/* Electric crackle effect */}
+                      <div className="absolute inset-0 nexus-title text-4xl md:text-6xl font-bold text-yellow-400 opacity-30 blur-md animate-pulse">
+                        N E X U S
+                      </div>
+                    </div>
+                    
+                    {/* Electric sparks */}
+                    <div className="mt-4 flex justify-center space-x-1">
+                      {Array.from({length: 8}).map((_, i) => (
+                        <div key={i} className="w-1 h-1 bg-yellow-400 rounded-full animate-ping opacity-80" 
+                             style={{
+                               animationDelay: `${i * 0.1}s`,
+                               animationDuration: `${0.5 + Math.random() * 0.5}s`
+                             }}>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Scanning line effect */}
+                    <div className="mt-4 h-0.5 bg-gradient-to-r from-transparent via-green-400 to-transparent animate-pulse opacity-60"></div>
+                    
+                    {/* System status with typewriter effect */}
+                    <div className="mt-4 text-green-400 text-sm" style={{fontFamily: 'Roboto Mono, monospace'}}>
+                      <span className="animate-pulse">[</span>
+                      <span className="typing-animation"> ACCESSING NEXUS PROTOCOL </span>
+                      <span className="animate-pulse">]</span>
+                    </div>
+                    
+                  </div>
+                  
+                  {/* Corner glitch effects */}
+                  <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-green-400 animate-ping opacity-60"></div>
+                  <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-green-400 animate-ping opacity-60" style={{animationDelay: '0.5s'}}></div>
+                  <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-green-400 animate-ping opacity-60" style={{animationDelay: '1s'}}></div>
+                  <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-green-400 animate-ping opacity-60" style={{animationDelay: '1.5s'}}></div>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <div className="typing-effect" style={{fontFamily: 'Roboto Mono, monospace'}}>
+                  Initializing anonymous protocol...
+                </div>
+                <div className="typing-effect mt-1" style={{fontFamily: 'Roboto Mono, monospace'}}>
+                  Masking user identity...
+                </div>
+                <div className="typing-effect mt-1" style={{fontFamily: 'Roboto Mono, monospace'}}>
+                  Configuring end-to-end encryption...
+                </div>
+                <div className="text-white mt-2" style={{fontFamily: 'Roboto Mono, monospace'}}>
+                  Ready for secure connection.
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 animate-blink">
+                <span className="text-green-600">darkroom@nexus:~$</span>
+                <span className="h-4 w-2 bg-green-500 inline-block animate-blink"></span>
+              </div>
+            </div>
+
+            {/* Access button */}
+            <div className="bg-zinc-900 p-4 border-t border-green-500/30 flex justify-center">
+              <button
+                onClick={handleEnterDarkRoom}
+                className="group relative overflow-hidden px-8 py-3 bg-black border border-green-500/50 text-green-500 hover:bg-green-950/30 transition-colors"
+                style={{fontFamily: 'Roboto Mono, monospace'}}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/10 to-transparent glitch-effect"></div>
+                <span className="relative z-10 inline-flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span>ESTABLISH CONNECTION</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Alias Input Modal */}
+      {showAliasInput && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+          <div className="w-full max-w-2xl p-6 rounded-lg overflow-hidden relative border border-green-500/30 bg-black">
+            <div className="relative z-10">
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-16 h-16 bg-[#0c0c0c] rounded-full flex items-center justify-center border border-green-500/30">
+                  <span className="text-2xl font-mono text-green-500">
+                    👤
+                  </span>
+                </div>
+              </div>
+
+              <h2 className="text-2xl font-bold text-green-400 mb-4 text-center font-mono">
+                ALIAS REQUIRED
+              </h2>
+
+              <div className="space-y-4 text-sm text-zinc-300 font-mono mb-6">
+                <p>Choose an anonymous alias for your dark room session:</p>
+              </div>
+
+              <div className="mb-6">
+                <input
+                  type="text"
+                  value={darkRoomAlias}
+                  onChange={(e) => setDarkRoomAlias(e.target.value)}
+                  placeholder="Enter your alias..."
+                  className="w-full bg-zinc-900 border border-green-500/30 rounded px-4 py-3 text-green-400 font-mono focus:border-green-500 focus:outline-none"
+                  maxLength={20}
+                />
+              </div>
+
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={() => setShowAliasInput(false)}
+                  className="px-6 py-2 border border-zinc-600 text-zinc-400 hover:text-white hover:border-zinc-400 transition-colors font-mono"
+                >
+                  ABORT
+                </button>
+                <button
+                  onClick={handleSetAlias}
+                  disabled={!darkRoomAlias.trim()}
+                  className={`px-6 py-2 font-mono transition-colors ${
+                    darkRoomAlias.trim()
+                      ? 'bg-green-600 text-black hover:bg-green-500'
+                      : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
+                  }`}
+                >
+                  INITIALIZE_SESSION
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Disclaimer Modal */}
+      {showDisclaimer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+          <div className="w-full max-w-2xl p-6 rounded-lg overflow-hidden relative border border-green-500/30 bg-black">
+            <div className="relative z-10">
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-16 h-16 bg-[#0c0c0c] rounded-full flex items-center justify-center border border-green-500/30">
+                  <Shield className="w-8 h-8 text-green-500" />
+                </div>
+              </div>
+
+              <h2 className="text-2xl font-bold text-green-400 mb-4 text-center" style={{fontFamily: 'UnifrakturCook, cursive'}}>
+                Dark Room Disclaimer
+              </h2>
+
+              <div className="space-y-4 text-sm text-zinc-300" style={{fontFamily: 'Roboto Mono, monospace'}}>
+                <p>✅ End-to-End Encrypted – All your chats are fully encrypted, so no one outside the conversation can access them.</p>
+                <p>🛡️ Privacy First – Your identity remains hidden; only you control what you reveal.</p>
+                <p>🚫 No Backdoors – We cannot access, read, or recover your messages, even if asked.</p>
+                <p>💬 Safe Conversations – Use Dark Room without worries; your interactions remain private, secure, and anonymous.</p>
+              </div>
+
+              <div className="flex justify-center space-x-4 mt-8">
+                <button
+                  onClick={() => setShowDisclaimer(false)}
+                  className="px-6 py-2 border border-zinc-600 text-zinc-400 hover:text-white hover:border-zinc-400 transition-colors font-mono"
+                >
+                  DECLINE
+                </button>
+                <button
+                  onClick={handleAcceptDisclaimer}
+                  className="px-6 py-2 bg-green-600 text-black hover:bg-green-500 transition-colors font-mono"
+                >
+                  ACCEPT & ENTER
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Create Group Modal */}
+      {showCreateModal && (
+      <div 
+        data-modal="create-dark-chat"
+        className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+      >
+        <div className="w-full max-w-md bg-zinc-900 border border-green-500/30 rounded-lg p-6 mx-4 animate-in zoom-in-95 duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-green-400 font-mono text-lg">Create Dark Chat</h3>
+            <button
+              onClick={() => {
+                setShowCreateModal(false);
+                setCreateGroupName('');
+                setCreateGroupDescription('');
+              }}
+              className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-zinc-800 text-zinc-300"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="darkroom-create-name" className="block text-xs text-green-500/80 font-mono mb-1">Group Name *</label>
+              <input
+                id="darkroom-create-name"
+                autoFocus
+                value={createGroupName}
+                onChange={(e) => setCreateGroupName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && createGroupName.trim() && !isCreatingGroup) {
+                    handleCreateGroup();
+                  }
+                }}
+                placeholder="Enter group name"
+                className="w-full px-3 py-2 bg-[#0c0c0c] border border-green-500/30 rounded text-green-200 placeholder-green-500/40 focus:outline-none focus:ring-1 focus:ring-green-500 font-mono"
+                maxLength={50}
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="darkroom-create-desc" className="block text-xs text-green-500/80 font-mono mb-1">Description (Optional)</label>
+              <textarea
+                id="darkroom-create-desc"
+                value={createGroupDescription}
+                onChange={(e) => setCreateGroupDescription(e.target.value)}
+                placeholder="Brief description of your group"
+                className="w-full px-3 py-2 bg-[#0c0c0c] border border-green-500/30 rounded text-green-200 placeholder-green-500/40 focus:outline-none focus:ring-1 focus:ring-green-500 font-mono resize-none"
+                rows={3}
+                maxLength={200}
+              />
+            </div>
+          </div>
+          
+          <div className="mt-6 flex gap-2 justify-end">
+            <button
+              onClick={() => {
+                setShowCreateModal(false);
+                setCreateGroupName('');
+                setCreateGroupDescription('');
+              }}
+              className="px-4 py-2 text-zinc-400 hover:text-zinc-300 font-mono"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreateGroup}
+              disabled={!createGroupName.trim() || isCreatingGroup}
+              className={`px-4 py-2 rounded font-mono transition-colors ${
+                createGroupName.trim() && !isCreatingGroup
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
+              }`}
+            >
+              {isCreatingGroup ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Creating...</span>
+                </div>
+              ) : (
+                'Create'
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+      )}
+    </div>
+  );
+};
+
+export default DarkRoomTab;
+
+

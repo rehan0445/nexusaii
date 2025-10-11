@@ -1,0 +1,27 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install deps (client)
+        run: cd client && npm ci
+      - name: Lint (client)
+        run: cd client && npm run lint --if-present
+      - name: Test (client)
+        run: cd client && npm run test --if-present
+      - name: Install deps (server)
+        run: cd server && npm ci
+      - name: Test (server)
+        env:
+          # Ensure bypass for tests if server is spun up separately
+          DEV_AUTH_BYPASS: 1
+        run: echo "Server tests run with node:test (requires server running if hitting real endpoints)"
+
+

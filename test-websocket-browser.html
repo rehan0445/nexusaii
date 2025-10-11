@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Browser Test</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>WebSocket Connection Test from Browser</h1>
+    <div id="status">Connecting...</div>
+    <div id="log"></div>
+
+    <script>
+        const status = document.getElementById('status');
+        const log = document.getElementById('log');
+
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            console.log(message);
+        }
+
+        addLog('Testing WebSocket connection from browser to ws://localhost:8002');
+
+        const socket = io('http://localhost:8002', {
+            transports: ['websocket', 'polling'],
+            timeout: 5000,
+            forceNew: true
+        });
+
+        socket.on('connect', () => {
+            status.textContent = '✅ Connected successfully!';
+            status.style.color = 'green';
+            addLog('Socket connected successfully');
+
+            // Test sending a message
+            socket.emit('test-message', { message: 'Hello from browser test!' });
+        });
+
+        socket.on('connect_error', (error) => {
+            status.textContent = '❌ Connection failed: ' + error.message;
+            status.style.color = 'red';
+            addLog('Connection error: ' + error.message);
+            addLog('Error details: ' + JSON.stringify(error));
+        });
+
+        socket.on('disconnect', (reason) => {
+            status.textContent = '📡 Disconnected: ' + reason;
+            status.style.color = 'orange';
+            addLog('Disconnected: ' + reason);
+        });
+
+        socket.on('error', (error) => {
+            addLog('Socket error: ' + error);
+        });
+
+        // Test receiving messages
+        socket.on('test-response', (data) => {
+            addLog('Received test response: ' + JSON.stringify(data));
+        });
+
+        // Test connection after 3 seconds
+        setTimeout(() => {
+            if (!socket.connected) {
+                addLog('Connection test timeout - socket not connected');
+            } else {
+                addLog('Connection test passed - socket is connected');
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

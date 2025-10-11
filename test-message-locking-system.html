@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Locking System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .info {
+            color: #17a2b8;
+        }
+        .result {
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .message {
+            background: #444;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .locked {
+            border-left-color: #ffc107;
+            background: #4a3c00;
+        }
+        .restricted {
+            border-left-color: #dc3545;
+            background: #4a1a1a;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 Message Locking System Test</h1>
+    
+    <div class="test-section">
+        <h2>📊 System Status</h2>
+        <div id="system-status">Loading...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 API Tests</h2>
+        <button class="test-button" onclick="testDatabaseConnection()">Test Database Connection</button>
+        <button class="test-button" onclick="testMessageStatus()">Test Message Status</button>
+        <button class="test-button" onclick="testLockMessage()">Test Lock Message</button>
+        <button class="test-button" onclick="testRestrictDeletion()">Test Restrict Deletion</button>
+        <button class="test-button" onclick="testDeletePermission()">Test Delete Permission</button>
+        <div id="api-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Sample Messages</h2>
+        <div id="sample-messages">
+            <div class="message" id="msg-1">
+                <strong>Message 1:</strong> This is a normal message that can be deleted by the author.
+            </div>
+            <div class="message" id="msg-2">
+                <strong>Message 2:</strong> This message will be locked and cannot be deleted.
+            </div>
+            <div class="message" id="msg-3">
+                <strong>Message 3:</strong> This message will have deletion restricted.
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Actions</h2>
+        <button class="test-button" onclick="lockMessage2()">Lock Message 2</button>
+        <button class="test-button" onclick="restrictMessage3()">Restrict Message 3</button>
+        <button class="test-button" onclick="checkPermissions()">Check All Permissions</button>
+        <div id="action-results"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:8002/api';
+        const TEST_MESSAGE_ID = 'msg-1759594706514-nnv6holmg'; // Use a real message ID from your system
+        let authToken = '';
+
+        // Initialize
+        async function init() {
+            try {
+                // Try to get auth token from localStorage
+                const authData = localStorage.getItem('nexus-auth');
+                if (authData) {
+                    const parsed = JSON.parse(authData);
+                    authToken = parsed.access_token;
+                    document.getElementById('system-status').innerHTML = 
+                        '<span class="success">✅ Auth token found</span><br>' +
+                        '<span class="info">Token: ' + authToken.substring(0, 30) + '...</span>';
+                } else {
+                    document.getElementById('system-status').innerHTML = 
+                        '<span class="error">❌ No auth token found. Please login first.</span>';
+                }
+            } catch (error) {
+                document.getElementById('system-status').innerHTML = 
+                    '<span class="error">❌ Error loading auth: ' + error.message + '</span>';
+            }
+        }
+
+        // Test functions
+        async function testDatabaseConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/hangout/health`);
+                const data = await response.json();
+                
+                const result = document.createElement('div');
+                result.className = 'result';
+                result.innerHTML = `<strong>Database Connection Test:</strong>\n${JSON.stringify(data, null, 2)}`;
+                document.getElementById('api-results').appendChild(result);
+            } catch (error) {
+                const result = document.createElement('div');
+                result.className = 'result error';
+                result.innerHTML = `<strong>Database Connection Test Failed:</strong>\n${error.message}`;
+                document.getElementById('api-results').appendChild(result);
+            }
+        }
+
+        async function testMessageStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/hangout/messages/${TEST_MESSAGE_ID}/status`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                const result = document.createElement('div');
+                result.className = 'result';
+                result.innerHTML = `<strong>Message Status Test:</strong>\n${JSON.stringify(data, null, 2)}`;
+                document.getElementById('api-results').appendChild(result);
+            } catch (error) {
+                const result = document.createElement('div');
+                result.className = 'result error';
+                result.innerHTML = `<strong>Message Status Test Failed:</strong>\n${error.message}`;
+                document.getElementById('api-results').appendChild(result);
+            }
+        }
+
+        async function testLockMessage() {
+            try {
+                const response = await fetch(`${API_BASE}/hangout/messages/${TEST_MESSAGE_ID}/lock`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reason: 'Test lock from message locking system test'
+                    })
+                });
+                const data = await response.json();
+                
+                const result = document.createElement('div');
+                result.className = 'result';
+                result.innerHTML = `<strong>Lock Message Test:</strong>\n${JSON.stringify(data, null, 2)}`;
+                document.getElementById('api-results').appendChild(result);
+            } catch (error) {
+                const result = document.createElement('div');
+                result.className = 'result error';
+                result.innerHTML = `<strong>Lock Message Test Failed:</strong>\n${error.message}`;
+                document.getElementById('api-results').appendChild(result);
+            }
+        }
+
+        async function testRestrictDeletion() {
+            try {
+                const response = await fetch(`${API_BASE}/hangout/messages/${TEST_MESSAGE_ID}/restrict-deletion`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reason: 'Test deletion restriction from message locking system test',
+                        allowAuthorDelete: false
+                    })
+                });
+                const data = await response.json();
+                
+                const result = document.createElement('div');
+                result.className = 'result';
+                result.innerHTML = `<strong>Restrict Deletion Test:</strong>\n${JSON.stringify(data, null, 2)}`;
+                document.getElementById('api-results').appendChild(result);
+            } catch (error) {
+                const result = document.createElement('div');
+                result.className = 'result error';
+                result.innerHTML = `<strong>Restrict Deletion Test Failed:</strong>\n${error.message}`;
+                document.getElementById('api-results').appendChild(result);
+            }
+        }
+
+        async function testDeletePermission() {
+            try {
+                const response = await fetch(`${API_BASE}/hangout/messages/${TEST_MESSAGE_ID}/can-delete`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                const result = document.createElement('div');
+                result.className = 'result';
+                result.innerHTML = `<strong>Delete Permission Test:</strong>\n${JSON.stringify(data, null, 2)}`;
+                document.getElementById('api-results').appendChild(result);
+            } catch (error) {
+                const result = document.createElement('div');
+                result.className = 'result error';
+                result.innerHTML = `<strong>Delete Permission Test Failed:</strong>\n${error.message}`;
+                document.getElementById('api-results').appendChild(result);
+            }
+        }
+
+        // Action functions
+        function lockMessage2() {
+            document.getElementById('msg-2').className = 'message locked';
+            document.getElementById('msg-2').innerHTML += '<br><span class="info">🔒 This message is now locked</span>';
+            
+            const result = document.createElement('div');
+            result.className = 'result success';
+            result.innerHTML = '<strong>Message 2 Locked:</strong> Visual indicator updated. In real app, this would call the lock API.';
+            document.getElementById('action-results').appendChild(result);
+        }
+
+        function restrictMessage3() {
+            document.getElementById('msg-3').className = 'message restricted';
+            document.getElementById('msg-3').innerHTML += '<br><span class="error">🚫 Deletion is now restricted for this message</span>';
+            
+            const result = document.createElement('div');
+            result.className = 'result success';
+            result.innerHTML = '<strong>Message 3 Restricted:</strong> Visual indicator updated. In real app, this would call the restriction API.';
+            document.getElementById('action-results').appendChild(result);
+        }
+
+        function checkPermissions() {
+            const messages = document.querySelectorAll('.message');
+            const result = document.createElement('div');
+            result.className = 'result';
+            
+            let permissions = '<strong>Permission Check Results:</strong>\n';
+            messages.forEach((msg, index) => {
+                const canDelete = !msg.classList.contains('locked') && !msg.classList.contains('restricted');
+                permissions += `Message ${index + 1}: ${canDelete ? '✅ Can Delete' : '❌ Cannot Delete'}\n`;
+            });
+            
+            result.innerHTML = permissions;
+            document.getElementById('action-results').appendChild(result);
+        }
+
+        // Initialize on page load
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Debug - Check Token</title>
+</head>
+<body>
+    <h1>Auth Token Debugger</h1>
+    <button onclick="checkAuth()">Check Auth State</button>
+    <button onclick="testCompanionsAPI()">Test Companions API</button>
+    <pre id="output"></pre>
+
+    <script>
+        function log(msg) {
+            document.getElementById('output').textContent += msg + '\n';
+            console.log(msg);
+        }
+
+        function checkAuth() {
+            document.getElementById('output').textContent = '';
+            log('=== CHECKING AUTH STATE ===\n');
+            
+            // Check localStorage
+            const authData = localStorage.getItem('nexus-auth');
+            log('1. nexus-auth exists: ' + (!!authData));
+            
+            if (authData) {
+                try {
+                    const parsed = JSON.parse(authData);
+                    log('2. Parsed structure keys: ' + Object.keys(parsed).join(', '));
+                    log('3. Full structure: ' + JSON.stringify(parsed, null, 2));
+                    
+                    // Try to extract token
+                    let token = null;
+                    if (parsed?.session?.access_token) {
+                        token = parsed.session.access_token;
+                        log('4. Token found at: parsed.session.access_token');
+                    } else if (parsed?.currentSession?.access_token) {
+                        token = parsed.currentSession.access_token;
+                        log('4. Token found at: parsed.currentSession.access_token');
+                    } else if (parsed?.access_token) {
+                        token = parsed.access_token;
+                        log('4. Token found at: parsed.access_token');
+                    } else {
+                        log('4. ❌ NO TOKEN FOUND in any expected path!');
+                    }
+                    
+                    if (token) {
+                        log('5. Token preview: ' + token.substring(0, 50) + '...');
+                        log('6. Token length: ' + token.length);
+                    }
+                } catch (e) {
+                    log('ERROR parsing: ' + e.message);
+                }
+            } else {
+                log('❌ No nexus-auth in localStorage!');
+            }
+        }
+
+        async function testCompanionsAPI() {
+            document.getElementById('output').textContent = '';
+            log('=== TESTING COMPANIONS API ===\n');
+            
+            const authData = localStorage.getItem('nexus-auth');
+            if (!authData) {
+                log('❌ No auth data - please login first!');
+                return;
+            }
+            
+            const parsed = JSON.parse(authData);
+            let token = parsed?.session?.access_token || parsed?.currentSession?.access_token || parsed?.access_token;
+            
+            if (!token) {
+                log('❌ No token found in localStorage!');
+                log('Available keys: ' + Object.keys(parsed).join(', '));
+                return;
+            }
+            
+            log('✅ Token found: ' + token.substring(0, 30) + '...');
+            
+            try {
+                const response = await fetch('http://localhost:8002/api/v1/character/user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ user_id: parsed.session?.user?.id || 'test-user-id' })
+                });
+                
+                log('Response status: ' + response.status);
+                const data = await response.json();
+                log('Response data: ' + JSON.stringify(data, null, 2));
+            } catch (e) {
+                log('❌ API Error: ' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
+

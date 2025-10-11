@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Room Message Leak Fix - Test</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        .status.success { background: #d4edda; color: #155724; border: 2px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 2px solid #bee5eb; }
+        .status.warning { background: #fff3cd; color: #856404; border: 2px solid #ffeaa7; }
+        
+        .rooms {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .room {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+        .room.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        .room h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .room .info {
+            font-size: 0.9em;
+            color: #666;
+            margin: 5px 0;
+        }
+        .room .messages {
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            min-height: 100px;
+        }
+        .room .message {
+            padding: 5px;
+            margin: 5px 0;
+            border-left: 3px solid #667eea;
+            padding-left: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .room .message.leaked {
+            border-left-color: #dc3545;
+            background: #ffe6e6;
+        }
+        .room .message .alias {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .room .message .content {
+            margin-top: 3px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 15px 0;
+        }
+        .log .timestamp {
+            color: #858585;
+        }
+        .log .success {
+            color: #4ec9b0;
+        }
+        .log .error {
+            color: #f48771;
+        }
+        .log .warning {
+            color: #dcdcaa;
+        }
+        .log .info {
+            color: #9cdcfe;
+        }
+        input[type="text"] {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            width: calc(100% - 24px);
+            margin: 10px 0;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Dark Room Message Leak Fix - Test Suite</h1>
+        <p>This test verifies that messages don't leak between Dark Room groups when switching rooms.</p>
+
+        <div id="connection-status" class="status info">
+            ⏳ Initializing test environment...
+        </div>
+
+        <div class="test-section">
+            <h2>Test Setup</h2>
+            <div>
+                <label>Your Alias: <input type="text" id="alias" value="Tester" /></label>
+            </div>
+            <div>
+                <button onclick="setupTest()">Initialize Test</button>
+                <button onclick="clearLogs()">Clear Logs</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Rooms</h2>
+            <div class="rooms">
+                <div class="room" id="room-a">
+                    <h3>Room A</h3>
+                    <div class="info">Room ID: <span id="room-a-id">test-room-a</span></div>
+                    <div class="info">Status: <span id="room-a-status">Not joined</span></div>
+                    <div class="info">Messages: <span id="room-a-count">0</span></div>
+                    <div class="messages" id="room-a-messages"></div>
+                    <button onclick="joinRoom('test-room-a')">Join Room A</button>
+                    <button onclick="sendMessage('test-room-a', 'Message from Room A')">Send Test Message</button>
+                </div>
+
+                <div class="room" id="room-b">
+                    <h3>Room B</h3>
+                    <div class="info">Room ID: <span id="room-b-id">test-room-b</span></div>
+                    <div class="info">Status: <span id="room-b-status">Not joined</span></div>
+                    <div class="info">Messages: <span id="room-b-count">0</span></div>
+                    <div class="messages" id="room-b-messages"></div>
+                    <button onclick="joinRoom('test-room-b')">Join Room B</button>
+                    <button onclick="sendMessage('test-room-b', 'Message from Room B')">Send Test Message</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Automated Tests</h2>
+            <button onclick="runTest1()">Test 1: Basic Room Switching</button>
+            <button onclick="runTest2()">Test 2: Message Isolation</button>
+            <button onclick="runTest3()">Test 3: Multiple Switches</button>
+            <button onclick="runAllTests()">Run All Tests</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Event Log</h2>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let currentRoom = null;
+        let alias = 'Tester';
+        let roomMessages = {
+            'test-room-a': [],
+            'test-room-b': []
+        };
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> <span class="${type}">${message}</span>`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLogs() {
+            document.getElementById('log').innerHTML = '';
+            log('Logs cleared', 'info');
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('connection-status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        function updateRoomStatus(roomId, status) {
+            const statusSpan = document.getElementById(`${roomId}-status`);
+            if (statusSpan) {
+                statusSpan.textContent = status;
+            }
+
+            // Update active styling
+            document.querySelectorAll('.room').forEach(room => {
+                room.classList.remove('active');
+            });
+            if (status === 'Joined (Active)') {
+                const roomDiv = roomId === 'test-room-a' ? document.getElementById('room-a') : document.getElementById('room-b');
+                if (roomDiv) {
+                    roomDiv.classList.add('active');
+                }
+            }
+        }
+
+        function displayMessage(roomId, message, isLeak = false) {
+            const messagesDiv = document.getElementById(`${roomId}-messages`);
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message${isLeak ? ' leaked' : ''}`;
+            messageDiv.innerHTML = `
+                <div class="alias">${message.alias}</div>
+                <div class="content">${message.message}</div>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            // Update count
+            roomMessages[roomId].push(message);
+            const countSpan = document.getElementById(`${roomId}-count`);
+            if (countSpan) {
+                countSpan.textContent = roomMessages[roomId].length;
+            }
+
+            if (isLeak) {
+                log(`⚠️ LEAKED MESSAGE detected in ${roomId}: ${message.message}`, 'error');
+            }
+        }
+
+        function setupTest() {
+            alias = document.getElementById('alias').value || 'Tester';
+            log('Setting up test environment...', 'info');
+
+            // Connect to Dark Room server
+            socket = io('http://localhost:8002');
+
+            socket.on('connect', () => {
+                log('✅ Connected to Dark Room server', 'success');
+                updateStatus('✅ Connected to server', 'success');
+            });
+
+            socket.on('disconnect', () => {
+                log('❌ Disconnected from server', 'error');
+                updateStatus('❌ Disconnected from server', 'error');
+            });
+
+            socket.on('receive-message', (data) => {
+                log(`📨 Received message: ${data.groupId} - ${data.alias}: ${data.message}`, 'info');
+                
+                // Check if this message is for the current room
+                if (data.groupId !== currentRoom) {
+                    log(`⚠️ LEAK DETECTED: Message from ${data.groupId} received while in ${currentRoom}`, 'error');
+                    displayMessage(data.groupId, data, true);
+                } else {
+                    displayMessage(data.groupId, data, false);
+                }
+            });
+
+            socket.on('room-joined', (data) => {
+                if (data.success) {
+                    log(`✅ Successfully joined room: ${data.roomId}`, 'success');
+                    updateRoomStatus(data.roomId, 'Joined (Active)');
+                } else {
+                    log(`❌ Failed to join room: ${data.roomId}`, 'error');
+                }
+            });
+
+            socket.on('room-left', (data) => {
+                if (data.success) {
+                    log(`✅ Successfully left room: ${data.roomId}`, 'success');
+                    updateRoomStatus(data.roomId, 'Left');
+                } else {
+                    log(`❌ Failed to leave room: ${data.roomId}`, 'error');
+                }
+            });
+
+            socket.on('room-history', (messages) => {
+                log(`📚 Received room history: ${messages.length} messages`, 'info');
+            });
+
+            log('Test environment ready. Click "Join Room A" to start testing.', 'success');
+        }
+
+        async function joinRoom(roomId) {
+            if (!socket) {
+                alert('Please initialize the test first!');
+                return;
+            }
+
+            log(`🔗 Joining room: ${roomId}`, 'info');
+
+            // Leave current room first (this is the fix!)
+            if (currentRoom && currentRoom !== roomId) {
+                log(`👋 Leaving previous room: ${currentRoom}`, 'warning');
+                socket.emit('leave-room', { groupId: currentRoom });
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            currentRoom = roomId;
+            socket.emit('join-room', {
+                groupId: roomId,
+                alias: alias
+            });
+        }
+
+        function sendMessage(roomId, message) {
+            if (!socket) {
+                alert('Please initialize the test first!');
+                return;
+            }
+
+            if (currentRoom !== roomId) {
+                alert(`You must join ${roomId} first!`);
+                return;
+            }
+
+            log(`📤 Sending message to ${roomId}: ${message}`, 'info');
+            socket.emit('send-message', {
+                groupId: roomId,
+                alias: alias,
+                message: message,
+                time: new Date().toISOString()
+            });
+        }
+
+        // Automated test functions
+        async function runTest1() {
+            log('=== Running Test 1: Basic Room Switching ===', 'warning');
+            
+            await joinRoom('test-room-a');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            sendMessage('test-room-a', 'Test 1 - Message in Room A');
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await joinRoom('test-room-b');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            sendMessage('test-room-b', 'Test 1 - Message in Room B');
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Check for leaks
+            const roomBMessages = roomMessages['test-room-b'];
+            const hasLeak = roomBMessages.some(msg => msg.message.includes('Room A'));
+            
+            if (hasLeak) {
+                log('❌ TEST 1 FAILED: Messages leaked from Room A to Room B', 'error');
+            } else {
+                log('✅ TEST 1 PASSED: No message leaks detected', 'success');
+            }
+        }
+
+        async function runTest2() {
+            log('=== Running Test 2: Message Isolation ===', 'warning');
+            
+            // Clear messages
+            roomMessages = { 'test-room-a': [], 'test-room-b': [] };
+            document.getElementById('test-room-a-messages').innerHTML = '';
+            document.getElementById('test-room-b-messages').innerHTML = '';
+            
+            await joinRoom('test-room-a');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            for (let i = 1; i <= 3; i++) {
+                sendMessage('test-room-a', `Test 2 - Room A Message ${i}`);
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            
+            await joinRoom('test-room-b');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Room B should be empty or only have new messages
+            const roomBMessages = roomMessages['test-room-b'];
+            const hasOldMessages = roomBMessages.some(msg => msg.message.includes('Room A'));
+            
+            if (hasOldMessages) {
+                log('❌ TEST 2 FAILED: Old messages from Room A appeared in Room B', 'error');
+            } else {
+                log('✅ TEST 2 PASSED: Room B is clean, no old messages', 'success');
+            }
+        }
+
+        async function runTest3() {
+            log('=== Running Test 3: Multiple Switches ===', 'warning');
+            
+            let leakCount = 0;
+            
+            for (let i = 1; i <= 5; i++) {
+                const room = i % 2 === 0 ? 'test-room-a' : 'test-room-b';
+                await joinRoom(room);
+                await new Promise(resolve => setTimeout(resolve, 300));
+                sendMessage(room, `Test 3 - Switch ${i} message`);
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Check if any leaked messages were detected
+            const allMessages = document.querySelectorAll('.message.leaked');
+            leakCount = allMessages.length;
+            
+            if (leakCount > 0) {
+                log(`❌ TEST 3 FAILED: ${leakCount} leaked messages detected during rapid switching`, 'error');
+            } else {
+                log('✅ TEST 3 PASSED: No leaks during rapid room switching', 'success');
+            }
+        }
+
+        async function runAllTests() {
+            log('=== Running All Tests ===', 'warning');
+            
+            await runTest1();
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            await runTest2();
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            await runTest3();
+            
+            log('=== All Tests Complete ===', 'warning');
+        }
+
+        // Auto-initialize on page load
+        window.onload = () => {
+            log('Test page loaded. Click "Initialize Test" to begin.', 'info');
+        };
+    </script>
+</body>
+</html>
+

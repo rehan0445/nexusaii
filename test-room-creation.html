@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Room Creation</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Test Hangout Room Creation</h1>
+    
+    <button onclick="testCreateRoom()">Create Test Room</button>
+    
+    <div id="output"></div>
+
+    <script>
+        async function testCreateRoom() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<p>Creating room...</p>';
+            
+            try {
+                // Get auth token from localStorage
+                const authData = JSON.parse(localStorage.getItem('nexus-auth') || '{}');
+                const token = authData?.currentSession?.access_token;
+                
+                if (!token) {
+                    output.innerHTML = '<p class="error">ERROR: Not logged in. Please log in first.</p>';
+                    return;
+                }
+                
+                const roomData = {
+                    name: `Test Room ${Date.now()}`,
+                    description: 'This is a test room',
+                    bio: 'Test bio',
+                    category: 'General',
+                    isPrivate: false,
+                    roomType: 'palace',
+                    tags: ['test']
+                };
+                
+                console.log('Sending request with data:', roomData);
+                
+                const response = await fetch('http://localhost:8002/api/hangout/rooms', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(roomData)
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (response.ok && data.success) {
+                    output.innerHTML = `
+                        <p class="success">✅ SUCCESS! Room created</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    output.innerHTML = `
+                        <p class="error">❌ FAILED</p>
+                        <p>Status: ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                output.innerHTML = `
+                    <p class="error">❌ ERROR</p>
+                    <p>${error.message}</p>
+                    <pre>${error.stack}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
+

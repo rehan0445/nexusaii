@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Loading Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #0066cc;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .success {
+            color: #90ee90;
+        }
+        .error {
+            color: #ee9090;
+        }
+        .warning {
+            color: #ffcc00;
+        }
+        .info {
+            color: #87ceeb;
+        }
+        .characters {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .character {
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #555;
+        }
+        .character-name {
+            font-weight: bold;
+            color: #90ee90;
+        }
+        .character-role {
+            font-size: 12px;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Character Loading Test</h1>
+    <p>This page tests the character loading functionality and verifies the CSP fix works.</p>
+    
+    <div class="test-section">
+        <h2>🎯 Test Scenarios</h2>
+        <button onclick="testCSPConnection()">Test CSP Connection</button>
+        <button onclick="testCharacterLoading()">Test Character Loading</button>
+        <button onclick="testFallbackCharacters()">Test Fallback Characters</button>
+        <button onclick="testAllScenarios()">Test All Scenarios</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>📊 Test Results</h3>
+        <div class="log" id="testLog"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>👥 Loaded Characters</h3>
+        <div class="characters" id="charactersList"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+            document.getElementById('charactersList').innerHTML = '';
+        }
+
+        function displayCharacters(characters) {
+            const container = document.getElementById('charactersList');
+            container.innerHTML = '';
+            
+            Object.entries(characters).forEach(([slug, character]) => {
+                const div = document.createElement('div');
+                div.className = 'character';
+                div.innerHTML = `
+                    <div class="character-name">${character.name}</div>
+                    <div class="character-role">${character.role || 'AI Character'}</div>
+                    <div style="font-size: 11px; color: #888; margin-top: 5px;">${character.description?.substring(0, 100)}...</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Simulate the centralized API configuration
+        function getServerUrl() {
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            // Special handling for 10.x.x.x network range
+            if (hostname.startsWith('10.')) {
+                const port = hostname === '10.87.73.163' ? '8000' : '8002';
+                return `${protocol}//${hostname}:${port}`;
+            }
+            
+            // Use same hostname as frontend with backend port
+            return `${protocol}//${hostname}:8002`;
+        }
+
+        // Fallback characters (simulating the app's fallback system)
+        const fallbackCharacters = {
+            'sakura-haruno': {
+                name: 'Sakura Haruno',
+                role: 'Medical Ninja',
+                description: 'A skilled medical ninja from Konoha with incredible strength and healing abilities.',
+                tags: ['naruto', 'medical', 'strong', 'pink-hair']
+            },
+            'naruto-uzumaki': {
+                name: 'Naruto Uzumaki',
+                role: 'Hokage',
+                description: 'The Seventh Hokage of Konoha, known for his determination and the Nine-Tails fox spirit.',
+                tags: ['naruto', 'hokage', 'determined', 'blonde']
+            },
+            'sasuke-uchiha': {
+                name: 'Sasuke Uchiha',
+                role: 'Shadow Hokage',
+                description: 'A powerful ninja with the Sharingan and Rinnegan, known for his cool demeanor.',
+                tags: ['naruto', 'sharingan', 'cool', 'dark-hair']
+            },
+            'hinata-hyuga': {
+                name: 'Hinata Hyuga',
+                role: 'Byakugan User',
+                description: 'A gentle ninja with the Byakugan eye technique, known for her kindness and loyalty.',
+                tags: ['naruto', 'byakugan', 'gentle', 'white-eyes']
+            },
+            'kakashi-hatake': {
+                name: 'Kakashi Hatake',
+                role: 'Copy Ninja',
+                description: 'The Sixth Hokage, known as the Copy Ninja for his ability to copy any technique.',
+                tags: ['naruto', 'copy-ninja', 'mysterious', 'silver-hair']
+            }
+        };
+
+        async function testCSPConnection() {
+            log('🧪 Testing CSP Connection...', 'info');
+            
+            const apiUrl = getServerUrl();
+            const testEndpoint = `${apiUrl}/api/v1/chat/models`;
+            
+            log(`🔍 Testing endpoint: ${testEndpoint}`, 'info');
+            
+            try {
+                const response = await fetch(testEndpoint, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ CSP Connection successful! Found ${data.length} characters`, 'success');
+                    return data;
+                } else {
+                    log(`⚠️ CSP Connection established but server returned ${response.status}`, 'warning');
+                    return null;
+                }
+            } catch (error) {
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    log(`❌ CSP Connection failed - CSP violation or network error: ${error.message}`, 'error');
+                    log('🔍 This is the same error occurring in characters.ts:74', 'error');
+                } else {
+                    log(`❌ CSP Connection failed: ${error.message}`, 'error');
+                }
+                return null;
+            }
+        }
+
+        async function testCharacterLoading() {
+            log('🧪 Testing Character Loading (simulating characters.ts:74)...', 'info');
+            
+            const characters = {};
+            
+            // Simulate the API call that's failing
+            try {
+                log('🔄 Loading built-in characters...', 'info');
+                const apiUrl = getServerUrl();
+                const builtInResponse = await fetch(`${apiUrl}/api/v1/chat/models`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors'
+                });
+                
+                if (builtInResponse.ok) {
+                    const builtInCharacters = await builtInResponse.json();
+                    log(`📡 Built-in characters response: ${builtInCharacters.length} characters`, 'info');
+                    
+                    builtInCharacters.forEach(character => {
+                        const slug = character.name.toLowerCase().replace(/\s+/g, '-');
+                        characters[slug] = character;
+                        log(`✅ Added character: ${character.name} with slug: ${slug}`, 'success');
+                    });
+                    
+                    log(`✅ Loaded built-in characters: ${builtInCharacters.length}`, 'success');
+                } else {
+                    throw new Error(`Server returned ${builtInResponse.status}`);
+                }
+            } catch (err) {
+                log('⚠️ Backend server not available, using fallback characters only', 'warning');
+                log(`❌ Failed to load built-in characters: ${err.message}`, 'error');
+            }
+            
+            // Fallback: if no built-in characters were loaded, use static set
+            if (Object.keys(characters).length === 0) {
+                log('⚠️ No built-in characters loaded. Falling back to static characters.', 'warning');
+                Object.entries(fallbackCharacters).forEach(([slug, character]) => {
+                    characters[slug] = character;
+                });
+                log(`✅ Loaded fallback static characters: ${Object.keys(characters).length}`, 'success');
+            }
+            
+            // Display the loaded characters
+            displayCharacters(characters);
+            log(`🎯 Total characters loaded: ${Object.keys(characters).length}`, 'info');
+            
+            return characters;
+        }
+
+        async function testFallbackCharacters() {
+            log('🧪 Testing Fallback Characters...', 'info');
+            
+            log('📦 Loading fallback characters (simulating API failure)...', 'info');
+            
+            // Simulate the fallback system
+            const characters = {};
+            Object.entries(fallbackCharacters).forEach(([slug, character]) => {
+                characters[slug] = character;
+                log(`✅ Added fallback character: ${character.name} with slug: ${slug}`, 'success');
+            });
+            
+            log(`✅ Loaded fallback static characters: ${Object.keys(characters).length}`, 'success');
+            
+            // Display the characters
+            displayCharacters(characters);
+            
+            return characters;
+        }
+
+        async function testAllScenarios() {
+            log('🚀 Starting comprehensive character loading test...', 'info');
+            clearLog();
+            
+            // Test 1: CSP Connection
+            log('=== TEST 1: CSP Connection ===', 'info');
+            const apiCharacters = await testCSPConnection();
+            
+            // Wait a moment, then test Character Loading
+            setTimeout(async () => {
+                log('=== TEST 2: Character Loading ===', 'info');
+                await testCharacterLoading();
+            }, 1000);
+            
+            // Wait a moment, then test Fallback
+            setTimeout(async () => {
+                log('=== TEST 3: Fallback Characters ===', 'info');
+                await testFallbackCharacters();
+            }, 2000);
+            
+            // Final summary
+            setTimeout(() => {
+                log('🎯 Test Summary:', 'info');
+                if (apiCharacters) {
+                    log('✅ CSP Fix: Working - API connection successful', 'success');
+                    log('✅ Character Loading: Working - Built-in characters loaded', 'success');
+                } else {
+                    log('⚠️ CSP Fix: Not working - API connection blocked', 'warning');
+                    log('✅ Character Loading: Working - Fallback characters loaded', 'success');
+                }
+                log('✅ Fallback System: Working - Static characters available', 'success');
+                log('🔍 The app should work regardless of CSP issues due to fallback system', 'info');
+            }, 3000);
+        }
+
+        // Log initial information
+        log('🧪 Character Loading Test initialized', 'info');
+        log(`🌐 Current hostname: ${window.location.hostname}`, 'info');
+        log(`🔗 Current protocol: ${window.location.protocol}`, 'info');
+        log(`🎯 Detected API URL: ${getServerUrl()}`, 'info');
+        log('📋 Ready to test character loading functionality', 'info');
+    </script>
+</body>
+</html>

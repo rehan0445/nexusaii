@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #0066cc;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .success {
+            color: #90ee90;
+        }
+        .error {
+            color: #ee9090;
+        }
+        .warning {
+            color: #ffcc00;
+        }
+        .info {
+            color: #87ceeb;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #333;
+            color: #fff;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Authentication Fix Test</h1>
+    <p>This page tests the authentication fixes for the 401 Unauthorized errors.</p>
+    
+    <div class="test-section">
+        <h2>🎯 Test Scenarios</h2>
+        <button onclick="testCSPFix()">Test CSP Fix</button>
+        <button onclick="testAuthentication()">Test Authentication</button>
+        <button onclick="testSessionBridge()">Test Session Bridge</button>
+        <button onclick="testHangoutMessages()">Test Hangout Messages</button>
+        <button onclick="testAllAuthFixes()">Test All Auth Fixes</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔑 Authentication Test</h3>
+        <input type="text" id="supabaseToken" placeholder="Paste Supabase JWT token here (optional)">
+        <button onclick="setAuthToken()">Set Auth Token</button>
+        <button onclick="clearAuthToken()">Clear Auth Token</button>
+    </div>
+    
+    <div class="grid">
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div class="log" id="testLog"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 What This Tests</h3>
+            <ul>
+                <li><strong>CSP Fix:</strong> Verifies connections to 10.87.73.163:8000 are allowed</li>
+                <li><strong>Authentication:</strong> Tests token validation and session bridge</li>
+                <li><strong>Session Bridge:</strong> Tests Supabase → Backend session conversion</li>
+                <li><strong>Hangout Messages:</strong> Tests the specific failing endpoint</li>
+            </ul>
+            
+            <h3>✅ Expected Results</h3>
+            <ul>
+                <li>No CSP violation errors</li>
+                <li>Authentication tokens properly sent</li>
+                <li>Session bridge working</li>
+                <li>Hangout messages endpoint accessible</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+        }
+
+        function setAuthToken() {
+            const token = document.getElementById('supabaseToken').value.trim();
+            if (token) {
+                localStorage.setItem('nexus-auth', JSON.stringify({
+                    currentSession: {
+                        access_token: token
+                    }
+                }));
+                log(`✅ Auth token set in localStorage`, 'success');
+            } else {
+                log(`❌ Please enter a valid token`, 'error');
+            }
+        }
+
+        function clearAuthToken() {
+            localStorage.removeItem('nexus-auth');
+            log(`🗑️ Auth token cleared from localStorage`, 'info');
+        }
+
+        // Simulate the centralized API configuration
+        function getServerUrl() {
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            // Special handling for 10.x.x.x network range
+            if (hostname.startsWith('10.')) {
+                const port = hostname === '10.87.73.163' ? '8000' : '8002';
+                return `${protocol}//${hostname}:${port}`;
+            }
+            
+            // Use same hostname as frontend with backend port
+            return `${protocol}//${hostname}:8002`;
+        }
+
+        // Get auth token from localStorage (simulating the app's auth system)
+        function getAuthToken() {
+            try {
+                const authData = localStorage.getItem('nexus-auth');
+                if (authData) {
+                    const parsed = JSON.parse(authData);
+                    return parsed?.currentSession?.access_token || parsed?.access_token || parsed?.session?.access_token;
+                }
+            } catch (error) {
+                log(`❌ Error parsing auth data: ${error.message}`, 'error');
+            }
+            return null;
+        }
+
+        async function testCSPFix() {
+            log('🧪 Testing CSP Fix...', 'info');
+            
+            const testUrl = 'http://10.87.73.163:8000/api/v1/chat/models';
+            
+            try {
+                const response = await fetch(testUrl, { mode: 'cors' });
+                if (response.ok) {
+                    log(`✅ CSP Fix working! Connected to ${testUrl}`, 'success');
+                } else {
+                    log(`⚠️ CSP Fix working but server returned ${response.status}`, 'warning');
+                }
+            } catch (error) {
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    log(`❌ CSP Violation: ${error.message}`, 'error');
+                } else {
+                    log(`❌ Connection failed: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testAuthentication() {
+            log('🧪 Testing Authentication...', 'info');
+            
+            const token = getAuthToken();
+            if (!token) {
+                log(`❌ No auth token found in localStorage`, 'error');
+                log(`💡 Set a token using the input field above`, 'info');
+                return;
+            }
+            
+            log(`🔑 Found auth token: ${token.substring(0, 20)}...`, 'info');
+            
+            const apiUrl = getServerUrl();
+            const authEndpoint = `${apiUrl}/api/auth/session/bridge`;
+            
+            try {
+                const response = await fetch(authEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Authentication successful! Session bridge working`, 'success');
+                    log(`📊 Response: ${JSON.stringify(data)}`, 'info');
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Authentication failed: ${response.status} ${response.statusText}`, 'error');
+                    log(`📊 Error details: ${JSON.stringify(errorData)}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Authentication test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSessionBridge() {
+            log('🧪 Testing Session Bridge...', 'info');
+            
+            const token = getAuthToken();
+            if (!token) {
+                log(`❌ No auth token found`, 'error');
+                return;
+            }
+            
+            const apiUrl = getServerUrl();
+            const bridgeEndpoint = `${apiUrl}/api/auth/session/bridge`;
+            
+            try {
+                const response = await fetch(bridgeEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Session bridge successful!`, 'success');
+                    log(`📊 Backend session created: ${JSON.stringify(data)}`, 'info');
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Session bridge failed: ${response.status} ${response.statusText}`, 'error');
+                    log(`📊 Error details: ${JSON.stringify(errorData)}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Session bridge test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testHangoutMessages() {
+            log('🧪 Testing Hangout Messages Endpoint...', 'info');
+            
+            const token = getAuthToken();
+            const apiUrl = getServerUrl();
+            const testRoomId = 'room-1759573909580-u5x2jc0s4';
+            const messagesEndpoint = `${apiUrl}/api/hangout/rooms/${testRoomId}/messages`;
+            
+            log(`🔍 Testing endpoint: ${messagesEndpoint}`, 'info');
+            
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                    log(`🔑 Using auth token for request`, 'info');
+                } else {
+                    log(`⚠️ No auth token - request will likely fail with 401`, 'warning');
+                }
+                
+                const response = await fetch(messagesEndpoint, {
+                    method: 'GET',
+                    headers,
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Hangout messages endpoint working!`, 'success');
+                    log(`📊 Found ${data.messages?.length || 0} messages`, 'info');
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Hangout messages failed: ${response.status} ${response.statusText}`, 'error');
+                    log(`📊 Error details: ${JSON.stringify(errorData)}`, 'error');
+                    
+                    if (response.status === 401) {
+                        log(`🔍 This is the 401 Unauthorized error you were experiencing`, 'error');
+                        log(`💡 The issue is likely missing or invalid authentication`, 'info');
+                    }
+                }
+            } catch (error) {
+                log(`❌ Hangout messages test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAllAuthFixes() {
+            log('🚀 Starting comprehensive authentication fixes test...', 'info');
+            clearLog();
+            
+            // Test 1: CSP Fix
+            await testCSPFix();
+            
+            // Wait a moment, then test Authentication
+            setTimeout(async () => {
+                await testAuthentication();
+            }, 1000);
+            
+            // Wait a moment, then test Session Bridge
+            setTimeout(async () => {
+                await testSessionBridge();
+            }, 2000);
+            
+            // Wait a moment, then test Hangout Messages
+            setTimeout(async () => {
+                await testHangoutMessages();
+            }, 3000);
+            
+            // Final summary
+            setTimeout(() => {
+                log('🎯 Test Summary:', 'info');
+                log('✅ CSP Fix: Should allow connections to 10.87.73.163:8000', 'info');
+                log('✅ Authentication: Should validate Supabase tokens', 'info');
+                log('✅ Session Bridge: Should create backend sessions', 'info');
+                log('✅ Hangout Messages: Should work with proper auth', 'info');
+                log('🔍 Check the results above to verify all fixes are working', 'info');
+            }, 4000);
+        }
+
+        // Log initial information
+        log('🔐 Authentication Fix Test initialized', 'info');
+        log(`🌐 Current hostname: ${window.location.hostname}`, 'info');
+        log(`🔗 Current protocol: ${window.location.protocol}`, 'info');
+        log(`🎯 Detected API URL: ${getServerUrl()}`, 'info');
+        log(`🔑 Auth token in localStorage: ${getAuthToken() ? 'Found' : 'Not found'}`, 'info');
+        log('📋 Ready to test authentication fixes', 'info');
+    </script>
+</body>
+</html>

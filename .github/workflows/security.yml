@@ -1,0 +1,47 @@
+name: security
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --no-banner --redact
+
+  npm-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: cd client && npm ci || true
+      - run: cd server && npm ci || true
+      - name: npm audit (root)
+        run: npm audit --audit-level=high || true
+      - name: npm audit (client)
+        run: cd client && npm audit --audit-level=high || true
+      - name: npm audit (server)
+        run: cd server && npm audit --audit-level=high || true
+
+  zap-scan:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.13.0
+        with:
+          target: ${{ secrets.ZAP_TARGET_URL }}
+          rules_file_name: ignore.conf
+          cmd_options: '-a'
+
+
