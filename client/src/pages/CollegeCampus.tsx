@@ -31,13 +31,13 @@ const CollegeCampus: React.FC = () => {
       name: 'Parul University',
       fullName: 'Parul University',
       color: 'from-green-600 to-teal-600',
-      image: 'https://i.pinimg.com/736x/bb/49/7e/bb497ee41c472c9d831a7cde9876e6c9.jpg'
+      image: 'https://i.pinimg.com/736x/40/b7/bd/40b7bddc3c79546f2d19da84f4ef6b42.jpg'
     },
-    'iict': {
-      name: 'IICT',
-      fullName: 'International Institute of Computer Technology',
+    'iist': {
+      name: 'IIST',
+      fullName: 'International Institute of Space Technology',
       color: 'from-indigo-600 to-purple-600',
-      image: 'https://i.pinimg.com/736x/bb/49/7e/bb497ee41c472c9d831a7cde9876e6c9.jpg'
+      image: 'https://i.pinimg.com/736x/f4/b6/fe/f4b6fe3e6d0af5f2b3930c4ed17e4dd8.jpg'
     }
   };
 

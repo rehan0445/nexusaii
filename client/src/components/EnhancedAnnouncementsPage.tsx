@@ -174,7 +174,7 @@ const CAMPUS_CODE_MAP: Record<string, string> = {
   'MIT WPU': 'mit-wpu',
   'VIT Vellore': 'vit-vellore',
   'Parul University': 'parul-university',
-  'IICT': 'iict',
+  'IIST': 'iist',
 };
 
 // Password for creating announcements

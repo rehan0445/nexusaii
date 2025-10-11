@@ -345,7 +345,7 @@ export function ConfessionPage({ onBack, universityId, collegeName, collegeFullN
     'MIT WPU': 'mit-wpu',
     'VIT Vellore': 'vit-vellore',
     'Parul University': 'parul-university',
-    'IICT': 'iict',
+    'IIST': 'iist',
   };
 
   // Fetch user alias from backend on mount

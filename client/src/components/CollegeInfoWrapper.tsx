@@ -27,9 +27,9 @@ const CollegeAnnouncementsWrapper: React.FC = () => {
       fullName: 'Parul University',
       color: 'from-green-600 to-teal-600'
     },
-    'iict': {
-      name: 'IICT',
-      fullName: 'International Institute of Computer Technology',
+    'iist': {
+      name: 'IIST',
+      fullName: 'International Institute of Space Technology',
       color: 'from-indigo-600 to-purple-600'
     }
   };

@@ -170,7 +170,11 @@ const AnonymousChat: React.FC<Props> = ({ group, message, setMessage, alias, onB
             <div className="p-4 border-b border-green-500/30 bg-zinc-900/90 flex items-center justify-between">
                 <div className="flex items-center">
                     <button
-                        onClick={onBack}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onBack();
+                        }}
                         className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white mr-4"
                     >
                         <ArrowLeft className="w-4 h-4" />

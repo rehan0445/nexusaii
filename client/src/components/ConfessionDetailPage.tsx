@@ -343,7 +343,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
               'MIT WPU': 'mit-wpu',
               'VIT Vellore': 'vit-vellore',
               'Parul University': 'parul-university',
-              'IICT': 'iict',
+              'IIST': 'iist',
             };
             const campusCode = CAMPUS_CODE_MAP[universityId as string] || universityId || 'mit-adt';
             const repliesResponse = await fetch(`${getServerUrl()}/api/confessions/${confessionId}/replies?campus=${campusCode}`);
