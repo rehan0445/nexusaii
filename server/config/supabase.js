@@ -13,8 +13,10 @@ if (!supabaseUrl || !supabaseKey) {
 // Log which environment is being used (without exposing the key)
 if (process.env.SUPABASE_URL) {
   console.log('✅ Using Supabase credentials from environment variables');
+  console.log(`🔌 Supabase client connected to: ${supabaseUrl.substring(0, 30)}...`);
 } else {
   console.log('⚠️ Using fallback Supabase credentials (local development)');
+  console.log('⚠️ Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Railway environment variables');
 }
 
 // Create Supabase client with connection pooling and timeout configuration
@@ -30,6 +32,13 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     headers: {
       'x-client-info': 'nexus-backend',
     },
+    // Add fetch with 30-second timeout to prevent hanging requests
+    fetch: (url, options = {}) => {
+      return fetch(url, { 
+        ...options, 
+        signal: AbortSignal.timeout(30000) 
+      });
+    }
   },
   // Add timeout configuration
   realtime: {

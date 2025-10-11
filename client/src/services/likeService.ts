@@ -109,7 +109,24 @@ export const getLikeCount = async (characterId: string | number): Promise<{ succ
 };
 
 // Get likes for multiple characters
+// TEMPORARY FIX: Return static data to prevent database overload
+// This function was causing 50+ simultaneous DB queries overwhelming Supabase
 export const getMultipleCharacterLikes = async (characterIds: (string | number)[]): Promise<Record<string, LikeData>> => {
+  // Return static/localStorage data without hitting backend
+  const likesMap: Record<string, LikeData> = {};
+  const auth = getAuth();
+  const userId = auth.currentUser?.uid || "anonymous";
+  
+  characterIds.forEach((id) => {
+    likesMap[String(id)] = {
+      likeCount: getLocalLikeCount(id),
+      userLiked: getLocalUserLiked(id, userId),
+    };
+  });
+  
+  return likesMap;
+  
+  /* DISABLED - Was causing 50+ simultaneous DB queries creating connection timeouts
   try {
     const auth = getAuth();
     const currentUser = auth.currentUser;
@@ -146,4 +163,5 @@ export const getMultipleCharacterLikes = async (characterIds: (string | number)[
     });
     return likesMap;
   }
+  */
 }; 
