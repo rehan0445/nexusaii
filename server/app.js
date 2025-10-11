@@ -110,6 +110,12 @@ const io = new Server(server, {
         return callback(null, true);
       }
 
+      // Allow Railway domains (same-origin deployment)
+      if (origin.includes('.railway.app') || origin.includes('.up.railway.app')) {
+        console.log('🔌 Socket.IO: Allowed Railway origin:', origin);
+        return callback(null, true);
+      }
+
       // Allow LAN IP patterns (192.168.x.x) for development
       const lanPattern = /^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/;
       if (lanPattern.test(origin)) {
@@ -182,6 +188,12 @@ app.use(cors({
 
     if (CORS_ALLOWLIST.includes(origin)) {
       console.log('🌐 CORS: Allowed origin:', origin);
+      return callback(null, true);
+    }
+
+    // Allow Railway domains (same-origin deployment)
+    if (origin.includes('.railway.app') || origin.includes('.up.railway.app')) {
+      console.log('🌐 CORS: Allowed Railway origin:', origin);
       return callback(null, true);
     }
 
