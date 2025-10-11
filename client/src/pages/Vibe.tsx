@@ -93,7 +93,8 @@ export default function Vibe() {
 
   // Socket.IO connection for Dark Room
   useEffect(() => {
-    const newSocket = io('http://localhost:8002');
+    const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
+    const newSocket = io(serverUrl);
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
@@ -349,7 +350,8 @@ export default function Vibe() {
 
     // Check with server for authenticity
     try {
-      const res = await fetch(`http://localhost:8002/api/v1/darkroom/rooms/${encodeURIComponent(id)}`);
+      const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
+      const res = await fetch(`${serverUrl}/api/v1/darkroom/rooms/${encodeURIComponent(id)}`);
       if (!res.ok) return false;
       const room = await res.json();
       const newGroup: Group = {

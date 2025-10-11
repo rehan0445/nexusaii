@@ -80,7 +80,7 @@ export const NexusChatsProvider: React.FC<NexusChatsProviderProps> = ({ children
 
     try {
       // Check if server is reachable first
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+      const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
       try {
         await axios.get(`${serverUrl}/api/health`, { timeout: 5000 });
       } catch (healthError) {

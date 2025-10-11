@@ -85,7 +85,7 @@ const Profile: React.FC = () => {
 
         // Try backend profile
         try {
-          const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+          const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
           const res = await fetch(`${serverUrl}/api/v1/chat/get-profile-data`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -710,7 +710,7 @@ const Profile: React.FC = () => {
                     <label className="text-sm text-zinc-300">Display name
                       <input className="mt-1 w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white" value={profileData?.name || ''} onChange={(e)=> setProfileData(p=> p? { ...p, name: e.target.value } : p)} onBlur={async()=>{
                         // auto-save name via existing update API
-                        try { await fetch(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:8002'}/api/v1/chat/update-profile`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid: currentUser?.uid, name: profileData?.name }) }); } catch {}
+                        try { await fetch(`${import.meta.env.VITE_SERVER_URL || window.location.origin}/api/v1/chat/update-profile`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid: currentUser?.uid, name: profileData?.name }) }); } catch {}
                       }} />
                     </label>
                     <label className="text-sm text-zinc-300">Username

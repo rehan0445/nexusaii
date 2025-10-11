@@ -9,7 +9,7 @@ import {
 
 // Get the server URL for API calls
 const getServerUrl = () => {
-  return import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+  return import.meta.env.VITE_SERVER_URL || window.location.origin;
 };
 
 interface ConfessionComposerProps {

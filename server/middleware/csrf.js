@@ -11,9 +11,10 @@ export function issueCsrfToken(res) {
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
-    // Only set an explicit domain in production. In development, omit domain so it works on localhost.
-    if (isProd) {
-      cookieOptions.domain = process.env.COOKIE_DOMAIN || '.nexusai.com';
+    // Only set an explicit domain in production if COOKIE_DOMAIN is set
+    // For Railway deployment, omit domain to use same-origin cookies
+    if (isProd && process.env.COOKIE_DOMAIN) {
+      cookieOptions.domain = process.env.COOKIE_DOMAIN;
     }
     res.cookie('nxa_csrf', token, cookieOptions);
     return token;

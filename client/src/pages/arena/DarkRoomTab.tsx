@@ -30,7 +30,7 @@ const DarkRoomTab: React.FC = () => {
   const fetchGroupsFromAPI = async () => {
     try {
       console.log('🔄 Fetching groups from API...');
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+      const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
       const response = await apiFetch(`${serverUrl}/api/v1/darkroom/rooms`);
       if (response.ok) {
         const data = await response.json();
@@ -132,7 +132,7 @@ const DarkRoomTab: React.FC = () => {
   const fetchRoomMessages = async (roomId: string) => {
     try {
       console.log('📨 [DarkRoomTab] Fetching messages for room:', roomId);
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+      const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
       const response = await apiFetch(`${serverUrl}/api/v1/darkroom/rooms/${roomId}/messages`);
 
       if (response.ok) {
@@ -507,7 +507,7 @@ const DarkRoomTab: React.FC = () => {
       
       try {
         // Create group via API
-        const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+        const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
         const response = await apiFetch(`${serverUrl}/api/v1/darkroom/create-group`, {
           method: 'POST',
           headers: {

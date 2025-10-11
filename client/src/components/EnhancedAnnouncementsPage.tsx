@@ -226,7 +226,7 @@ export function EnhancedAnnouncementsPage({
         return;
       }
       const campusParam = `?campus=${campusCode}`;
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+      const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
       const response = await apiFetch(`${serverUrl}/api/v1/announcements${campusParam}`);
       const data = await response.json();
       if (data.success && Array.isArray(data.data)) {
@@ -259,7 +259,7 @@ export function EnhancedAnnouncementsPage({
   // Fetch urgent broadcasts - using useCallback to prevent recreation on every render
   const fetchUrgentBroadcasts = useCallback(async (isInitialLoad = false) => {
     try {
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+      const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
       // Note: Urgent broadcasts are global (not campus-specific)
       const response = await apiFetch(`${serverUrl}/api/v1/announcements/urgent-broadcast`);
       
@@ -318,7 +318,7 @@ export function EnhancedAnnouncementsPage({
 
   const handleVotePoll = async (announcementId: string, optionIndex: number) => {
     try {
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+      const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
       const response = await apiFetch(`${serverUrl}/api/v1/announcements/${announcementId}/poll/vote`, {
         method: 'POST',
         headers: {
@@ -348,7 +348,7 @@ export function EnhancedAnnouncementsPage({
 
   const handleRSVP = async (announcementId: string, response: 'going' | 'maybe' | 'not_going') => {
     try {
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+      const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
       const apiResponse = await apiFetch(`${serverUrl}/api/v1/announcements/${announcementId}/rsvp`, {
         method: 'POST',
         headers: {
@@ -380,7 +380,7 @@ export function EnhancedAnnouncementsPage({
 
   const handleUrgentBroadcastSubmit = async (formData: any) => {
     try {
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+      const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
       
       // Ensure all required fields are present with defaults
       const payload = {
@@ -460,7 +460,7 @@ export function EnhancedAnnouncementsPage({
 
         console.log('Creating announcement:', announcementData);
 
-        const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+        const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
         const response = await apiFetch(`${serverUrl}/api/v1/announcements`, {
           method: 'POST',
           headers: {

@@ -129,7 +129,7 @@ export const LikeDebugger: React.FC<LikeDebuggerProps> = ({
           <ul className="text-sm text-yellow-700 space-y-1">
             <li>• Make sure the backend server is running on port 8002</li>
             <li>• Run: <code>cd nexus/server && npm run dev</code></li>
-            <li>• Check if the server is accessible at http://localhost:8002</li>
+            <li>• Check if the server is accessible at {import.meta.env.VITE_SERVER_URL || window.location.origin}</li>
           </ul>
         </div>
       )}

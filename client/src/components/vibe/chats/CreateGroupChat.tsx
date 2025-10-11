@@ -24,7 +24,7 @@ const CreateGroupChat: React.FC<CreateGroupChatProps> = ({ onGroupCreated, onClo
     setError('');
 
     try {
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8002';
+      const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
       const response = await axios.post(`${serverUrl}/api/v1/darkroom/create-group`, {
         name: formData.name,
         description: formData.description,
