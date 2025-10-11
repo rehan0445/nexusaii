@@ -21,7 +21,6 @@ const IntroNexus: React.FC = () => (
         </div>
         <a 
           href="/onboarding/companion" 
-          onClick={() => localStorage.setItem('hasSeenOnboarding', 'true')}
           aria-label="Next" 
           className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur flex items-center justify-center text-white"
         >
