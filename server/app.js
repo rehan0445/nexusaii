@@ -1076,6 +1076,7 @@ app.use(express.urlencoded({ extended: true }));
 // Remove duplicate permissive CORS block
 
 // Health check endpoint - moved from "/" to "/health" to allow static files at root
+// This allows the React app to be served at the root URL
 app.get("/health", (req, res) => {
   res.json({ 
     message: "Companion Backend Server", 
