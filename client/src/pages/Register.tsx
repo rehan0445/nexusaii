@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { Mail, Eye, EyeOff, User, Check } from "lucide-react";
+import { Mail, Eye, EyeOff, User, Check, X, CheckCircle } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import nexusLogo from "../assets/nexus-logo.png";
 
@@ -17,6 +17,8 @@ const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   useEffect(() => {
     // Check if user has seen onboarding intro pages
@@ -88,9 +90,9 @@ const Register: React.FC = () => {
           console.log('✅ Session exists, redirecting to /onboarding/user-details');
           navigate("/onboarding/user-details", { replace: true });
         } else {
-          // Email confirmation required
-          alert('Please check your email to confirm your account!');
-          navigate("/login");
+          // Email confirmation required - show modal
+          setRegisteredEmail(formData.email);
+          setShowEmailModal(true);
         }
       }
     } catch (error: any) {
@@ -103,9 +105,67 @@ const Register: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-zinc-900 flex items-center justify-center p-4">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-softgold-500/10 via-zinc-900 to-purple-500/10" />
+    <>
+      {/* Email Confirmation Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="relative bg-zinc-800 rounded-2xl p-8 max-w-md w-full border border-zinc-700 shadow-2xl">
+            {/* Close button */}
+            <button
+              onClick={() => {
+                setShowEmailModal(false);
+                navigate("/login");
+              }}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Success Icon */}
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-500" />
+              </div>
+            </div>
+
+            {/* Title */}
+            <h2 className="text-2xl font-bold text-white text-center mb-4">
+              Check Your Email!
+            </h2>
+
+            {/* Message */}
+            <div className="space-y-4 text-center mb-6">
+              <p className="text-zinc-300">
+                We've sent a verification link to:
+              </p>
+              <p className="text-softgold-500 font-semibold text-lg break-all">
+                {registeredEmail}
+              </p>
+              <p className="text-zinc-400 text-sm">
+                Please check your inbox and click the verification link to activate your account.
+              </p>
+              <p className="text-zinc-500 text-xs">
+                Don't see it? Check your spam folder.
+              </p>
+            </div>
+
+            {/* Action Button */}
+            <button
+              onClick={() => {
+                setShowEmailModal(false);
+                navigate("/login");
+              }}
+              className="w-full bg-softgold-500 hover:bg-softgold-600 text-black font-bold py-3 px-4 rounded-lg transition-all duration-300"
+            >
+              Got it, Go to Login
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="min-h-screen bg-zinc-900 flex items-center justify-center p-4">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-softgold-500/10 via-zinc-900 to-purple-500/10" />
       
       <div className="relative z-10 w-full max-w-md">
         {/* Header with Logo */}
@@ -240,6 +300,7 @@ const Register: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
