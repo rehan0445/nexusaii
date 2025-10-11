@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { 
   ArrowLeft
 } from 'lucide-react';
@@ -27,85 +27,7 @@ interface ConfessionComposerProps {
 
 export function ConfessionComposer({ onBack, onSubmit, alias }: ConfessionComposerProps) {
   const [content, setContent] = useState('');
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [showPoll, setShowPoll] = useState(false);
-  const [pollQuestion, setPollQuestion] = useState('');
-  const [pollOptions, setPollOptions] = useState(['', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setIsUploadingImage(true);
-      try {
-        // Create preview
-        const preview = URL.createObjectURL(file);
-        setImagePreview(preview);
-        
-        // Upload to backend
-        const formData = new FormData();
-        formData.append('image', file);
-        
-        const response = await fetch(`${getServerUrl()}/api/confessions/upload-image`, {
-          method: 'POST',
-          body: formData
-        });
-        
-        const result = await response.json();
-        if (result.success && result.data.url) {
-          console.log('✅ Image uploaded:', result.data.url);
-          setImageUrl(result.data.url);
-        } else {
-          console.error('Failed to upload image');
-          alert('Failed to upload image. Please try again.');
-          // Remove preview if upload failed
-          URL.revokeObjectURL(preview);
-          setImagePreview(null);
-        }
-      } catch (error) {
-        console.error('Error uploading image:', error);
-        alert('Failed to upload image. Please try again.');
-        if (imagePreview) {
-          URL.revokeObjectURL(imagePreview);
-          setImagePreview(null);
-        }
-      } finally {
-        setIsUploadingImage(false);
-      }
-    }
-  };
-
-  const removeImage = () => {
-    setImageUrl(null);
-    if (imagePreview) {
-      URL.revokeObjectURL(imagePreview);
-      setImagePreview(null);
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const addPollOption = () => {
-    if (pollOptions.length < 4) {
-      setPollOptions([...pollOptions, '']);
-    }
-  };
-
-  const removePollOption = (index: number) => {
-    if (pollOptions.length > 2) {
-      setPollOptions(pollOptions.filter((_, i) => i !== index));
-    }
-  };
-
-  const updatePollOption = (index: number, value: string) => {
-    const newOptions = [...pollOptions];
-    newOptions[index] = value;
-    setPollOptions(newOptions);
-  };
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
