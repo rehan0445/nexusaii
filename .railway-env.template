@@ -1,0 +1,63 @@
+# Railway Environment Variables Template
+# Copy these variables to Railway Dashboard → Variables tab
+# Replace placeholder values with your actual credentials
+
+# ============================================
+# CRITICAL - REQUIRED FOR APP TO START
+# ============================================
+
+# Generate with: node generate-jwt-secret.js
+JWT_SECRET=PASTE_GENERATED_VALUE_HERE
+
+# From: https://app.supabase.com/project/YOUR_PROJECT/settings/api
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=PASTE_YOUR_SERVICE_ROLE_KEY_HERE
+
+# From: https://venice.ai/
+VENICE_API_KEY=PASTE_YOUR_VENICE_API_KEY_HERE
+
+# ============================================
+# RAILWAY CONFIGURATION
+# ============================================
+
+# Use Railway's dynamic port (keep as-is)
+PORT=${{PORT}}
+
+# Your Railway app URL (update with your actual URL)
+CORS_ALLOWLIST=https://your-app-name.railway.app
+
+# Cookie domain for Railway (or use your custom domain)
+COOKIE_DOMAIN=.railway.app
+
+# ============================================
+# SECURITY & FEATURES (RECOMMENDED)
+# ============================================
+
+# Enable CSRF protection in production
+CSRF_ENABLED=true
+
+# ============================================
+# OPTIONAL CONFIGURATION
+# ============================================
+
+# Admin users (comma-separated emails)
+# ROLE_ADMIN_EMAILS=admin@example.com
+
+# Captcha configuration (if using)
+# CAPTCHA_PROVIDER=hcaptcha
+# HCAPTCHA_SECRET=your_hcaptcha_secret_key
+
+# Or for reCAPTCHA:
+# CAPTCHA_PROVIDER=recaptcha
+# RECAPTCHA_SECRET=your_recaptcha_secret_key
+
+# ============================================
+# NOTES
+# ============================================
+# 
+# 1. In Railway, add each variable separately (don't paste this whole file)
+# 2. Variable names are case-sensitive
+# 3. Don't include quotes around values in Railway UI
+# 4. After adding variables, click "Deploy" to apply changes
+# 5. Check logs for "✅ Server listening on port XXXX"
+

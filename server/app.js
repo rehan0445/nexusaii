@@ -6,6 +6,8 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import { Server } from "socket.io";
+import path from "path";
+import { fileURLToPath } from "url";
 import modelRouter from "./routes/chatModels.js";
 import chatAiRouter from "./routes/chatAi.js";
 import profileRouter from "./routes/profile.js";
@@ -1636,6 +1638,39 @@ app.use("/api/v1/chat/companion", companionChatRouter);
 app.use("/api/v1/chat/companion/context", companionContextRouter);
 app.use("/api/v1/quests", questsRouter);
 app.use("/api/v1/affection", affectionRouter);
+
+// Serve static files from React build (for production Railway deployment)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
+
+// Serve static assets (JS, CSS, images, etc.)
+app.use(express.static(clientDistPath, {
+  maxAge: '1y',
+  setHeaders: (res, filepath) => {
+    // Cache static assets aggressively
+    if (filepath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
+
+// SPA fallback - serve index.html for all non-API routes
+app.get('*', (req, res, next) => {
+  // Skip if it's an API route (let 404 handler catch invalid API routes)
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  
+  // Serve index.html for all other routes (React Router handles client-side routing)
+  const indexPath = path.join(clientDistPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error('Error serving index.html:', err);
+      res.status(404).json({ error: 'Frontend not found. Make sure the build was successful.' });
+    }
+  });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

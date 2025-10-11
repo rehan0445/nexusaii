@@ -32,6 +32,12 @@ export const API_CONFIG = {
       return `${protocol}//${hostname}:8002`;
     }
 
+    // Production deployment (Railway, Vercel, etc.) - same domain for frontend & backend
+    // Don't add port number, use the same origin
+    if (hostname.includes('railway.app') || hostname.includes('vercel.app') || !port || port === '80' || port === '443') {
+      return `${protocol}//${hostname}`;
+    }
+
     // Default fallback
     return `${protocol}//${hostname}:8002`;
   },
