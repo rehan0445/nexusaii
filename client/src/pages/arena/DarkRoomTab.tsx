@@ -45,8 +45,8 @@ const DarkRoomTab: React.FC = () => {
           createdAt: room.created_at || room.createdAt,
           isDeleted: false
         }));
-        // Sort by createdAt descending (newest first)
-        groups = groups.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        // Sort by member count descending (most active first)
+        groups = groups.sort((a, b) => b.members - a.members);
         setDarkroomGroups(groups);
         console.log('✅ Groups updated from API:', groups.map(g => ({ id: g.id, name: g.name, members: g.members })));
       } else {
@@ -140,7 +140,7 @@ const DarkRoomTab: React.FC = () => {
       // Listen to room list updates
       socket.on('room-list', (rooms: any[]) => {
         console.log('📋 Room list update received:', rooms);
-        // Convert API data to Group format
+        // Convert API data to Group format and sort by member count
         const groups: Group[] = rooms.map((room: any) => ({
           id: room.id,
           name: room.name || `Group ${room.id}`,
@@ -150,20 +150,25 @@ const DarkRoomTab: React.FC = () => {
           createdBy: room.created_by || 'system',
           createdAt: room.created_at,
           isDeleted: false
-        }));
+        }))
+        .sort((a, b) => b.members - a.members); // Sort by most active first
+        
         setDarkroomGroups(groups);
       });
 
       // Listen to user count updates
       socket.on('user-count-update', (data: any) => {
         console.log('👥 User count update received:', data);
-        setDarkroomGroups(prev => 
-          prev.map(group => 
+        setDarkroomGroups(prev => {
+          // Update the member count and re-sort by most active
+          const updated = prev.map(group => 
             group.id === data.roomId 
               ? { ...group, members: data.count }
               : group
-          )
-        );
+          );
+          // Re-sort to maintain most active first order
+          return updated.sort((a, b) => b.members - a.members);
+        });
       });
     }
   }, [socket]);
