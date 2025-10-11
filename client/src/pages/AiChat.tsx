@@ -2210,18 +2210,20 @@ function AiChat() {
 
 
               {/* Netflix-Style Character Banners */}
-              <CompanionBanners
-                characters={characters}
-                views={views}
-                characterLikes={characterLikes}
-                featuredCharacters={[
-                  'batman-bruce',    // Batman
-                  'makima',          // Makima
-                  'maul',            // Darth Maul
-                  'dante-maroni',    // Dante Maroni
-                  'virat-kohli'      // Virat Kohli
-                ]}
-              />
+              <div className="mt-2 sm:mt-0">
+                <CompanionBanners
+                  characters={characters}
+                  views={views}
+                  characterLikes={characterLikes}
+                  featuredCharacters={[
+                    'batman-bruce',    // Batman
+                    'makima',          // Makima
+                    'maul',            // Darth Maul
+                    'dante-maroni',    // Dante Maroni
+                    'virat-kohli'      // Virat Kohli
+                  ]}
+                />
+              </div>
               
               {/* For You Section */}
               <div className="mb-12">

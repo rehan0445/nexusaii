@@ -2141,14 +2141,6 @@ Choose the format that feels most natural for continuing the conversation.`;
                 : 'bg-black/30 backdrop-blur-sm rounded-2xl border border-zinc-700/50 p-6 shadow-xl'
             }`}>
 
-          {/* Typing Indicator */}
-          {isTyping && (
-            <TypingIndicator
-              characterName={character.name}
-              characterImage={character.image}
-            />
-          )}
-
           {/* Chat messages */}
           {(isIncognito ? incognitoMessages : messages).map((msg, index) => (
             <div key={`msg-${msg.id || index}-${msg.timestamp}`} className={`mb-3 ${msg.sender === 'user' ? 'flex justify-end' : 'flex justify-start'}`}>
@@ -2259,8 +2251,16 @@ Choose the format that feels most natural for continuing the conversation.`;
             </div>
           ))}
 
+          {/* Typing Indicator */}
+          {isTyping && (
+            <TypingIndicator
+              characterName={character.name}
+              characterImage={character.image}
+            />
+          )}
+
           {/* Loading indicator */}
-          {isLoading && (
+          {isLoading && !isTyping && (
             <div className="flex items-start space-x-3">
               <img
                 src={character.image}

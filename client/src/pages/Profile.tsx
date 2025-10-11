@@ -16,7 +16,7 @@ import EditProfileModal from "../components/EditProfileModal";
 import { hangoutService, ChatRoom } from "../services/hangoutService";
 import MobileSettingsPanel from "../components/MobileSettingsPanel";
 import settingsService from "../services/settingsService";
-import { Bell, Shield, User as UserIcon, LogOut, HelpCircle, Mail } from "lucide-react";
+import { Bell, User as UserIcon, LogOut, HelpCircle, Mail } from "lucide-react";
 
 interface ProfileData {
   name: string;
@@ -33,13 +33,6 @@ interface ProfileData {
   postsCreated?: any[];
   interests?: string[];
 }
-
-// Helper function to change password
-const doPasswordChange = async (newPassword: string): Promise<void> => {
-  const { supabase } = await import('../lib/supabase');
-  const { error } = await supabase.auth.updateUser({ password: newPassword });
-  if (error) throw error;
-};
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
@@ -348,60 +341,6 @@ const Profile: React.FC = () => {
           setState(s=>({...s, pushNotifications: next}));
         }} />
         <p className="text-xs text-zinc-500 mt-2">Saved automatically.</p>
-      </div>
-    );
-  };
-
-  const SecurityMini: React.FC = () => {
-    const [twoFA, setTwoFA] = useState(() => localStorage.getItem('nexus_2fa_enabled') === 'true');
-    const [pwd, setPwd] = useState({ current:'', next:'', confirm:'' });
-    const [trusted, setTrusted] = useState<Array<{ id:string; name:string; lastUsed:string }>>(() => {
-      const v = localStorage.getItem('nexus_trusted_devices');
-      return v ? JSON.parse(v) : [];
-    });
-
-    React.useEffect(()=>{ localStorage.setItem('nexus_2fa_enabled', String(twoFA)); },[twoFA]);
-    React.useEffect(()=>{ localStorage.setItem('nexus_trusted_devices', JSON.stringify(trusted)); },[trusted]);
-
-    return (
-      <div className="space-y-4 pt-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-white">Two‑Factor Authentication</p>
-            <p className="text-xs text-zinc-500">Adds an extra step at sign‑in</p>
-          </div>
-          <button onClick={()=> setTwoFA(v=>!v)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${twoFA ? 'bg-softgold-500' : 'bg-zinc-600'}`}>
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${twoFA ? 'translate-x-6' : 'translate-x-1'}`} />
-          </button>
-        </div>
-
-        <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/50">
-          <p className="text-white text-sm mb-2">Change Password</p>
-          <div className="space-y-2">
-            <input type="password" placeholder="Current" value={pwd.current} onChange={(e)=> setPwd({...pwd, current:e.target.value})} className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-white" />
-            <input type="password" placeholder="New password" value={pwd.next} onChange={(e)=> setPwd({...pwd, next:e.target.value})} className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-white" />
-            <input type="password" placeholder="Confirm new password" value={pwd.confirm} onChange={(e)=> setPwd({...pwd, confirm:e.target.value})} className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-white" />
-            <button onClick={async()=>{
-              if(pwd.next!==pwd.confirm){ alert('Passwords do not match'); return; }
-              try{ await doPasswordChange(pwd.next); alert('Password updated'); setPwd({ current:'', next:'', confirm:'' }); }catch{ alert('Failed to change password'); }
-            }} className="px-3 py-2 bg-softgold-500 text-black rounded text-sm">Update Password</button>
-          </div>
-        </div>
-
-        <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/50">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-white text-sm">Trusted Devices</p>
-            <button onClick={()=> setTrusted(list=> [...list, { id:String(Date.now()), name: navigator.platform || 'This device', lastUsed: new Date().toISOString() }])} className="px-2 py-1 text-xs bg-zinc-700 rounded text-white">Add this device</button>
-          </div>
-          <div className="space-y-2">
-            {(trusted.length? trusted : [{ id:'placeholder', name:'No devices yet', lastUsed:'' }]).map(d=> (
-              <div key={d.id} className="flex items-center justify-between bg-zinc-900 rounded px-3 py-2 text-sm">
-                <span className="text-zinc-300">{d.name}</span>
-                {d.id!=='placeholder' && <button onClick={()=> setTrusted(list=> list.filter(x=> x.id!==d.id))} className="text-red-400 text-xs">Remove</button>}
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     );
   };
@@ -794,14 +733,6 @@ const Profile: React.FC = () => {
               icon: Bell,
               children: (
                 <NotificationsMini />
-              )
-            },
-            {
-              id: 'security',
-              title: 'Account & Security',
-              icon: Shield,
-              children: (
-                <SecurityMini />
               )
             },
             {

@@ -111,11 +111,11 @@ const CompanionBanners: React.FC<CompanionBannersProps> = ({
   const [currentSlug, currentCharacter] = bannerCharacters[currentBanner];
 
   return (
-    <div className="relative mb-6 sm:mb-8">
+    <div className="relative mb-6 sm:mb-8 pt-1">
       {/* Main Banner */}
       <button
         type="button"
-        className="relative h-[25vh] min-h-[200px] md:h-[45vh] md:min-h-[400px] rounded-xl sm:rounded-2xl overflow-hidden group cursor-pointer w-full text-left"
+        className="relative h-[22vh] min-h-[180px] md:h-[40vh] md:min-h-[360px] rounded-xl sm:rounded-2xl overflow-hidden group cursor-pointer w-full text-left"
         aria-label={`View ${currentCharacter.name} profile`}
         onClick={() => navigate(`/character/${currentSlug}`)}
         onKeyDown={(e) => {

@@ -123,8 +123,6 @@ function SettingsPage() {
     autoDismiss: true,
   });
   const [savingNotifications, setSavingNotifications] = useState(false);
-  const [passwordInputs, setPasswordInputs] = useState({ current: '', newPass: '', confirm: '' });
-  const [emailInput, setEmailInput] = useState('');
   const [pauseAll, setPauseAll] = useState(false);
   const [categoryChannels, setCategoryChannels] = useState<Record<string, { push: boolean; email: boolean; inApp: boolean }>>(
     () => {
@@ -141,14 +139,6 @@ function SettingsPage() {
       };
     }
   );
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(() => {
-    const v = localStorage.getItem('nexus_2fa_enabled');
-    return v ? v === 'true' : false;
-  });
-  const [trustedDevices, setTrustedDevices] = useState<Array<{ id: string; name: string; lastUsed: string; location: string }>>(() => {
-    const v = localStorage.getItem('nexus_trusted_devices');
-    return v ? JSON.parse(v) : [];
-  });
   const [privacy, setPrivacy] = useState({
     publicProfile: true,
     hideChatHistory: false,
@@ -180,7 +170,6 @@ function SettingsPage() {
 
   const tabs = [
     { id: 'general', name: 'General', icon: <Settings className="w-5 h-5" /> },
-    { id: 'account', name: 'Account & Security', icon: <User className="w-5 h-5" /> },
     { id: 'notifications', name: 'Notifications', icon: <Bell className="w-5 h-5" /> },
     { id: 'subscriptions', name: 'Subscriptions', icon: <Smartphone className="w-5 h-5" /> },
     { id: 'activity', name: 'Activity', icon: <Monitor className="w-5 h-5" /> },
@@ -386,65 +375,6 @@ function SettingsPage() {
                 <div className="bg-zinc-700/30 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-gold mb-1">0</div>
                   <div className="text-zinc-400 text-xs">Days</div>
-                </div>
-              </div>
-
-              {/* Security Actions */}
-              <div className="space-y-4 mb-6">
-                <h4 className="text-white font-semibold flex items-center gap-2"><Shield className="w-4 h-4 text-gold"/> Account & Security</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-zinc-700/20 rounded-lg p-4">
-                    <p className="text-white font-medium mb-2">Change Password</p>
-                    <div className="space-y-2">
-                      <input type="password" placeholder="Current password" value={passwordInputs.current} onChange={(e)=>setPasswordInputs(p=>({...p,current:e.target.value}))} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-white" />
-                      <input type="password" placeholder="New password" value={passwordInputs.newPass} onChange={(e)=>setPasswordInputs(p=>({...p,newPass:e.target.value}))} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-white" />
-                      <input type="password" placeholder="Confirm new password" value={passwordInputs.confirm} onChange={(e)=>setPasswordInputs(p=>({...p,confirm:e.target.value}))} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-white" />
-                      <button onClick={async()=>{
-                        if(passwordInputs.newPass!==passwordInputs.confirm){ alert('Passwords do not match'); return; }
-                        try{ await doPasswordChange(passwordInputs.newPass); alert('Password changed'); setPasswordInputs({current:'',newPass:'',confirm:''}); }catch(e){ console.error(e); alert('Failed to change password'); }
-                      }} className="px-3 py-2 bg-gold/10 border border-gold/30 rounded text-gold text-sm">Update Password</button>
-                    </div>
-                  </div>
-                  <div className="bg-zinc-700/20 rounded-lg p-4">
-                    <p className="text-white font-medium mb-2">Change Email</p>
-                    <div className="space-y-2">
-                      <input type="email" placeholder={currentUser?.email || 'New email'} value={emailInput} onChange={(e)=>setEmailInput(e.target.value)} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-white" />
-                      <button onClick={()=>{ alert('Email change flow depends on backend; placeholder triggered.'); }} className="px-3 py-2 bg-zinc-700 hover:bg-zinc-600 rounded text-white text-sm">Request Change</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 2FA and Trusted Devices */}
-              <div className="space-y-4 mb-6">
-                <div className="bg-zinc-700/20 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-white font-medium">Two-Factor Authentication</p>
-                      <p className="text-zinc-400 text-sm">Add an extra layer of security</p>
-                    </div>
-                    <Toggle enabled={twoFactorEnabled} onChange={setTwoFactorEnabled} />
-                  </div>
-                </div>
-
-                <div className="bg-zinc-700/20 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-white font-medium">Trusted Devices</p>
-                    <button onClick={()=> setTrustedDevices(d=>[...d, { id: String(Date.now()), name: navigator.platform || 'This device', lastUsed: new Date().toISOString(), location: 'Unknown' }])} className="px-3 py-1.5 text-sm bg-zinc-700 hover:bg-zinc-600 rounded text-white">Add This Device</button>
-                  </div>
-                  <div className="space-y-2">
-                    {(trustedDevices.length ? trustedDevices : [{ id: 'placeholder', name: 'No devices yet', lastUsed: '-', location: '-' }]).map((d)=> (
-                      <div key={d.id} className="flex items-center justify-between bg-zinc-800/50 rounded px-3 py-2">
-                        <div>
-                          <p className="text-white text-sm">{d.name}</p>
-                          <p className="text-zinc-500 text-xs">Last used: {d.lastUsed} • {d.location}</p>
-                        </div>
-                        {d.id !== 'placeholder' && (
-                          <button onClick={()=> setTrustedDevices(list=> list.filter(x=> x.id!==d.id))} className="px-2 py-1 text-xs bg-red-500/20 text-red-400 rounded">Remove</button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
 
