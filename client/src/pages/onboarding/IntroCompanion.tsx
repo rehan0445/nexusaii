@@ -1,9 +1,10 @@
 import React from 'react';
 import OnboardingSlide from '../../components/OnboardingSlide';
+import companionImage from '../../assets/intro/companion.png';
 
 const IntroCompanion: React.FC = () => (
   <OnboardingSlide
-    imageUrl={"/assets/intro/companion.png"}
+    imageUrl={companionImage}
     title="Companions"
     subtitle="From conversations to companionship."
     index={2}

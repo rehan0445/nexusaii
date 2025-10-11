@@ -1,5 +1,6 @@
 import React from 'react';
 import OnboardingSlide from '../../components/OnboardingSlide';
+import hangoutImage from '../../assets/intro/hangout.png';
 
 const IntroHangout: React.FC = () => {
   const handleGetStarted = () => {
@@ -9,7 +10,7 @@ const IntroHangout: React.FC = () => {
 
   return (
     <OnboardingSlide
-      imageUrl={"/assets/intro/hangout.png"}
+      imageUrl={hangoutImage}
       title="Hangouts"
       subtitle="From conversations to companionship."
       index={5}

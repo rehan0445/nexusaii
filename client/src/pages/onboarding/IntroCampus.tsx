@@ -1,9 +1,10 @@
 import React from 'react';
 import OnboardingSlide from '../../components/OnboardingSlide';
+import campusImage from '../../assets/intro/campus.png';
 
 const IntroCampus: React.FC = () => (
   <OnboardingSlide
-    imageUrl={"/assets/intro/campus.png"}
+    imageUrl={campusImage}
     title="Campus"
     subtitle="Announcements, confessions, and campus life in one place."
     index={3}

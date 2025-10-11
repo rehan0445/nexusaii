@@ -1,9 +1,10 @@
 import React from 'react';
 import OnboardingSlide from '../../components/OnboardingSlide';
+import darkroomImage from '../../assets/intro/darkroom.png';
 
 const IntroDarkRoom: React.FC = () => (
   <OnboardingSlide
-    imageUrl={"/assets/intro/darkroom.png"}
+    imageUrl={darkroomImage}
     title="Dark Room"
     subtitle="End‑to‑end encrypted, identity-safe conversations."
     index={4}

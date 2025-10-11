@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import OnboardingSlide from '../../components/OnboardingSlide';
+import nexusImage from '../../assets/intro/nexus.jpg';
 
 const IntroNexus: React.FC = () => {
   const navigate = useNavigate();
@@ -10,13 +11,9 @@ const IntroNexus: React.FC = () => {
     <div className="relative min-h-screen" style={{minHeight: '100svh', height: '100svh'}}>
       <div className="absolute inset-0">
         <img 
-          src="/assets/intro/nexus.jpg" 
+          src={nexusImage} 
           alt="Nexus" 
           className="w-full h-full object-cover object-center"
-          onError={(e) => {
-            console.error('Failed to load image:', e.currentTarget.src);
-            e.currentTarget.style.backgroundColor = '#1a1a1a';
-          }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/80" />
       </div>
