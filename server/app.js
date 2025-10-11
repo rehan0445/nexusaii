@@ -1255,19 +1255,43 @@ app.get("/api/v1/darkroom/rooms", async (req, res) => {
 app.get("/api/v1/darkroom/rooms/:roomId", async (req, res) => {
   try {
     const { roomId } = req.params;
-    const room = darkRoomState.roomMetadata?.[roomId];
     
-    if (!room) {
+    console.log(`📨 [Dark Room] Fetching room details for ${roomId}`);
+    
+    // Fetch from database first
+    const { data: room, error } = await supabase
+      .from('darkroom_rooms')
+      .select('*')
+      .eq('id', roomId)
+      .single();
+    
+    if (error || !room) {
+      console.error(`❌ [Dark Room] Room ${roomId} not found in database:`, error);
       return res.status(404).json({ error: "Room not found" });
     }
     
+    // Get active user count from the room_users table
+    const { data: activeUsers } = await supabase
+      .from('darkroom_room_users')
+      .select('user_id')
+      .eq('room_id', roomId)
+      .eq('is_active', true);
+    
+    const userCount = activeUsers?.length || 0;
+    
+    console.log(`✅ [Dark Room] Found room ${roomId} with ${userCount} active users`);
+    
     res.json({
-      ...room,
-      userCount: darkRoomState.roomUserCounts?.[roomId] || 0,
-      messages: darkRoomState.roomMessages?.[roomId] || []
+      id: room.id,
+      name: room.name,
+      description: room.description,
+      created_by: room.created_by,
+      created_at: room.created_at,
+      user_count: userCount,
+      is_active: room.is_active
     });
   } catch (error) {
-    console.error('Error fetching room:', error);
+    console.error('❌ [Dark Room] Error fetching room:', error);
     res.status(500).json({ error: 'Failed to fetch room' });
   }
 });
