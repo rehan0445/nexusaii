@@ -14,29 +14,65 @@ export const useAndroidBackHandler = () => {
     if (!isAndroid()) return;
 
     const onPopState = () => {
-      // Inside a tab, allow normal back behavior within stack
-      // Enforce special behavior at tab roots
       const path = location.pathname;
 
-      const atArenaRoot = path === "/arena" || path === "/arena/";
-      const atCampusRoot = path === "/campus" || path === "/campus/";
-
-      if (atArenaRoot || atCampusRoot) {
-        // Back from non-Arena root goes to Arena
-        selectRootTab("hangout");
-        // push replacement handled in selectRootTab
+      // Darkroom chat -> Darkroom list -> Companion
+      if (path.startsWith("/arena/darkroom/")) {
+        navigate("/arena/darkroom", { replace: true });
         return;
       }
 
-      // At arena root - handle double back to exit
-      if (atArenaRoot) {
+      if (path === "/arena/darkroom") {
+        navigate("/companion", { replace: true });
+        return;
+      }
+
+      // Campus confessions -> Campus detail -> Campus chooser -> Companion
+      if (path.match(/^\/campus\/[^\/]+\/confessions$/)) {
+        const collegeId = path.split("/")[2];
+        navigate(`/campus/${collegeId}`, { replace: true });
+        return;
+      }
+
+      // Campus announcements -> Campus detail -> Campus chooser -> Companion
+      if (path.match(/^\/campus\/[^\/]+\/announcements$/)) {
+        const collegeId = path.split("/")[2];
+        navigate(`/campus/${collegeId}`, { replace: true });
+        return;
+      }
+
+      // Campus detail -> Campus chooser
+      if (path.match(/^\/campus\/[^\/]+$/) && path !== "/campus") {
+        navigate("/campus", { replace: true });
+        return;
+      }
+
+      // Campus chooser -> Companion
+      if (path === "/campus") {
+        navigate("/companion", { replace: true });
+        return;
+      }
+
+      // Profile -> Companion
+      if (path === "/profile") {
+        navigate("/companion", { replace: true });
+        return;
+      }
+
+      // Hangout -> Companion
+      if (path === "/arena/hangout") {
+        navigate("/companion", { replace: true });
+        return;
+      }
+
+      // At companion - handle double back to exit
+      if (path === "/companion") {
         const now = Date.now();
         if (now - lastBackPressRef.current < 1500) {
-          // simulate app exit by navigating away or closing window; on web we do history.back twice
           window.close?.();
         } else {
           lastBackPressRef.current = now;
-          // Ideally show a toast: "Press back again to exit"
+          // Show toast: "Press back again to exit"
         }
       }
     };

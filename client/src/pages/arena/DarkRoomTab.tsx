@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Shield, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import RedesignedDarkRoom from "../../components/RedesignedDarkRoom";
-import AnonymousChat from "../../components/AnonymousChat";
 import { Group } from "../../utils/darkroomData";
 import { Socket } from 'socket.io-client';
 import { apiFetch, getSupabaseAccessToken } from "../../lib/utils";
@@ -10,20 +10,18 @@ import { useAuth } from "../../contexts/AuthContext";
 const DarkRoomTab: React.FC = () => {
   // Get current user for tracking (while maintaining anonymous display)
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   
-  // Navigation not needed here since bottom bar handles primary navigation
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [showAliasInput, setShowAliasInput] = useState(false);
   const [darkRoomAlias, setDarkRoomAlias] = useState("");
   const [inDarkRoom, setInDarkRoom] = useState(false);
   const [darkroomGroups, setDarkroomGroups] = useState<Group[]>([]);
-  const [selectedDarkroomGroup, setSelectedDarkroomGroup] = useState<Group | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createGroupName, setCreateGroupName] = useState('');
   const [createGroupDescription, setCreateGroupDescription] = useState('');
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
-  const [darkroomMessage, setDarkroomMessage] = useState('');
   const [isOpeningModal, setIsOpeningModal] = useState(false);
 
   // Fetch groups from database API
@@ -128,52 +126,6 @@ const DarkRoomTab: React.FC = () => {
     };
   }, [inDarkRoom]);
 
-  // Fetch messages for a specific room
-  const fetchRoomMessages = async (roomId: string) => {
-    try {
-      console.log('📨 [DarkRoomTab] Fetching messages for room:', roomId);
-      const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
-      const response = await apiFetch(`${serverUrl}/api/v1/darkroom/rooms/${roomId}/messages`);
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('📨 [DarkRoomTab] Received messages from API:', result);
-
-        if (result.success && Array.isArray(result.messages)) {
-          console.log(`✅ [DarkRoomTab] Loaded ${result.messages.length} messages for room ${roomId}`);
-
-          // Update the group with fetched messages in both arrays
-          setDarkroomGroups(prev =>
-            prev.map(group =>
-              group.id === roomId
-                ? { ...group, messages: result.messages }
-                : group
-            )
-          );
-
-          // Also update the selected group if it matches
-          setSelectedDarkroomGroup(prev => {
-            if (prev && prev.id === roomId) {
-              console.log(`📨 [DarkRoomTab] Updated selected group ${roomId} with ${result.messages.length} messages`);
-              return { ...prev, messages: result.messages };
-            }
-            return prev;
-          });
-
-          return result.messages;
-        } else {
-          console.warn('⚠️ [DarkRoomTab] Invalid messages response:', result);
-          return [];
-        }
-      } else {
-        console.error('❌ [DarkRoomTab] Failed to fetch messages:', response.status);
-        return [];
-      }
-    } catch (error) {
-      console.error('❌ [DarkRoomTab] Error fetching messages:', error);
-      return [];
-    }
-  };
 
   // Socket event handlers
   useEffect(() => {
@@ -212,161 +164,6 @@ const DarkRoomTab: React.FC = () => {
               : group
           )
         );
-        // Also update selected group if it matches
-        setSelectedDarkroomGroup(prev => {
-          if (prev && prev.id === data.roomId) {
-            return { ...prev, members: data.count };
-          }
-          return prev;
-        });
-      });
-
-      // Listen for successful room join confirmations
-      socket.on('room-joined', (data: any) => {
-        console.log('✅ Room joined confirmation:', data);
-        if (data.success && data.roomId) {
-          // Update the group's user count immediately
-          setDarkroomGroups(prev => 
-            prev.map(group => 
-              group.id === data.roomId 
-                ? { ...group, members: data.userCount || group.members }
-                : group
-            )
-          );
-        }
-      });
-
-      // Listen to room history when joining
-      socket.on('room-history', async (messages: any[]) => {
-        console.log('📚 [Dark Room] Received room history:', messages?.length || 0, 'messages');
-
-        if (messages && Array.isArray(messages)) {
-          // Convert database format to frontend format
-          const formattedMessages = messages.map(msg => ({
-            id: msg.id,
-            alias: msg.alias || 'Anonymous',
-            message: msg.message || '',
-            time: msg.timestamp || msg.time || new Date().toISOString()
-          }));
-
-          console.log('📚 [Dark Room] Formatted messages for display:', formattedMessages.slice(0, 3));
-
-          // Update all groups with the room history
-          setDarkroomGroups(prev =>
-            prev.map(group => {
-              // Find which room these messages belong to
-              const roomMessages = messages.filter(msg => msg.room_id === group.id);
-              if (roomMessages.length > 0) {
-                const formattedRoomMessages = roomMessages.map(msg => ({
-                  id: msg.id,
-                  alias: msg.alias || 'Anonymous',
-                  message: msg.message || '',
-                  time: msg.timestamp || msg.time || new Date().toISOString()
-                }));
-
-                console.log(`📚 [Dark Room] Updating group ${group.id} with ${formattedRoomMessages.length} messages`);
-                return {
-                  ...group,
-                  messages: formattedRoomMessages
-                };
-              }
-              return group;
-            })
-          );
-
-          // Also update the selected group if it has messages
-          setSelectedDarkroomGroup(prev => {
-            if (prev) {
-              const roomMessages = messages.filter(msg => msg.room_id === prev.id);
-              if (roomMessages.length > 0) {
-                const formattedRoomMessages = roomMessages.map(msg => ({
-                  id: msg.id,
-                  alias: msg.alias || 'Anonymous',
-                  message: msg.message || '',
-                  time: msg.timestamp || msg.time || new Date().toISOString()
-                }));
-
-                console.log(`📚 [Dark Room] Updating selected group ${prev.id} with ${formattedRoomMessages.length} messages`);
-                return {
-                  ...prev,
-                  messages: formattedRoomMessages
-                };
-              }
-            }
-            return prev;
-          });
-        } else {
-          // If no messages received via socket, try fetching from API as fallback
-          console.log('📚 [Dark Room] No messages received via socket, trying API fallback...');
-          if (selectedDarkroomGroup) {
-            await fetchRoomMessages(selectedDarkroomGroup.id);
-          }
-        }
-      });
-
-      // Listen to incoming messages
-      socket.on('receive-message', (data: any) => {
-        console.log('📨 [Dark Room] Received message in DarkRoomTab:', data);
-        
-        // 🔧 FIX: Prevent duplicate messages by checking if message ID already exists
-        const newMessage = {
-          id: data.id,
-          alias: data.alias,
-          message: data.message,
-          time: data.time
-        };
-        
-        setDarkroomGroups(prev =>
-          prev.map(group => {
-            if (group.id === data.groupId) {
-              const currentMessages = group.messages || [];
-              
-              // Check if message already exists (by ID or by content+time)
-              const messageExists = currentMessages.some(msg => 
-                msg.id === data.id || 
-                (msg.alias === data.alias && msg.message === data.message && 
-                 Math.abs(new Date(msg.time).getTime() - new Date(data.time).getTime()) < 1000)
-              );
-              
-              if (messageExists) {
-                console.log('⚠️ [Dark Room] Duplicate message detected, skipping:', data.id);
-                return group;
-              }
-              
-              console.log(`✅ [Dark Room] Adding new message to group ${group.id}:`, data.message.substring(0, 30));
-              return {
-                ...group,
-                messages: [...currentMessages, newMessage]
-              };
-            }
-            return group;
-          })
-        );
-        
-        // Also update the selected group if it matches
-        setSelectedDarkroomGroup(prev => {
-          if (prev && prev.id === data.groupId) {
-            const currentMessages = prev.messages || [];
-            
-            // Check if message already exists
-            const messageExists = currentMessages.some(msg => 
-              msg.id === data.id || 
-              (msg.alias === data.alias && msg.message === data.message && 
-               Math.abs(new Date(msg.time).getTime() - new Date(data.time).getTime()) < 1000)
-            );
-            
-            if (messageExists) {
-              return prev;
-            }
-            
-            console.log(`✅ [Dark Room] Adding message to selected group ${prev.id}`);
-            return {
-              ...prev,
-              messages: [...currentMessages, newMessage]
-            };
-          }
-          return prev;
-        });
       });
     }
   }, [socket]);
@@ -375,8 +172,6 @@ const DarkRoomTab: React.FC = () => {
   useEffect(() => {
     return () => {
       if (socket) {
-        socket.off('room-history');
-        socket.off('receive-message');
         socket.off('room-created');
         socket.off('room-list');
         socket.off('user-count-update');
@@ -385,121 +180,16 @@ const DarkRoomTab: React.FC = () => {
     };
   }, [socket]);
 
-  // Enhanced room joining logic with message fetching
+  // Navigate to individual dark room chat
   const joinRoomWithMessages = async (group: Group) => {
-    console.log('🔗 [DarkRoomTab] Joining room with message fetching:', group.id);
-
-    // Set the selected group first
-    setSelectedDarkroomGroup(group);
-    console.log('🔗 [DarkRoomTab] Set selectedDarkroomGroup to:', group.id);
-
-    // Check if user has an alias
-    if (!darkRoomAlias) {
-      console.error('❌ [DarkRoomTab] Cannot join room: no alias set');
-      setDarkRoomAlias('Anonymous');
-      console.log('🔗 [DarkRoomTab] Set default alias to "Anonymous"');
-    }
-
-    // Initialize socket if not already done
-    if (!socket) {
-      console.log('🔗 [DarkRoomTab] Initializing socket connection...');
-      try {
-        const { createSocket } = await import('../../lib/socketConfig');
-        const token = getSupabaseAccessToken();
-        const newSocket = await createSocket({
-          token,
-          options: {
-            timeout: 8000,
-            transports: ['websocket', 'polling']
-          }
-        });
-        setSocket(newSocket);
-        console.log('✅ [DarkRoomTab] Socket initialized');
-      } catch (error) {
-        console.error('❌ [DarkRoomTab] Failed to initialize socket:', error);
-        return;
-      }
-    }
-
-    // Fetch messages for this room
-    console.log('📨 [DarkRoomTab] Fetching initial messages...');
-    await fetchRoomMessages(group.id);
-
-    // Join the socket room
-    if (socket && darkRoomAlias) {
-      console.log(`🔗 [DarkRoomTab] Joining socket room: ${group.id} with alias: ${darkRoomAlias}`);
-      socket.emit('join-room', { 
-        groupId: group.id, 
-        alias: darkRoomAlias,
-        // Include user info for tracking (not displayed publicly)
-        user_name: currentUser?.displayName || null,
-        user_email: currentUser?.email || null,
-        user_id: currentUser?.uid || null
-      });
-
-      // Set up one-time listener for room join confirmation
-      const handleRoomJoined = (data: { roomId: string; success: boolean }) => {
-        if (data.roomId === group.id) {
-          if (data.success) {
-            console.log(`✅ [DarkRoomTab] Successfully joined room ${group.id}`);
-          } else {
-            console.error(`❌ [DarkRoomTab] Failed to join room ${group.id}:`, data.error);
-          }
-          socket.off('room-joined', handleRoomJoined);
-        }
-      };
-
-      // Listen for room join confirmation
-      socket.on('room-joined', handleRoomJoined);
-
-      // Also request room history explicitly
-      console.log(`📚 [DarkRoomTab] Requesting room history for ${group.id}`);
-      socket.emit('request-room-history', { roomId: group.id });
-
-      // Set a timeout to check if we got messages
-      setTimeout(() => {
-        const currentGroup = darkroomGroups.find(g => g.id === group.id);
-        if (currentGroup && (!currentGroup.messages || currentGroup.messages.length === 0)) {
-          console.log('🔄 [DarkRoomTab] No messages received, fetching from API as fallback...');
-          fetchRoomMessages(group.id);
-        }
-      }, 3000);
-    }
+    console.log('🔗 [DarkRoomTab] Navigating to room:', group.id);
+    
+    // Store alias in localStorage for the chat page
+    localStorage.setItem('darkroom_alias', darkRoomAlias || 'Anonymous');
+    
+    // Navigate to the individual chat page
+    navigate(`/arena/darkroom/${group.id}`);
   };
-
-  // If user selected a group, show the chat interface
-  if (selectedDarkroomGroup) {
-    console.log('🔗 [DarkRoomTab] Rendering AnonymousChat for group:', selectedDarkroomGroup.id);
-    return (
-      <AnonymousChat
-        group={selectedDarkroomGroup}
-        message={darkroomMessage}
-        setMessage={setDarkroomMessage}
-        alias={darkRoomAlias}
-        onBack={() => {
-          console.log('🔗 [DarkRoomTab] Going back from chat');
-          setSelectedDarkroomGroup(null);
-        }}
-        socket={socket}
-        onSend={() => {
-          if (darkroomMessage.trim() && socket) {
-            socket.emit('send-message', {
-              groupId: selectedDarkroomGroup.id,
-              message: darkroomMessage.trim(),
-              alias: darkRoomAlias,
-              time: new Date().toISOString(),
-              // Include user info for tracking (not displayed publicly)
-              user_name: currentUser?.displayName || null,
-              user_email: currentUser?.email || null,
-              user_id: currentUser?.uid || null
-            });
-            setDarkroomMessage('');
-          }
-        }}
-        setGroups={setDarkroomGroups}
-      />
-    );
-  }
 
   const handleCreateGroup = async () => {
     if (createGroupName.trim() && !isCreatingGroup) {
@@ -559,76 +249,18 @@ const DarkRoomTab: React.FC = () => {
     }
   };
 
-  // Check if user is in a deleted group
-  const isInDeletedGroup = selectedDarkroomGroup?.isDeleted;
-
   // If user is in dark room, show the group selection interface
   if (inDarkRoom) {
-    // Show deleted group disclaimer if in deleted group
-    if (isInDeletedGroup) {
-      return (
-        <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-zinc-900 border border-red-500/30 rounded-lg p-6 text-center">
-            <div className="w-16 h-16 bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/30">
-              <AlertTriangle className="w-8 h-8 text-red-400" />
-            </div>
-            <h2 className="text-red-300 font-mono text-xl font-semibold mb-4">Group Deleted</h2>
-            <p className="text-zinc-300 font-mono text-sm mb-6 leading-relaxed">
-              The creator has deleted this dark chat group. The group will be completely disbanded in 2 minutes.
-              All messages will be permanently removed and all users will be kicked out.
-            </p>
-            <div className="space-y-3">
-              <button
-                onClick={() => {
-                  setSelectedDarkroomGroup(null);
-                  setInDarkRoom(true);
-                }}
-                className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-mono transition-colors"
-              >
-                Find Another Group
-              </button>
-              <button
-                onClick={() => {
-                  setShowCreateModal(true);
-                  setSelectedDarkroomGroup(null);
-                }}
-                className="w-full bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded font-mono transition-colors"
-              >
-                Create New Group
-              </button>
-              <button
-                onClick={() => {
-                  setInDarkRoom(false);
-                  setSelectedDarkroomGroup(null);
-                  if (socket) {
-                    socket.disconnect();
-                    setSocket(null);
-                  }
-                }}
-                className="w-full text-zinc-400 hover:text-zinc-300 px-4 py-2 font-mono transition-colors"
-              >
-                Leave Dark Room
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <>
         <RedesignedDarkRoom
           groups={darkroomGroups}
-          selectedGroup={selectedDarkroomGroup}
-          setSelectedGroup={setSelectedDarkroomGroup}
+          selectedGroup={null}
+          setSelectedGroup={() => {}}
           alias={darkRoomAlias}
           onBack={() => {
-            setInDarkRoom(false);
-            setSelectedDarkroomGroup(null);
-            if (socket) {
-              socket.disconnect();
-              setSocket(null);
-            }
+            // Navigate back to companion page
+            navigate('/companion');
           }}
           onJoinGroup={joinRoomWithMessages}
           onCreateGroup={() => {
@@ -655,9 +287,7 @@ const DarkRoomTab: React.FC = () => {
           onJoinById={async (id: string) => {
             const group = darkroomGroups.find(g => g.id === id);
             if (group) {
-              // Set the selected group first
-              setSelectedDarkroomGroup(group);
-              // Use the enhanced join logic
+              // Navigate to the room
               await joinRoomWithMessages(group);
               return true;
             }

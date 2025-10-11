@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, ArrowLeft } from 'lucide-react';
 import { useResponsive } from '../hooks/useResponsive';
 
 const CollegeSelection: React.FC = () => {
@@ -69,11 +69,18 @@ const CollegeSelection: React.FC = () => {
       <header className="relative z-50 border-b border-zinc-700/30 bg-zinc-900/20 backdrop-blur-xl">
         <div className="w-full px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <button
+              onClick={() => navigate("/companion")}
+              className="flex-shrink-0 text-softgold-500 hover:text-softgold-400 transition-colors"
+              aria-label="Back to companion">
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            
+            <div className="flex items-center space-x-3 flex-1 justify-center">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-softgold-400 via-softgold-500 to-softgold-600 bg-clip-text text-transparent" style={{ fontFamily: 'Rouge Script, cursive' }}>Nexus</h1>
             </div>
 
-            <div className="w-16"></div>
+            <div className="w-10"></div>
           </div>
         </div>
       </header>

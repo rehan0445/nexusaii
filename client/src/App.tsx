@@ -23,6 +23,7 @@ import { useSwipeGesture } from "./hooks/useSwipeGesture";
 import ProfileRoot from "./pages/ProfileRoot";
 import CompanionRoot from "./pages/CompanionRoot";
 import DarkRoomTab from "./pages/arena/DarkRoomTab";
+import DarkRoomChat from "./pages/arena/DarkRoomChat";
 import HangoutTab from "./pages/arena/HangoutTab";
 import HangoutChat from "./pages/HangoutChat";
 import HangoutInfo from "./pages/HangoutInfo";
@@ -156,6 +157,7 @@ function App() {
                   {/* New mobile-first routes */}
                   <Route path="/arena" element={<Navigate to="/companion" replace />} />
                   <Route path="/arena/darkroom" element={<DarkRoomTab />} />
+                  <Route path="/arena/darkroom/:roomId" element={<DarkRoomChat />} />
                   <Route path="/arena/groups" element={<GroupsTab />} />
                   <Route path="/arena/hangout" element={<HangoutTab />} />
                   <Route path="/arena/hangout/chat/:roomId" element={<HangoutChat />} />
