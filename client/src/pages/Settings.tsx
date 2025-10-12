@@ -2051,13 +2051,13 @@ function SettingsPage() {
                         Need help? Reach out to our support team
                       </p>
                       <a
-                        href="https://mail.google.com/mail/?view=cm&fs=1&to=nexus.rehansurani@gmail.com&su=Help%20Request%20-%20Nexus%20Support"
+                        href="https://mail.google.com/mail/?view=cm&fs=1&to=nexusschats@gmail.com&su=Help%20Request%20-%20Nexus%20Support"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-softgold-500 hover:bg-softgold-600 text-black rounded-lg font-medium transition-colors"
                       >
                         <Mail className="w-4 h-4" />
-                        nexus.rehansurani@gmail.com
+                        nexusschats@gmail.com
                       </a>
                     </div>
                   </div>

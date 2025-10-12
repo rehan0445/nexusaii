@@ -88,7 +88,7 @@ const TermsAndConditions: React.FC = () => {
 
             <h2 className="text-2xl font-bold text-white mb-3">9. Moderation and Reporting</h2>
             <p className="text-zinc-300 mb-2">9.1 Nexus reserves the right, but not the obligation, to <strong>review, monitor, or remove</strong> content at its discretion.</p>
-            <p className="text-zinc-300 mb-2">9.2 Users can report inappropriate behavior or content through in-app reporting tools or via email at nexus.rehansurani@gmail.com</p>
+            <p className="text-zinc-300 mb-2">9.2 Users can report inappropriate behavior or content through in-app reporting tools or via email at nexusschats@gmail.com</p>
             <p className="text-zinc-300 mb-6">9.3 Decisions made by Nexus moderation team are final and binding.</p>
 
             <h2 className="text-2xl font-bold text-white mb-3">10. Privacy and Data Handling</h2>
@@ -156,8 +156,8 @@ const TermsAndConditions: React.FC = () => {
             <h2 className="text-2xl font-bold text-white mb-3">22. Contact Information</h2>
             <p className="text-zinc-300 mb-6">
               For questions, concerns, or legal notices, contact us at:<br />
-              <a href="mailto:nexus.rehansurani@gmail.com" className="text-softgold-500 hover:text-softgold-300 underline">
-                nexus.rehansurani@gmail.com
+              <a href="mailto:nexusschats@gmail.com" className="text-softgold-500 hover:text-softgold-300 underline">
+                nexusschats@gmail.com
               </a>
             </p>
 

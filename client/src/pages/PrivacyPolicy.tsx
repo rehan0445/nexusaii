@@ -123,8 +123,8 @@ const PrivacyPolicy: React.FC = () => {
             </ul>
             <p className="text-zinc-300 mb-6">
               To exercise these rights, contact us at{" "}
-              <a href="mailto:nexus.rehansurani@gmail.com" className="text-softgold-500 hover:text-softgold-300 underline">
-                nexus.rehansurani@gmail.com
+              <a href="mailto:nexusschats@gmail.com" className="text-softgold-500 hover:text-softgold-300 underline">
+                nexusschats@gmail.com
               </a>
             </p>
 
@@ -152,8 +152,8 @@ const PrivacyPolicy: React.FC = () => {
             <h2 className="text-2xl font-bold text-white mb-3">14. Contact Us</h2>
             <p className="text-zinc-300 mb-6">
               For questions, concerns, or requests regarding this Privacy Policy, please contact us at:<br />
-              <a href="mailto:nexus.rehansurani@gmail.com" className="text-softgold-500 hover:text-softgold-300 underline">
-                nexus.rehansurani@gmail.com
+              <a href="mailto:nexusschats@gmail.com" className="text-softgold-500 hover:text-softgold-300 underline">
+                nexusschats@gmail.com
               </a>
             </p>
 
