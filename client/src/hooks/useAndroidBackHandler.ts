@@ -18,12 +18,12 @@ export const useAndroidBackHandler = () => {
 
       // Darkroom chat -> Darkroom list -> Companion
       if (path.startsWith("/arena/darkroom/")) {
-        navigate("/arena/darkroom", { replace: true });
+        navigate("/arena/darkroom");
         return;
       }
 
       if (path === "/arena/darkroom") {
-        navigate("/companion", { replace: true });
+        navigate("/companion");
         return;
       }
 

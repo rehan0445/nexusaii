@@ -235,6 +235,16 @@ const DarkRoomChat: React.FC = () => {
 
   // Handle back navigation
   const handleBack = () => {
+    // Clean up socket connection before navigating
+    if (socket) {
+      console.log('🔌 [DarkRoomChat] Disconnecting socket before navigation');
+      socket.emit('leave-room', { groupId: roomId, alias: darkRoomAlias });
+      socket.off('room-history');
+      socket.off('receive-message');
+      socket.off('user-count-update');
+      socket.disconnect();
+    }
+    // Use standard navigation for natural back behavior
     navigate('/arena/darkroom');
   };
 
