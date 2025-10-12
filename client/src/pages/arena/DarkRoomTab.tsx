@@ -91,6 +91,9 @@ const DarkRoomTab: React.FC = () => {
 
   const handleSetAlias = async () => {
     if (darkRoomAlias.trim()) {
+      // Store alias in localStorage for returning from chat
+      localStorage.setItem('darkroom_alias', darkRoomAlias.trim());
+      
       setShowAliasInput(false);
       setInDarkRoom(true);
       
@@ -107,6 +110,35 @@ const DarkRoomTab: React.FC = () => {
       setSocket(newSocket);
     }
   };
+
+  // Check for existing alias on mount (user returning from chat)
+  useEffect(() => {
+    const storedAlias = localStorage.getItem('darkroom_alias');
+    if (storedAlias) {
+      console.log('🔄 [DarkRoomTab] Found stored alias, showing list view:', storedAlias);
+      setDarkRoomAlias(storedAlias);
+      setInDarkRoom(true);
+      
+      // Initialize socket connection for returning user
+      const initSocket = async () => {
+        try {
+          const { createSocket } = await import('../../lib/socketConfig');
+          const token = getSupabaseAccessToken();
+          const newSocket = await createSocket({
+            token,
+            options: {
+              timeout: 8000,
+              transports: ['websocket', 'polling']
+            }
+          });
+          setSocket(newSocket);
+        } catch (error) {
+          console.error('❌ Failed to initialize socket:', error);
+        }
+      };
+      initSocket();
+    }
+  }, []);
 
   // Fetch groups from API on component mount and after login
   useEffect(() => {
@@ -265,6 +297,8 @@ const DarkRoomTab: React.FC = () => {
           alias={darkRoomAlias}
           onBack={() => {
             // Go back to intro page, not directly to companion
+            // Clear the stored alias so intro shows on next visit
+            localStorage.removeItem('darkroom_alias');
             setInDarkRoom(false);
           }}
           onJoinGroup={joinRoomWithMessages}
