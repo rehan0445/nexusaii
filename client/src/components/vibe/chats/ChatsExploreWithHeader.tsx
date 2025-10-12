@@ -161,7 +161,7 @@ const ChatsExploreWithHeader: React.FC = () => {
 
   useEffect(() => {
     // Fetch all rooms from backend
-    axios.get<Room[]>(`http://localhost:8001/api/v1/darkroom/rooms`)
+    axios.get<Room[]>(`${import.meta.env.VITE_SERVER_URL || window.location.origin}/api/v1/darkroom/rooms`)
       .then(({ data }) => {
         let withDefaults: Room[] = data.map(r => ({ 
           ...r, 

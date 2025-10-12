@@ -96,7 +96,7 @@ type CustomRole = {
   color: string;
 };
 
-const socket = io("http://localhost:8001", { transports: ["websocket"] });
+const socket = io(import.meta.env.VITE_SERVER_URL || window.location.origin, { transports: ["websocket"] });
 
 // Theme configurations with image paths
 const themes = [

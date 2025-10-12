@@ -715,12 +715,12 @@ const Profile: React.FC = () => {
                     </label>
                     <label className="text-sm text-zinc-300">Username
                       <input className="mt-1 w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white" value={profileData?.username || ''} onChange={(e)=> setProfileData(p=> p? { ...p, username: e.target.value } : p)} onBlur={async()=>{
-                        try { await fetch(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:8002'}/api/v1/chat/update-profile`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid: currentUser?.uid, username: profileData?.username }) }); } catch {}
+                        try { await fetch(`${import.meta.env.VITE_SERVER_URL || window.location.origin}/api/v1/chat/update-profile`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid: currentUser?.uid, username: profileData?.username }) }); } catch {}
                       }} />
                     </label>
                     <label className="text-sm text-zinc-300">Bio
                       <textarea className="mt-1 w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white" rows={3} value={profileData?.bio || ''} onChange={(e)=> setProfileData(p=> p? { ...p, bio: e.target.value } : p)} onBlur={async()=>{
-                        try { await fetch(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:8002'}/api/v1/chat/update-profile`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid: currentUser?.uid, bio: profileData?.bio }) }); } catch {}
+                        try { await fetch(`${import.meta.env.VITE_SERVER_URL || window.location.origin}/api/v1/chat/update-profile`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid: currentUser?.uid, bio: profileData?.bio }) }); } catch {}
                       }} />
                     </label>
                   </div>

@@ -322,7 +322,7 @@ export function InfoPage({ onBack, universityId, currentUser, collegeName, colle
 
   const handleLike = async (postId: string) => {
     try {
-      const response = await fetch(`http://localhost:8001/api/v1/announcements/${postId}/like`, {
+      const response = await fetch(`${import.meta.env.VITE_SERVER_URL || window.location.origin}/api/v1/announcements/${postId}/like`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -388,7 +388,7 @@ export function InfoPage({ onBack, universityId, currentUser, collegeName, colle
       
       console.log('Optimistic update applied:', { postId, emoji });
       
-      const response = await fetch(`http://localhost:8001/api/v1/announcements/${postId}/react`, {
+      const response = await fetch(`${import.meta.env.VITE_SERVER_URL || window.location.origin}/api/v1/announcements/${postId}/react`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
