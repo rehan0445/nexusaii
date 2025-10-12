@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Shield, X } from "lucide-react";
+import { Shield, X, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import RedesignedDarkRoom from "../../components/RedesignedDarkRoom";
 import { Group } from "../../utils/darkroomData";
@@ -264,8 +264,8 @@ const DarkRoomTab: React.FC = () => {
           setSelectedGroup={() => {}}
           alias={darkRoomAlias}
           onBack={() => {
-            // Navigate back to companion page
-            navigate('/companion');
+            // Go back to intro page, not directly to companion
+            setInDarkRoom(false);
           }}
           onJoinGroup={joinRoomWithMessages}
           onCreateGroup={() => {
@@ -396,14 +396,22 @@ const DarkRoomTab: React.FC = () => {
     <div className="min-h-screen bg-black text-white darkroom-scope" style={{fontFamily: 'Roboto Mono, monospace'}}>
       {/* Header */}
       <div className="sticky top-0 z-50 bg-black/80 backdrop-blur border-b border-green-500/30">
-        <div className="flex items-center p-4">
-          <h1 className="text-3xl font-bold text-green-400" style={{
-            fontFamily: 'UnifrakturCook, cursive',
-            textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(34, 197, 94, 0.5)',
-            filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.6))',
-            letterSpacing: '2px',
-            textTransform: 'uppercase'
-          }}>Dark Room</h1>
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center">
+            <button
+              onClick={() => navigate('/companion')}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white mr-4"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <h1 className="text-3xl font-bold text-green-400" style={{
+              fontFamily: 'UnifrakturCook, cursive',
+              textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(34, 197, 94, 0.5)',
+              filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.6))',
+              letterSpacing: '2px',
+              textTransform: 'uppercase'
+            }}>Dark Room</h1>
+          </div>
         </div>
       </div>
       
