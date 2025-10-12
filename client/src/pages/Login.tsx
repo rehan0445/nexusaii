@@ -65,7 +65,7 @@ const Login = () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/companion`,
+          redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -81,9 +81,8 @@ const Login = () => {
       }
 
       console.log('✅ Google OAuth initiated:', data);
-      localStorage.setItem('hasSeenOnboarding', 'true');
-      localStorage.setItem('hasCompletedOnboarding', 'true');
-      // User will be redirected to Google, then back to /companion
+      // User will be redirected to Google, then back to /auth/callback
+      // The callback page will handle setting localStorage and redirecting to /companion
     } catch (error: any) {
       console.error("Google login error:", error);
       alert(error.message || "Google login failed");
