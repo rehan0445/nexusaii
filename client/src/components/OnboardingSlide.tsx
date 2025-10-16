@@ -215,19 +215,6 @@ const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
             )}
           </div>
         </div>
-        
-        {/* Swipe instruction hint for mobile */}
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 text-white/60 text-xs text-center pointer-events-none">
-          <div className="flex items-center gap-2">
-            <span>Swipe</span>
-            <div className="flex gap-1">
-              <div className="w-1 h-1 bg-white/40 rounded-full"></div>
-              <div className="w-1 h-1 bg-white/40 rounded-full"></div>
-              <div className="w-1 h-1 bg-white/40 rounded-full"></div>
-            </div>
-            <span>to navigate</span>
-          </div>
-        </div>
       </div>
     </div>
   );
