@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-16T16:47:38.376Z",
+  "generatedAt": "2025-10-16T16:51:15.850Z",
   "confessions": [
     {
       "id": "64f7f0d6-af34-4d47-ac7e-923b41aee653",
@@ -15,33 +15,12 @@
         "imageUrl": null
       },
       "sessionId": "1760595955706-sqs1td91lwa",
-      "campus": "mit-adt",
+      "campus": "general",
       "createdAt": "2025-10-16T15:45:18.477",
       "score": 4,
       "reactions": {},
       "replies": 0,
       "isExplicit": true
-    },
-    {
-      "id": "4a2c353f-6c57-4520-8fc9-38ad9a6ccbef",
-      "content": "ddd\n\n\n\n\n\n\n\n\nD",
-      "alias": {
-        "name": "CampusCrusader",
-        "color": "from-softgold-600 to-softgold-800",
-        "emoji": "🦋",
-        "stats": {
-          "totalEngagement": 0,
-          "totalConfessions": 0
-        },
-        "imageUrl": null
-      },
-      "sessionId": "1760626597044-38fs7wqs8to",
-      "campus": "mit-adt",
-      "createdAt": "2025-10-16T15:02:10.662",
-      "score": 2,
-      "reactions": {},
-      "replies": 0,
-      "isExplicit": false
     },
     {
       "id": "68a0ddf0-b244-48b0-ba5b-67779aed38f0",
@@ -57,7 +36,7 @@
         "imageUrl": null
       },
       "sessionId": "1760609820485-muxioyukdy",
-      "campus": "mit-adt",
+      "campus": "general",
       "createdAt": "2025-10-16T10:22:17.104",
       "score": 22,
       "reactions": {},
@@ -78,7 +57,7 @@
         "imageUrl": null
       },
       "sessionId": "1760368326664-qo8tu7rj6cg",
-      "campus": "mit-adt",
+      "campus": "general",
       "createdAt": "2025-10-13T15:16:42.751",
       "score": 0,
       "reactions": {},
@@ -99,7 +78,7 @@
         "imageUrl": null
       },
       "sessionId": "1760356057176-w028eujw61",
-      "campus": "mit-adt",
+      "campus": "general",
       "createdAt": "2025-10-13T11:49:09.682",
       "score": 0,
       "reactions": {},
@@ -132,7 +111,7 @@
         "imageUrl": null
       },
       "sessionId": "1760256437475-bqcwts1y6k7",
-      "campus": "mit-adt",
+      "campus": "general",
       "createdAt": "2025-10-12T08:43:19.872",
       "score": 3,
       "reactions": {},
@@ -165,7 +144,7 @@
         "imageUrl": null
       },
       "sessionId": "1760256437475-bqcwts1y6k7",
-      "campus": "mit-adt",
+      "campus": "general",
       "createdAt": "2025-10-12T08:14:59.616",
       "score": 13,
       "reactions": {},
@@ -186,7 +165,7 @@
         "imageUrl": null
       },
       "sessionId": "1760256437475-bqcwts1y6k7",
-      "campus": "mit-adt",
+      "campus": "general",
       "createdAt": "2025-10-12T08:09:00.104",
       "score": 9,
       "reactions": {},
@@ -207,7 +186,7 @@
         "imageUrl": null
       },
       "sessionId": "1760233240866-2kb770grfta",
-      "campus": "mit-adt",
+      "campus": "general",
       "createdAt": "2025-10-12T01:54:18.461",
       "score": 2,
       "reactions": {},
@@ -228,7 +207,7 @@
         "imageUrl": null
       },
       "sessionId": "1760212303455-2yr28vrjyr2",
-      "campus": "mit-adt",
+      "campus": "general",
       "createdAt": "2025-10-11T19:52:59.612",
       "score": 3,
       "reactions": {},
@@ -249,96 +228,9 @@
         "imageUrl": null
       },
       "sessionId": "1760208239928-ms002f5b4p",
-      "campus": "mit-adt",
+      "campus": "general",
       "createdAt": "2025-10-11T18:46:01.044",
       "score": 2,
-      "reactions": {},
-      "replies": 0,
-      "isExplicit": false
-    },
-    {
-      "id": "192b933c-0d27-4b40-88ca-717b7c6cb4b4",
-      "content": "I love my self Ha Ha",
-      "alias": {
-        "name": "AnonymousOwl",
-        "color": "from-softgold-500 to-softgold-700",
-        "emoji": "🐯",
-        "stats": {
-          "totalEngagement": 0,
-          "totalConfessions": 0
-        },
-        "imageUrl": "https://dswuotsdaltsomyqqykn.supabase.co/storage/v1/object/public/confession-avatars/avatars/1796871d-90eb-4333-a2d5-d3c76b3a3221.jpg"
-      },
-      "sessionId": "1760204590831-dx5durp0j5",
-      "campus": "mit-adt",
-      "createdAt": "2025-10-11T17:59:40.931",
-      "score": 2,
-      "reactions": {},
-      "replies": 0,
-      "isExplicit": false
-    },
-    {
-      "id": "00c07479-2955-4c0d-8f8c-2794796757f6",
-      "content": "🚀 Announcing our Open  Source Portal! 🚀\n\nBuilt by developers, for developers. This is your new home for collaboration and innovation.\n✨ Our Vision:\n \n🔓 Open Access: Unrestricted entry to knowledge and projects.\n 🧠 Shared Knowledge: Learn from the community and share your expertise.\n 🌌 Infinite Possibilities: No limits to what we can create together.\n🤝 Join the Movement:\nBecome part of a global community of builders and changemakers. Let's code together and grow together. This portal is yours to contribute, collaborate, and create.\n💪 Together, we will move tech forward.\n\nLast date to fill the form is\n-15 October \n\n🔗 Explore the Portal:\nhttps://www.gfgmitadt.in/forge\n\n📸 Follow our journey on Instagram:\nhttps://www.instagram.com/reel/DPjB27jiJaO/?igsh=b3l3OGJleWRuZXVv\n\nPlease forward this message to other groups and fellow developers to help our community grow!",
-      "alias": {
-        "name": "alias",
-        "badge": {
-          "id": "first_whisper",
-          "icon": "🌟",
-          "name": "First Whisper",
-          "color": "text-yellow-400",
-          "pfpColor": "from-gray-600 to-gray-700",
-          "description": "Posted your first confession",
-          "requirement": {
-            "type": "confessions",
-            "count": 1
-          }
-        },
-        "color": "from-gray-600 to-gray-700",
-        "emoji": "🦉",
-        "stats": {
-          "totalEngagement": 0,
-          "totalConfessions": 3
-        },
-        "imageUrl": null
-      },
-      "sessionId": "1759863640257-a8jo9ledpz",
-      "campus": "mit-adt",
-      "createdAt": "2025-10-08T16:25:29.539",
-      "score": 0,
-      "reactions": {},
-      "replies": 0,
-      "isExplicit": false
-    },
-    {
-      "id": "25006aa5-55d2-4c37-acd3-c23857e8bc9d",
-      "content": "heyy",
-      "alias": {
-        "name": "ShadowScholar",
-        "badge": {
-          "id": "first_whisper",
-          "icon": "🌟",
-          "name": "First Whisper",
-          "color": "text-yellow-400",
-          "pfpColor": "from-gray-600 to-gray-700",
-          "description": "Posted your first confession",
-          "requirement": {
-            "type": "confessions",
-            "count": 1
-          }
-        },
-        "color": "from-gray-600 to-gray-700",
-        "emoji": "🐢",
-        "stats": {
-          "totalEngagement": 0,
-          "totalConfessions": 2
-        },
-        "imageUrl": null
-      },
-      "sessionId": "1759863640257-a8jo9ledpz",
-      "campus": "mit-adt",
-      "createdAt": "2025-10-08T14:18:16.221",
-      "score": 0,
       "reactions": {},
       "replies": 0,
       "isExplicit": false
