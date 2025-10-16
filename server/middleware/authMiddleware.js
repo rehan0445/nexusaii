@@ -77,8 +77,8 @@ const sanitizeInput = (fields = []) => (req, res, next) => {
       if (typeof req.body?.[f] === 'string') {
         req.body[f] = req.body[f]
           .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-          .replace(/on\w+="[^"]*"/gi, '')
-          .trim();
+          .replace(/on\w+="[^"]*"/gi, '');
+        // Note: Removed .trim() to preserve formatting including spaces and line breaks
       }
     });
     next();

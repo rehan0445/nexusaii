@@ -19,6 +19,44 @@ import {
   BarChart3,
   AlertTriangle,
 } from 'lucide-react';
+
+// Utility function to check if content exceeds 4 lines
+const shouldShowMore = (content: string): boolean => {
+  if (!content) return false;
+  
+  // Split content into lines and count
+  const lines = content.split('\n');
+  
+  // If there are more than 4 lines, show "show more"
+  if (lines.length > 4) return true;
+  
+  // Also check if any single line is very long (more than ~80 characters)
+  // which would likely wrap to multiple lines
+  const hasLongLines = lines.some(line => line.length > 80);
+  
+  return hasLongLines;
+};
+
+// Utility function to truncate content to 4 lines
+const truncateContent = (content: string): string => {
+  if (!content) return '';
+  
+  const lines = content.split('\n');
+  
+  if (lines.length <= 4) {
+    // If content is 4 lines or less, check if any line is too long
+    const truncatedLines = lines.map(line => {
+      if (line.length > 80) {
+        return line.substring(0, 80) + '...';
+      }
+      return line;
+    });
+    return truncatedLines.join('\n');
+  }
+  
+  // Take first 4 lines and add ellipsis
+  return lines.slice(0, 4).join('\n') + '\n...';
+};
 import { ConfessionComposer } from './ConfessionComposer';
 import { ConfessionDetailPage } from './ConfessionDetailPage';
 import { PageHeader } from './PageHeader';
@@ -2091,7 +2129,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                     <div className="relative">
                       {confession.backgroundImageUrl ? (
                         <div 
-                          className={`rounded-3xl overflow-hidden border border-[#F4E3B5]/10 mb-6  cursor-pointer hover:border-[#F4E3B5]/20 transition-all duration-300 group ${
+                          className={`rounded-3xl overflow-hidden border border-[#F4E3B5]/10 mb-6 cursor-pointer hover:border-[#F4E3B5]/20 transition-all duration-300 group ${
                             confession.isExplicit && !revealedContent[confession.id] ? 'blur-lg' : ''
                           }`}
                           onClick={() => setSelectedConfessionId(confession.id)}
@@ -2104,23 +2142,53 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                             <div className="absolute inset-0 p-6 flex items-end">
-                              <p className="text-white drop-shadow-2xl leading-relaxed text-lg md:text-xl font-medium tracking-wide">
-                                {confession.content}
-                              </p>
+                              <div className="w-full">
+                                <p className="text-white drop-shadow-2xl leading-relaxed text-lg md:text-xl font-medium tracking-wide whitespace-pre-wrap">
+                                  {shouldShowMore(confession.content) 
+                                    ? truncateContent(confession.content)
+                                    : confession.content
+                                  }
+                                </p>
+                                {shouldShowMore(confession.content) && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedConfessionId(confession.id);
+                                    }}
+                                    className="mt-3 text-white/80 hover:text-white font-medium text-sm transition-colors duration-200 flex items-center gap-1 drop-shadow-lg"
+                                  >
+                                    Show more
+                                    <ArrowLeft className="w-3 h-3 rotate-90" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
                       ) : (
                         <div 
-                          className={`mb-6 cursor-pointer hover:bg-[#F4E3B5]/5 rounded-2xl p-4 -m-4 transition-all duration-300 ${
+                          className={`mb-6 hover:bg-[#F4E3B5]/5 rounded-2xl p-4 -m-4 transition-all duration-300 ${
                             confession.isExplicit && !revealedContent[confession.id] ? 'blur-lg' : ''
                           }`}
-                          onClick={() => setSelectedConfessionId(confession.id)}
                         >
                           {confession.content ? (
-                            <p className="text-zinc-100 leading-relaxed text-lg md:text-xl font-medium tracking-wide">
-                              {confession.content}
-                            </p>
+                            <div>
+                              <p className="text-zinc-100 leading-relaxed text-lg md:text-xl font-medium tracking-wide whitespace-pre-wrap">
+                                {shouldShowMore(confession.content) 
+                                  ? truncateContent(confession.content)
+                                  : confession.content
+                                }
+                              </p>
+                              {shouldShowMore(confession.content) && (
+                                <button
+                                  onClick={() => setSelectedConfessionId(confession.id)}
+                                  className="mt-3 text-[#F4E3B5] hover:text-white font-medium text-sm transition-colors duration-200 flex items-center gap-1"
+                                >
+                                  Show more
+                                  <ArrowLeft className="w-3 h-3 rotate-90" />
+                                </button>
+                              )}
+                            </div>
                           ) : (
                             <p className="text-[#a1a1aa] leading-relaxed text-lg md:text-xl font-medium tracking-wide italic">
                               {confession.poll ? 'Poll only confession' : 'Media only confession'}

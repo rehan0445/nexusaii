@@ -609,7 +609,7 @@ router.post(
       return res.status(400).json({ success: false, message: 'Missing or invalid campus parameter. Please specify a valid campus.' });
     }
 
-    const hasText = content && typeof content === "string" && content.trim().length > 0;
+    const hasText = content && typeof content === "string" && content.length > 0;
     const hasPoll = poll && poll.question && poll.options && poll.options.length >= 2;
 
     if (!hasText && !hasPoll) {
@@ -1135,7 +1135,7 @@ router.post(
     const { id } = req.params;
     const { content, alias, sessionId, parentCommentId, campus } = req.body || {};
 
-    if (!content || typeof content !== "string" || content.trim().length === 0 || content.length > 1000) {
+    if (!content || typeof content !== "string" || content.length === 0 || content.length > 1000) {
       return res.status(400).json({ success: false, message: "Invalid reply content" });
     }
 
@@ -1155,7 +1155,7 @@ router.post(
     const reply = {
       id: replyId,
       confessionId: id,
-      content: content.trim(),
+      content: content, // Preserve original formatting including spaces and line breaks
       alias: replyAlias,
       sessionId: sessionId || null,
       parentId: parentCommentId || null,

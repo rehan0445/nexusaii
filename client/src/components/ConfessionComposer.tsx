@@ -32,13 +32,13 @@ export function ConfessionComposer({ onBack, onSubmit, alias }: ConfessionCompos
   const handleSubmit = async () => {
     if (isSubmitting) return;
     
-    // Check if text content is provided
-    if (!content.trim()) return;
+    // Check if text content is provided (only check for empty content, preserve formatting)
+    if (!content || content.length === 0) return;
     
     setIsSubmitting(true);
     try {
       await onSubmit({
-        content: content.trim(),
+        content: content, // Preserve original formatting including spaces and line breaks
         imageUrl: null,
         poll: null
       });
@@ -52,8 +52,8 @@ export function ConfessionComposer({ onBack, onSubmit, alias }: ConfessionCompos
     }
   };
 
-  // Validation: text is mandatory
-  const hasText = content.trim().length > 0;
+  // Validation: text is mandatory (check for non-empty content while preserving formatting)
+  const hasText = content && content.length > 0;
   
   const canSubmit = hasText && !isSubmitting;
 

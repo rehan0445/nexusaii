@@ -1730,7 +1730,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                     <div className="absolute inset-0 p-4 sm:p-6 flex items-end">
-                      <p className="text-white drop-shadow-2xl leading-relaxed text-base sm:text-lg font-medium tracking-wide">
+                      <p className="text-white drop-shadow-2xl leading-relaxed text-base sm:text-lg font-medium tracking-wide whitespace-pre-wrap">
                         {confession.content}
                       </p>
                     </div>
@@ -1739,7 +1739,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
               ) : (
                 <div className={confession.isExplicit && !revealedContent ? 'blur-lg' : ''}>
                   {confession.content ? (
-                    <p className="text-zinc-100 leading-relaxed text-lg sm:text-xl font-medium tracking-wide">
+                    <p className="text-zinc-100 leading-relaxed text-lg sm:text-xl font-medium tracking-wide whitespace-pre-wrap">
                       {confession.content}
                     </p>
                   ) : (
