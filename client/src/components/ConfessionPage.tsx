@@ -2088,11 +2088,9 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                     ? 'bg-[#F4E3B5]/20 text-[#F4E3B5] border border-[#F4E3B5]/30' 
                     : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-700/50'
                 }`}
+                title={sortByUpvotes ? 'Auto-sort enabled (10s intervals)' : 'Manual sorting enabled'}
               >
                 <div className={`w-2 h-2 rounded-full ${sortByUpvotes ? 'bg-[#F4E3B5]' : 'bg-zinc-500'}`}></div>
-                <span className="text-sm font-medium">
-                  {sortByUpvotes ? 'Auto-sort' : 'Manual sorting'}
-                </span>
                 {sortByUpvotes && (
                   <span className="text-xs text-[#F4E3B5]/70">(10s)</span>
                 )}
