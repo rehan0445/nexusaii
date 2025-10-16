@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>General Confessions Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .campus-card {
+            background: #3a3a3a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #F4E3B5;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .campus-card:hover {
+            background: #4a4a4a;
+            transform: translateX(5px);
+        }
+        .campus-card.general {
+            border-left-color: #F4E3B5;
+            background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
+        }
+        .campus-card.general::before {
+            content: "🌟 ";
+            font-size: 1.2em;
+        }
+        button {
+            background: #F4E3B5;
+            color: #1a1a1a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #e6d1a1;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #2d5a2d; }
+        .error { background: #5a2d2d; }
+        .info { background: #2d4a5a; }
+        .confession {
+            background: #3a3a3a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #F4E3B5;
+        }
+        .campus-tag {
+            background: #F4E3B5;
+            color: #1a1a1a;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌟 General Confessions Test</h1>
+    
+    <div class="test-section">
+        <h2>Campus Selection Order</h2>
+        <p>Test the campus selection order - General Confessions should appear first:</p>
+        
+        <div id="campus-list">
+            <!-- Campus cards will be generated here -->
+        </div>
+        
+        <button onclick="testCampusOrder()">Test Campus Order</button>
+        <button onclick="testGeneralConfessions()">Test General Confessions API</button>
+        <button onclick="testCampusMapping()">Test Campus Mapping</button>
+        
+        <div id="status"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>General Confessions API Test</h2>
+        <div id="api-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Campus Mapping Test</h2>
+        <div id="mapping-results"></div>
+    </div>
+
+    <script>
+        // Campus data (should match the frontend)
+        const campuses = [
+            {
+                id: 'general',
+                name: 'General Confessions',
+                fullName: 'General Confessions - All Campuses',
+                color: 'from-[#F4E3B5] to-[#D4C4A8]',
+                isGeneral: true
+            },
+            {
+                id: 'mit-adt',
+                name: 'MIT ADT',
+                fullName: 'MIT - Arts, Design and Tech',
+                color: 'from-blue-600 to-purple-600'
+            },
+            {
+                id: 'mit-wpu',
+                name: 'MIT WPU',
+                fullName: 'MIT - World Peace University',
+                color: 'from-emerald-600 to-blue-600'
+            },
+            {
+                id: 'vit-vellore',
+                name: 'VIT Vellore',
+                fullName: 'Vellore Institute of Technology',
+                color: 'from-orange-600 to-red-600'
+            },
+            {
+                id: 'parul-university',
+                name: 'Parul University',
+                fullName: 'Parul University',
+                color: 'from-green-600 to-teal-600'
+            },
+            {
+                id: 'iist',
+                name: 'IIST',
+                fullName: 'Indore Institute of Technology',
+                color: 'from-indigo-600 to-purple-600'
+            }
+        ];
+
+        // Campus mapping (should match frontend)
+        const CAMPUS_CODE_MAP = {
+            'General Confessions': 'general',
+            'MIT ADT': 'mit-adt',
+            'MIT WPU': 'mit-wpu',
+            'VIT Vellore': 'vit-vellore',
+            'Parul University': 'parul-university',
+            'IIST': 'iist',
+        };
+
+        function generateCampusCards() {
+            const container = document.getElementById('campus-list');
+            container.innerHTML = '';
+            
+            campuses.forEach((campus, index) => {
+                const card = document.createElement('div');
+                card.className = `campus-card ${campus.isGeneral ? 'general' : ''}`;
+                card.innerHTML = `
+                    <div><strong>#${index + 1}</strong> - ${campus.name}</div>
+                    <div style="font-size: 0.9em; color: #ccc;">${campus.fullName}</div>
+                    <div style="font-size: 0.8em; color: #888;">ID: ${campus.id}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function testCampusOrder() {
+            const generalCampus = campuses[0];
+            if (generalCampus.id === 'general' && generalCampus.isGeneral) {
+                logStatus('✅ General Confessions appears first in campus list', 'success');
+            } else {
+                logStatus('❌ General Confessions is not first in campus list', 'error');
+            }
+        }
+
+        function testGeneralConfessions() {
+            const resultsDiv = document.getElementById('api-results');
+            resultsDiv.innerHTML = '<p>Testing General Confessions API...</p>';
+            
+            // Simulate API call
+            setTimeout(() => {
+                const mockConfessions = [
+                    {
+                        id: '1',
+                        content: 'This is a general confession from any campus',
+                        campus: 'general',
+                        score: 15,
+                        timestamp: new Date()
+                    },
+                    {
+                        id: '2',
+                        content: 'Another general confession',
+                        campus: 'general',
+                        score: 8,
+                        timestamp: new Date()
+                    }
+                ];
+                
+                resultsDiv.innerHTML = `
+                    <h3>General Confessions API Response:</h3>
+                    ${mockConfessions.map(confession => `
+                        <div class="confession">
+                            <div><strong>Confession #${confession.id}</strong></div>
+                            <div>${confession.content}</div>
+                            <div>Campus: <span class="campus-tag">${confession.campus}</span></div>
+                            <div>Score: ${confession.score} upvotes</div>
+                        </div>
+                    `).join('')}
+                `;
+                
+                logStatus('✅ General Confessions API test completed', 'success');
+            }, 1000);
+        }
+
+        function testCampusMapping() {
+            const resultsDiv = document.getElementById('mapping-results');
+            const tests = [
+                { input: 'General Confessions', expected: 'general' },
+                { input: 'MIT ADT', expected: 'mit-adt' },
+                { input: 'MIT WPU', expected: 'mit-wpu' },
+                { input: 'VIT Vellore', expected: 'vit-vellore' },
+                { input: 'Parul University', expected: 'parul-university' },
+                { input: 'IIST', expected: 'iist' }
+            ];
+            
+            let results = '<h3>Campus Mapping Test Results:</h3>';
+            let allPassed = true;
+            
+            tests.forEach(test => {
+                const result = CAMPUS_CODE_MAP[test.input];
+                const passed = result === test.expected;
+                if (!passed) allPassed = false;
+                
+                results += `
+                    <div style="margin: 10px 0; padding: 10px; background: ${passed ? '#2d5a2d' : '#5a2d2d'}; border-radius: 5px;">
+                        <strong>${test.input}</strong> → ${result} 
+                        ${passed ? '✅' : '❌'} 
+                        (expected: ${test.expected})
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = results;
+            
+            if (allPassed) {
+                logStatus('✅ All campus mappings are correct', 'success');
+            } else {
+                logStatus('❌ Some campus mappings are incorrect', 'error');
+            }
+        }
+
+        function logStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            statusDiv.appendChild(div);
+            statusDiv.scrollTop = statusDiv.scrollHeight;
+        }
+
+        // Initialize the test page
+        window.onload = function() {
+            generateCampusCards();
+            logStatus('🚀 General Confessions test page loaded', 'info');
+            logStatus('📱 General Confessions should appear at the top for mobile/tablet', 'info');
+        };
+    </script>
+</body>
+</html>

@@ -79,7 +79,7 @@ const normalizeConfession = (row) => {
     content: row.content ?? "",
     alias: aliasValue,
     sessionId: row.sessionId ?? row.session_id ?? row.user_id ?? null,
-    campus: row.campus ?? 'mit-adt',
+    campus: row.campus ?? 'general',
     createdAt, // Always DB value
     score: scoreValue,
     reactions,
@@ -103,7 +103,7 @@ const normalizeReply = (row) => {
     alias: aliasValue,
     sessionId: row.sessionId ?? row.session_id ?? null,
     parentId: row.parentId ?? row.parent_id ?? null,
-    campus: row.campus ?? 'mit-adt', // Include campus field
+    campus: row.campus ?? 'general', // Include campus field
     createdAt: row.createdAt ?? row.created_at ?? new Date().toISOString(),
     score: safeNumber(row.score, 0),
     metadata: row.metadata && typeof row.metadata === "object" ? row.metadata : {},
@@ -328,6 +328,7 @@ const getBestConfessionOfDay = async (campus = null) => {
 
 // Helper: map campus code to table name
 const CONFESSION_TABLE_MAP = {
+  'general': 'confessions', // General confessions use the main table
   'mit-adt': 'confessions_mit_adt',
   'mit-wpu': 'confessions_mit_wpu',
   'vit-vellore': 'confessions_vit_vellore',
@@ -348,6 +349,7 @@ const getAllConfessionTables = () => ['confessions', ...Object.values(CONFESSION
 
 // New comments tables (per campus)
 const COMMENTS_TABLE_MAP = {
+  'general': 'comments', // General confessions use the main comments table
   'mit-adt': 'comments_mit_adt',
   'mit-wpu': 'comments_mit_wpu',
   'iict': 'comments_iict',
@@ -356,6 +358,7 @@ const COMMENTS_TABLE_MAP = {
   'vit-vellore': 'comments_vit_vellore'
 };
 const SUBCOMMENTS_TABLE_MAP = {
+  'general': 'sub_comments', // General confessions use the main sub_comments table
   'mit-adt': 'sub_comments_mit_adt',
   'mit-wpu': 'sub_comments_mit_wpu',
   'iict': 'sub_comments_iict',
@@ -603,8 +606,9 @@ router.post(
     await ensureCache();
 
     const { content, alias, sessionId, poll, campus, userName, userEmail, anonymousName, avatar, uploads, searchHistory } = req.body || {};
-    const table = getConfessionTable(campus);
-    console.log(`[CONFESSION CREATE] campus: ${campus}, table: ${table}`);
+    const campusCode = campus || 'general'; // Default to general if no campus specified
+    const table = getConfessionTable(campusCode);
+    console.log(`[CONFESSION CREATE] campus: ${campusCode}, table: ${table}`);
     if (!table) {
       return res.status(400).json({ success: false, message: 'Missing or invalid campus parameter. Please specify a valid campus.' });
     }
@@ -649,6 +653,7 @@ router.post(
       content: content || "",
       alias: normalizedAlias,
       sessionId: sessionId || null,
+      campus: campusCode,
       createdAt: timestamp,
       score: 0,
       reactions: {},
@@ -669,6 +674,7 @@ router.post(
         content: confession.content,
         alias: confession.alias,
         session_id: confession.sessionId,
+        campus: confession.campus,
         created_at: confession.createdAt,
         reactions: confession.reactions,
         poll: confession.poll || null,
@@ -722,7 +728,14 @@ router.get("/", async (req, res) => {
     const rangeTo = cursor + limit - 1;
 
     let query;
-    if (table === 'confessions' && campus) {
+    if (campus === 'general') {
+      // General confessions: show confessions from all campuses
+      query = supabase
+        .from('confessions')
+        .select("*")
+        .order(sortBy === 'score' ? "score" : "created_at", { ascending: false })
+        .range(rangeFrom, rangeTo);
+    } else if (table === 'confessions' && campus) {
       // Monolithic table: filter by campus
       query = supabase
         .from('confessions')
@@ -1160,7 +1173,7 @@ router.post(
       alias: replyAlias,
       sessionId: sessionId || null,
       parentId: parentCommentId || null,
-    campus: campus || 'mit-adt', // Use provided campus or default
+      campus: campusCode, // Use provided campus or default
       createdAt: timestamp,
       score: 0,
       metadata: {}

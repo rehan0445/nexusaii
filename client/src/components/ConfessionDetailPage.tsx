@@ -980,6 +980,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
     try {
       // Get campus code for proper table routing
       const CAMPUS_CODE_MAP: Record<string, string> = {
+        'General Confessions': 'general',
         'MIT ADT': 'mit-adt',
         'MIT WPU': 'mit-wpu',
         'VIT Vellore': 'vit-vellore',

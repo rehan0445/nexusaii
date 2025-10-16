@@ -11,6 +11,14 @@ const CollegeSelection: React.FC = () => {
 
   const colleges = [
     {
+      id: 'general',
+      name: 'General Confessions',
+      fullName: 'General Confessions - All Campuses',
+      image: 'https://i.pinimg.com/736x/8b/5a/46/8b5a46c4c4c4c4c4c4c4c4c4c4c4c4c4.jpg',
+      color: 'from-[#F4E3B5] to-[#D4C4A8]',
+      isGeneral: true
+    },
+    {
       id: 'mit-adt',
       name: 'MIT ADT',
       fullName: 'MIT - Arts, Design and Tech',

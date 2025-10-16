@@ -383,6 +383,7 @@ export function ConfessionPage({ onBack, universityId, collegeName, collegeFullN
 
   // Helper: map display name to campus code
   const CAMPUS_CODE_MAP: Record<string, string> = {
+    'General Confessions': 'general',
     'MIT ADT': 'mit-adt',
     'MIT WPU': 'mit-wpu',
     'VIT Vellore': 'vit-vellore',
@@ -2090,7 +2091,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
               >
                 <div className={`w-2 h-2 rounded-full ${sortByUpvotes ? 'bg-[#F4E3B5]' : 'bg-zinc-500'}`}></div>
                 <span className="text-sm font-medium">
-                  {sortByUpvotes ? 'Auto-sort by upvotes' : 'Manual sorting'}
+                  {sortByUpvotes ? 'Auto-sort' : 'Manual sorting'}
                 </span>
                 {sortByUpvotes && (
                   <span className="text-xs text-[#F4E3B5]/70">(10s)</span>
