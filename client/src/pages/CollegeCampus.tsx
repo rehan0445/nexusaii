@@ -9,6 +9,12 @@ const CollegeCampus: React.FC = () => {
   const { isDesktop } = useResponsive();
 
   const collegeData = {
+    'general': {
+      name: 'General Confessions',
+      fullName: 'General Confessions - All Campuses',
+      color: 'from-[#F4E3B5] to-[#D4C4A8]',
+      image: 'https://i.pinimg.com/736x/8b/5a/46/8b5a46c4c4c4c4c4c4c4c4c4c4c4c4c4.jpg'
+    },
     'mit-adt': {
       name: 'MIT Arts , Design & Technology',
       fullName: 'MIT Arts , Design & Technology',
@@ -46,7 +52,7 @@ const CollegeCampus: React.FC = () => {
   // Redirect to default campus if invalid collegeId
   React.useEffect(() => {
     if (!college) {
-      navigate("/campus/mit-adt", { replace: true });
+      navigate("/campus/general", { replace: true });
     }
   }, [college, navigate]);
 

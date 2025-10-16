@@ -7,6 +7,11 @@ const CollegeConfessionWrapper: React.FC = () => {
   const navigate = useNavigate();
 
   const collegeData = {
+    'general': {
+      name: 'General Confessions',
+      fullName: 'General Confessions - All Campuses',
+      color: 'from-[#F4E3B5] to-[#D4C4A8]'
+    },
     'mit-adt': {
       name: 'MIT ADT',
       fullName: 'MIT ADT',
