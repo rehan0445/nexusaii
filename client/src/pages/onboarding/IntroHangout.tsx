@@ -1,11 +1,14 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import OnboardingSlide from '../../components/OnboardingSlide';
 import hangoutImage from '../../assets/intro/hangout.png';
 
 const IntroHangout: React.FC = () => {
+  const navigate = useNavigate();
+  
   const handleGetStarted = () => {
     localStorage.setItem('hasSeenOnboarding', 'true');
-    window.location.href = '/register';
+    navigate('/register');
   };
 
   return (
