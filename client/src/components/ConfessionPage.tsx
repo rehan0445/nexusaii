@@ -335,9 +335,7 @@ export function ConfessionPage({ onBack, universityId, collegeName, collegeFullN
     'Friendship issues'
   ]);
 
-  // Auto-sorting state
-  const [sortByUpvotes, setSortByUpvotes] = useState(true);
-  const [autoSortInterval, setAutoSortInterval] = useState<NodeJS.Timeout | null>(null);
+  // Auto-sorting state removed - no more auto-refresh functionality
 
   // Filter categories for confessions
   const filterCategories = [
@@ -679,8 +677,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
         alert('Please select a valid college/campus.');
         return;
       }
-      const sortParam = sortByUpvotes ? '&sortBy=score' : '';
-      const response = await apiFetch(`${getServerUrl()}/api/confessions?cursor=0&limit=10&campus=${campusCode}${sortParam}`);
+      const response = await apiFetch(`${getServerUrl()}/api/confessions?cursor=0&limit=10&campus=${campusCode}`);
       const result = await response.json();
 
       if (result.success && result.data.items.length > 0) {
@@ -719,7 +716,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
     } finally {
       setLoading(false);
     }
-  }, [calculateEngagementScore, sortByUpvotes]);
+  }, [calculateEngagementScore]);
 
   useEffect(() => {
     // Try to load from localStorage first, then from server
@@ -972,8 +969,8 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
       try {
         console.log('📊 Vote update received:', data);
         if (data && typeof data === 'object' && data.confessionId && typeof data.score === 'number') {
-          setConfessions(prevConfessions => {
-            const updated = prevConfessions.map(confession => {
+          setConfessions(prevConfessions =>
+            prevConfessions.map(confession => {
               if (confession.id === data.confessionId) {
                 // Update score for everyone, but only update userVote if it's this user's vote
                 const updates: any = { score: data.score };
@@ -983,14 +980,8 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                 return { ...confession, ...updates };
               }
               return confession;
-            });
-
-            // If auto-sorting is enabled, sort by score immediately
-            if (sortByUpvotes) {
-              return updated.sort((a, b) => (b.score || 0) - (a.score || 0));
-            }
-            return updated;
-          });
+            })
+          );
         }
       } catch (error) {
         console.error('Error handling vote update:', error);
@@ -1085,7 +1076,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
       socket.off('comment-vote-update');
       socket.off('confession-updated');
     };
-  }, [calculateEngagementScore, sortByUpvotes]);
+  }, [calculateEngagementScore]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -1109,29 +1100,6 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
     };
   }, [loadMoreConfessions]);
 
-  // Auto-sort confessions by upvotes every 10 seconds
-  useEffect(() => {
-    if (sortByUpvotes && confessions.length > 0) {
-      const interval = setInterval(() => {
-        // Sort confessions by score (upvotes) in descending order
-        setConfessions(prevConfessions => {
-          const sorted = [...prevConfessions].sort((a, b) => (b.score || 0) - (a.score || 0));
-          return sorted;
-        });
-        console.log('🔄 Auto-sorted confessions by upvotes');
-      }, 10000); // 10 seconds
-
-      setAutoSortInterval(interval);
-
-      return () => {
-        clearInterval(interval);
-        setAutoSortInterval(null);
-      };
-    } else if (autoSortInterval) {
-      clearInterval(autoSortInterval);
-      setAutoSortInterval(null);
-    }
-  }, [sortByUpvotes, confessions.length]);
 
   // Load trending and best confession data
   useEffect(() => {
@@ -2078,28 +2046,6 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Auto-sort Toggle */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSortByUpvotes(!sortByUpvotes)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200 ${
-                  sortByUpvotes 
-                    ? 'bg-[#F4E3B5]/20 text-[#F4E3B5] border border-[#F4E3B5]/30' 
-                    : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-700/50'
-                }`}
-                title={sortByUpvotes ? 'Auto-sort enabled (10s intervals)' : 'Manual sorting enabled'}
-              >
-                <div className={`w-2 h-2 rounded-full ${sortByUpvotes ? 'bg-[#F4E3B5]' : 'bg-zinc-500'}`}></div>
-                {sortByUpvotes && (
-                  <span className="text-xs text-[#F4E3B5]/70">(10s)</span>
-                )}
-              </button>
-            </div>
-            <div className="text-xs text-zinc-500">
-              {sortByUpvotes ? 'Most upvoted first' : 'Latest first'}
-            </div>
-          </div>
 
           {/* Confessions List */}
           <div className="space-y-0">

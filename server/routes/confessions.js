@@ -727,45 +727,85 @@ router.get("/", async (req, res) => {
     const rangeFrom = cursor;
     const rangeTo = cursor + limit - 1;
 
-    let query;
+    let items = [];
     if (campus === 'general') {
-      // General confessions: show confessions from all campuses
-      query = supabase
-        .from('confessions')
-        .select("*")
-        .order(sortBy === 'score' ? "score" : "created_at", { ascending: false })
-        .range(rangeFrom, rangeTo);
-    } else if (table === 'confessions' && campus) {
-      // Monolithic table: filter by campus
-      query = supabase
-        .from('confessions')
-        .select("*")
-        .eq("campus", campus)
-        .order(sortBy === 'score' ? "score" : "created_at", { ascending: false })
-        .range(rangeFrom, rangeTo);
-    } else if (table !== 'confessions') {
-      // Campus-specific table
-      query = supabase
-        .from(table)
-        .select("*")
-        .order(sortBy === 'score' ? "score" : "created_at", { ascending: false })
-        .range(rangeFrom, rangeTo);
+      // General confessions: aggregate confessions from all campus tables
+      const allTables = ['confessions', ...Object.values(CONFESSION_TABLE_MAP).filter(t => t !== 'confessions')];
+      console.log(`[GENERAL CONFESSIONS] Fetching from tables: ${allTables.join(', ')}`);
+      
+      // Fetch from all tables and combine results
+      const allConfessions = [];
+      for (const tableName of allTables) {
+        try {
+          const { data: tableData, error: tableError } = await supabase
+            .from(tableName)
+            .select("*")
+            .order(sortBy === 'score' ? "score" : "created_at", { ascending: false });
+          
+          if (tableError) {
+            console.warn(`Failed to fetch from ${tableName}:`, tableError.message);
+            continue;
+          }
+          
+          if (Array.isArray(tableData)) {
+            allConfessions.push(...tableData);
+          }
+        } catch (error) {
+          console.warn(`Error fetching from ${tableName}:`, error.message);
+        }
+      }
+      
+      // Sort combined results
+      allConfessions.sort((a, b) => {
+        if (sortBy === 'score') {
+          return (b.score || 0) - (a.score || 0);
+        } else {
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+      });
+      
+      // Apply pagination
+      items = allConfessions.slice(rangeFrom, rangeTo + 1);
+      console.log(`[GENERAL CONFESSIONS] Found ${allConfessions.length} total confessions, returning ${items.length}`);
+      
     } else {
-      // Fallback: return latest across all tables if campus missing
-      query = supabase
-        .from('confessions')
-        .select("*")
-        .order(sortBy === 'score' ? "score" : "created_at", { ascending: false })
-        .range(rangeFrom, rangeTo);
+      // Regular campus-specific query
+      let query;
+      if (table === 'confessions' && campus) {
+        // Monolithic table: filter by campus
+        query = supabase
+          .from('confessions')
+          .select("*")
+          .eq("campus", campus)
+          .order(sortBy === 'score' ? "score" : "created_at", { ascending: false })
+          .range(rangeFrom, rangeTo);
+      } else if (table !== 'confessions') {
+        // Campus-specific table
+        query = supabase
+          .from(table)
+          .select("*")
+          .order(sortBy === 'score' ? "score" : "created_at", { ascending: false })
+          .range(rangeFrom, rangeTo);
+      } else {
+        // Fallback: return latest across all tables if campus missing
+        query = supabase
+          .from('confessions')
+          .select("*")
+          .order(sortBy === 'score' ? "score" : "created_at", { ascending: false })
+          .range(rangeFrom, rangeTo);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      items = Array.isArray(data) ? data.map((row) => normalizeConfession(row)) : [];
     }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-
-    let items = Array.isArray(data) ? data.map((row) => normalizeConfession(row)) : [];
-    // Ensure campus present
-    if (table !== 'confessions') {
+    // Ensure campus present and normalize items
+    if (campus === 'general') {
+      // For general confessions, normalize all items and preserve their original campus
+      items = items.map((row) => normalizeConfession(row));
+    } else if (table !== 'confessions') {
       const derivedCampus = getCampusForTable(table) || campus || null;
       items = items.map((item) => ({ ...item, campus: item.campus || derivedCampus }));
     } else if (campus) {
