@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-16T16:22:47.934Z",
+  "generatedAt": "2025-10-16T16:43:59.450Z",
   "confessions": [
     {
       "id": "64f7f0d6-af34-4d47-ac7e-923b41aee653",
@@ -273,6 +273,72 @@
       "campus": "mit-adt",
       "createdAt": "2025-10-11T17:59:40.931",
       "score": 2,
+      "reactions": {},
+      "replies": 0,
+      "isExplicit": false
+    },
+    {
+      "id": "00c07479-2955-4c0d-8f8c-2794796757f6",
+      "content": "🚀 Announcing our Open  Source Portal! 🚀\n\nBuilt by developers, for developers. This is your new home for collaboration and innovation.\n✨ Our Vision:\n \n🔓 Open Access: Unrestricted entry to knowledge and projects.\n 🧠 Shared Knowledge: Learn from the community and share your expertise.\n 🌌 Infinite Possibilities: No limits to what we can create together.\n🤝 Join the Movement:\nBecome part of a global community of builders and changemakers. Let's code together and grow together. This portal is yours to contribute, collaborate, and create.\n💪 Together, we will move tech forward.\n\nLast date to fill the form is\n-15 October \n\n🔗 Explore the Portal:\nhttps://www.gfgmitadt.in/forge\n\n📸 Follow our journey on Instagram:\nhttps://www.instagram.com/reel/DPjB27jiJaO/?igsh=b3l3OGJleWRuZXVv\n\nPlease forward this message to other groups and fellow developers to help our community grow!",
+      "alias": {
+        "name": "alias",
+        "badge": {
+          "id": "first_whisper",
+          "icon": "🌟",
+          "name": "First Whisper",
+          "color": "text-yellow-400",
+          "pfpColor": "from-gray-600 to-gray-700",
+          "description": "Posted your first confession",
+          "requirement": {
+            "type": "confessions",
+            "count": 1
+          }
+        },
+        "color": "from-gray-600 to-gray-700",
+        "emoji": "🦉",
+        "stats": {
+          "totalEngagement": 0,
+          "totalConfessions": 3
+        },
+        "imageUrl": null
+      },
+      "sessionId": "1759863640257-a8jo9ledpz",
+      "campus": "mit-adt",
+      "createdAt": "2025-10-08T16:25:29.539",
+      "score": 0,
+      "reactions": {},
+      "replies": 0,
+      "isExplicit": false
+    },
+    {
+      "id": "25006aa5-55d2-4c37-acd3-c23857e8bc9d",
+      "content": "heyy",
+      "alias": {
+        "name": "ShadowScholar",
+        "badge": {
+          "id": "first_whisper",
+          "icon": "🌟",
+          "name": "First Whisper",
+          "color": "text-yellow-400",
+          "pfpColor": "from-gray-600 to-gray-700",
+          "description": "Posted your first confession",
+          "requirement": {
+            "type": "confessions",
+            "count": 1
+          }
+        },
+        "color": "from-gray-600 to-gray-700",
+        "emoji": "🐢",
+        "stats": {
+          "totalEngagement": 0,
+          "totalConfessions": 2
+        },
+        "imageUrl": null
+      },
+      "sessionId": "1759863640257-a8jo9ledpz",
+      "campus": "mit-adt",
+      "createdAt": "2025-10-08T14:18:16.221",
+      "score": 0,
       "reactions": {},
       "replies": 0,
       "isExplicit": false

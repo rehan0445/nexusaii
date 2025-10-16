@@ -60,7 +60,12 @@ const CollegeSelection: React.FC = () => {
     setIsAnimating(true);
     
     setTimeout(() => {
-      navigate(`/campus/${collegeId}`);
+      // For general confessions, go directly to the confessions page
+      if (collegeId === 'general') {
+        navigate(`/campus/${collegeId}/confessions`);
+      } else {
+        navigate(`/campus/${collegeId}`);
+      }
     }, 800);
   };
 
