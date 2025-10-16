@@ -69,8 +69,7 @@ export const TabNavigatorProvider: React.FC<{ children: React.ReactNode }> = ({ 
           navigate("/arena/darkroom", { replace: false });
           break;
         case "campus": {
-          const target = state.perTabSelectedSubTab.campus ?? "campus.info";
-          navigate(target === "campus.confessions" ? "/campus/confessions" : "/campus/info", { replace: false });
+          navigate("/campus", { replace: false });
           break;
         }
         case "companion":
