@@ -10,6 +10,7 @@ const IntroDarkRoom: React.FC = () => (
     index={4}
     total={5}
     nextPath="/onboarding/hangout"
+    prevPath="/onboarding/campus"
     titleStyle={{ fontFamily: 'EB Garamond, serif' }}
     subtitleStyle={{ fontFamily: 'Neue Haas Grotesk Text, Inter, system-ui, sans-serif' }}
     routes={["/onboarding/intro", "/onboarding/companion", "/onboarding/campus", "/onboarding/darkroom", "/onboarding/hangout"]}

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onboarding Swipe Gestures Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-title {
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+        .test-description {
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+        .test-steps {
+            background: #333;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin: 5px 0;
+            color: #ddd;
+        }
+        .mobile-hint {
+            background: #444;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            text-align: center;
+            color: #ffd700;
+        }
+        .keyboard-hint {
+            background: #444;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            color: #ffd700;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #2d5a2d;
+            color: #90ee90;
+        }
+        .status.info {
+            background: #2d4a5a;
+            color: #87ceeb;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎯 Onboarding Swipe Gestures & Tab Configuration Test</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">📱 Mobile Swipe Gestures</h2>
+            <p class="test-description">Test swipe navigation on mobile devices and tablets</p>
+            
+            <div class="test-steps">
+                <h3>Test Steps:</h3>
+                <ol>
+                    <li>Open the app on a mobile device or tablet</li>
+                    <li>Navigate to the onboarding flow (/onboarding/intro)</li>
+                    <li>Swipe left to go to the next slide</li>
+                    <li>Swipe right to go to the previous slide</li>
+                    <li>Verify smooth transitions between slides</li>
+                    <li>Test swipe sensitivity and velocity thresholds</li>
+                </ol>
+            </div>
+            
+            <div class="mobile-hint">
+                💡 <strong>Mobile Hint:</strong> Look for the "Swipe to navigate" hint at the top of each slide
+            </div>
+            
+            <div class="status info">
+                <strong>Expected Behavior:</strong>
+                <ul>
+                    <li>Swipe left (→) advances to next slide</li>
+                    <li>Swipe right (←) goes back to previous slide</li>
+                    <li>Swipe gestures work smoothly without interfering with vertical scrolling</li>
+                    <li>Previous/Next buttons appear/disappear based on current slide position</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">⌨️ Keyboard Navigation</h2>
+            <p class="test-description">Test keyboard shortcuts and tab configuration</p>
+            
+            <div class="test-steps">
+                <h3>Test Steps:</h3>
+                <ol>
+                    <li>Open the app on desktop/laptop</li>
+                    <li>Navigate to the onboarding flow</li>
+                    <li>Press <strong>Right Arrow</strong> or <strong>Space</strong> to go to next slide</li>
+                    <li>Press <strong>Left Arrow</strong> to go to previous slide</li>
+                    <li>Press <strong>Enter</strong> to advance to next slide</li>
+                    <li>Press <strong>Tab</strong> to navigate between interactive elements</li>
+                    <li>Click on progress dots to jump to specific slides</li>
+                </ol>
+            </div>
+            
+            <div class="keyboard-hint">
+                ⌨️ <strong>Keyboard Shortcuts:</strong>
+                <ul>
+                    <li><strong>→</strong> or <strong>Space</strong>: Next slide</li>
+                    <li><strong>←</strong>: Previous slide</li>
+                    <li><strong>Enter</strong>: Next slide</li>
+                    <li><strong>Tab</strong>: Navigate between elements</li>
+                </ul>
+            </div>
+            
+            <div class="status info">
+                <strong>Expected Behavior:</strong>
+                <ul>
+                    <li>All keyboard shortcuts work as expected</li>
+                    <li>Tab navigation follows logical order</li>
+                    <li>Progress dots are clickable and navigate correctly</li>
+                    <li>Focus management works properly</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">♿ Accessibility Features</h2>
+            <p class="test-description">Test accessibility compliance and screen reader support</p>
+            
+            <div class="test-steps">
+                <h3>Test Steps:</h3>
+                <ol>
+                    <li>Use a screen reader to navigate the onboarding</li>
+                    <li>Verify ARIA labels are properly announced</li>
+                    <li>Test keyboard-only navigation</li>
+                    <li>Check color contrast and visual indicators</li>
+                    <li>Verify focus indicators are visible</li>
+                </ol>
+            </div>
+            
+            <div class="status success">
+                <strong>Accessibility Features Implemented:</strong>
+                <ul>
+                    <li>✅ Proper ARIA labels for all interactive elements</li>
+                    <li>✅ Keyboard navigation support</li>
+                    <li>✅ Focus management</li>
+                    <li>✅ Screen reader friendly structure</li>
+                    <li>✅ High contrast visual indicators</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔄 Navigation Flow</h2>
+            <p class="test-description">Test the complete onboarding navigation flow</p>
+            
+            <div class="test-steps">
+                <h3>Onboarding Slides:</h3>
+                <ol>
+                    <li><strong>Slide 1:</strong> Nexus (intro) - No previous button</li>
+                    <li><strong>Slide 2:</strong> Companions - Previous/Next buttons</li>
+                    <li><strong>Slide 3:</strong> Campus - Previous/Next buttons</li>
+                    <li><strong>Slide 4:</strong> Dark Room - Previous/Next buttons</li>
+                    <li><strong>Slide 5:</strong> Hangouts - No next button, leads to registration</li>
+                </ol>
+            </div>
+            
+            <div class="status info">
+                <strong>Navigation Rules:</strong>
+                <ul>
+                    <li>First slide: Only Next button visible</li>
+                    <li>Middle slides: Both Previous and Next buttons visible</li>
+                    <li>Last slide: Only Previous button visible, Next triggers registration</li>
+                    <li>Progress dots: Always visible and clickable</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🐛 Common Issues to Check</h2>
+            <p class="test-description">Watch out for these potential issues</p>
+            
+            <div class="test-steps">
+                <h3>Issues to Verify Fixed:</h3>
+                <ol>
+                    <li>✅ Swipe gestures don't interfere with vertical scrolling</li>
+                    <li>✅ Touch events are properly handled on mobile</li>
+                    <li>✅ Keyboard navigation works on all slides</li>
+                    <li>✅ Progress dots are properly clickable</li>
+                    <li>✅ Navigation buttons appear/disappear correctly</li>
+                    <li>✅ Focus management works properly</li>
+                    <li>✅ ARIA labels are properly set</li>
+                    <li>✅ No linting errors in the code</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">📋 Test Checklist</h2>
+            <p class="test-description">Complete this checklist to verify all functionality</p>
+            
+            <div class="test-steps">
+                <h3>Mobile Testing:</h3>
+                <ul>
+                    <li>□ Swipe left advances to next slide</li>
+                    <li>□ Swipe right goes to previous slide</li>
+                    <li>□ Swipe gestures work smoothly</li>
+                    <li>□ No interference with vertical scrolling</li>
+                    <li>□ Touch targets are appropriately sized</li>
+                </ul>
+                
+                <h3>Desktop Testing:</h3>
+                <ul>
+                    <li>□ Right arrow advances to next slide</li>
+                    <li>□ Left arrow goes to previous slide</li>
+                    <li>□ Space bar advances to next slide</li>
+                    <li>□ Enter key advances to next slide</li>
+                    <li>□ Tab navigation works properly</li>
+                    <li>□ Progress dots are clickable</li>
+                </ul>
+                
+                <h3>Accessibility Testing:</h3>
+                <ul>
+                    <li>□ Screen reader announces slide information</li>
+                    <li>□ ARIA labels are properly set</li>
+                    <li>□ Focus indicators are visible</li>
+                    <li>□ Keyboard-only navigation works</li>
+                    <li>□ Color contrast is sufficient</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

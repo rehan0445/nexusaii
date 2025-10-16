@@ -16,6 +16,7 @@ const IntroHangout: React.FC = () => {
       index={5}
       total={5}
       nextPath="/register"
+      prevPath="/onboarding/darkroom"
       onNext={handleGetStarted}
       titleStyle={{ fontFamily: 'EB Garamond, serif' }}
       subtitleStyle={{ fontFamily: 'Neue Haas Grotesk Text, Inter, system-ui, sans-serif' }}
