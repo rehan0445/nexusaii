@@ -97,8 +97,8 @@ const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
       if (deltaX > 0 && index > 1) {
         // Swipe right - go to previous slide
         handlePrev();
-      } else if (deltaX < 0 && index < total) {
-        // Swipe left - go to next slide
+      } else if (deltaX < 0) {
+        // Swipe left - go to next slide (or get started on last slide)
         handleNext();
       }
     }
@@ -113,9 +113,7 @@ const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
       case ' ':
       case 'Enter':
         e.preventDefault();
-        if (index < total) {
-          handleNext();
-        }
+        handleNext();
         break;
       case 'ArrowLeft':
         e.preventDefault();
@@ -203,16 +201,14 @@ const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
               </button>
             )}
             
-            {/* Next button - only show if not on last slide */}
-            {index < total && (
-              <button
-                onClick={handleNext}
-                aria-label="Next slide"
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur flex items-center justify-center text-white transition-all active:scale-95"
-              >
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            )}
+            {/* Next button - show on all slides, including last slide */}
+            <button
+              onClick={handleNext}
+              aria-label={index < total ? "Next slide" : "Get Started"}
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur flex items-center justify-center text-white transition-all active:scale-95"
+            >
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </div>
