@@ -2035,7 +2035,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
       {/* Modern Header */}
       {/* Header Section */}
       <PageHeader
-        title={collegeName ? `${collegeName} Confessions` : 'Confessions'}
+        title={collegeName === 'General Confessions' ? 'Confessions' : `${collegeName} Confessions`}
         onBack={onBack}
         onSearch={handleSearch}
         recentSearches={recentSearches}
