@@ -713,8 +713,9 @@ router.get("/", async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || "20", 10), 100);
   const cursor = req.query.cursor ? parseInt(req.query.cursor, 10) : 0;
   const campus = req.query.campus; // Get campus filter
+  const sortBy = req.query.sortBy || 'created_at'; // Default to created_at, can be 'score' for upvotes
   const table = getConfessionTable(campus) || 'confessions';
-  console.log(`[CONFESSION FETCH] campus: ${campus}, table: ${table}`);
+  console.log(`[CONFESSION FETCH] campus: ${campus}, table: ${table}, sortBy: ${sortBy}`);
 
   try {
     const rangeFrom = cursor;
@@ -727,21 +728,21 @@ router.get("/", async (req, res) => {
         .from('confessions')
         .select("*")
         .eq("campus", campus)
-        .order("created_at", { ascending: false })
+        .order(sortBy === 'score' ? "score" : "created_at", { ascending: false })
         .range(rangeFrom, rangeTo);
     } else if (table !== 'confessions') {
       // Campus-specific table
       query = supabase
         .from(table)
         .select("*")
-        .order("created_at", { ascending: false })
+        .order(sortBy === 'score' ? "score" : "created_at", { ascending: false })
         .range(rangeFrom, rangeTo);
     } else {
       // Fallback: return latest across all tables if campus missing
       query = supabase
         .from('confessions')
         .select("*")
-        .order("created_at", { ascending: false })
+        .order(sortBy === 'score' ? "score" : "created_at", { ascending: false })
         .range(rangeFrom, rangeTo);
     }
 

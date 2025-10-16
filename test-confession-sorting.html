@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confession Auto-Sorting Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .confession {
+            background: #3a3a3a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #F4E3B5;
+        }
+        .score {
+            color: #F4E3B5;
+            font-weight: bold;
+        }
+        button {
+            background: #F4E3B5;
+            color: #1a1a1a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #e6d1a1;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #2d5a2d; }
+        .error { background: #5a2d2d; }
+        .info { background: #2d4a5a; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Confession Auto-Sorting Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Data</h2>
+        <p>This test simulates confessions with different upvote scores to verify the sorting algorithm.</p>
+        
+        <button onclick="generateTestData()">Generate Test Confessions</button>
+        <button onclick="testSorting()">Test Auto-Sorting</button>
+        <button onclick="simulateVoteUpdates()">Simulate Vote Updates</button>
+        
+        <div id="status"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Confessions (Sorted by Upvotes)</h2>
+        <div id="confessions-list"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Sorting Log</h2>
+        <div id="sorting-log"></div>
+    </div>
+
+    <script>
+        let testConfessions = [];
+        let sortInterval = null;
+
+        function generateTestData() {
+            testConfessions = [
+                { id: '1', content: 'I love my campus!', score: 15, timestamp: new Date() },
+                { id: '2', content: 'Exams are stressing me out', score: 8, timestamp: new Date() },
+                { id: '3', content: 'Found my soulmate in the library', score: 23, timestamp: new Date() },
+                { id: '4', content: 'Roommate drama is real', score: 5, timestamp: new Date() },
+                { id: '5', content: 'Best pizza place near campus?', score: 12, timestamp: new Date() },
+                { id: '6', content: 'Midnight study sessions hit different', score: 18, timestamp: new Date() },
+                { id: '7', content: 'Professor gave us extra credit!', score: 3, timestamp: new Date() },
+                { id: '8', content: 'Campus WiFi is terrible', score: 20, timestamp: new Date() }
+            ];
+            
+            displayConfessions();
+            logStatus('✅ Test data generated with ' + testConfessions.length + ' confessions', 'success');
+        }
+
+        function displayConfessions() {
+            const container = document.getElementById('confessions-list');
+            container.innerHTML = '';
+            
+            testConfessions.forEach((confession, index) => {
+                const div = document.createElement('div');
+                div.className = 'confession';
+                div.innerHTML = `
+                    <div><strong>#${index + 1}</strong> - <span class="score">${confession.score} upvotes</span></div>
+                    <div>${confession.content}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function testSorting() {
+            // Sort by score (upvotes) in descending order
+            testConfessions.sort((a, b) => (b.score || 0) - (a.score || 0));
+            displayConfessions();
+            logStatus('🔄 Confessions sorted by upvotes (highest to lowest)', 'info');
+            logSorting('Manual sort triggered - sorted by score descending');
+        }
+
+        function simulateVoteUpdates() {
+            // Simulate random vote changes
+            const randomIndex = Math.floor(Math.random() * testConfessions.length);
+            const change = Math.random() > 0.5 ? 1 : -1;
+            testConfessions[randomIndex].score += change;
+            
+            displayConfessions();
+            logStatus(`📊 Vote update: Confession #${randomIndex + 1} ${change > 0 ? 'gained' : 'lost'} 1 upvote`, 'info');
+            logSorting(`Vote update: Confession #${randomIndex + 1} score changed to ${testConfessions[randomIndex].score}`);
+        }
+
+        function startAutoSorting() {
+            if (sortInterval) {
+                clearInterval(sortInterval);
+            }
+            
+            sortInterval = setInterval(() => {
+                testConfessions.sort((a, b) => (b.score || 0) - (a.score || 0));
+                displayConfessions();
+                logStatus('🔄 Auto-sorted confessions by upvotes (10s interval)', 'info');
+                logSorting('Auto-sort triggered - sorted by score descending');
+            }, 10000);
+            
+            logStatus('✅ Auto-sorting started (10-second intervals)', 'success');
+        }
+
+        function stopAutoSorting() {
+            if (sortInterval) {
+                clearInterval(sortInterval);
+                sortInterval = null;
+                logStatus('⏹️ Auto-sorting stopped', 'info');
+            }
+        }
+
+        function logStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            statusDiv.appendChild(div);
+            statusDiv.scrollTop = statusDiv.scrollHeight;
+        }
+
+        function logSorting(message) {
+            const logDiv = document.getElementById('sorting-log');
+            const div = document.createElement('div');
+            div.style.padding = '5px';
+            div.style.borderBottom = '1px solid #444';
+            div.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            logDiv.appendChild(div);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Auto-start with test data
+        window.onload = function() {
+            generateTestData();
+            logStatus('🚀 Test page loaded. Click buttons to test functionality.', 'info');
+        };
+    </script>
+</body>
+</html>
