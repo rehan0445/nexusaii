@@ -72,6 +72,7 @@ const Register: React.FC = () => {
             name: formData.name,
             full_name: formData.name,
           },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 

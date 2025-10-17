@@ -10,6 +10,7 @@ import { GroupChatProvider } from "./contexts/GroupChatContext";
 // Core pages - loaded immediately
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import AuthCallback from "./pages/AuthCallback";
 import WelcomeScreen from "./pages/WelcomeScreen";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -86,9 +87,10 @@ const SwipeGestureHandler: React.FC = () => {
   const { openChats, closeChats, isOpen } = useNexusChats();
   const location = useLocation();
 
-  // Disable swipe on login/register/legal pages
+  // Disable swipe on login/register/legal pages and auth callback
   const shouldDisableSwipe = location.pathname === '/login' || 
                               location.pathname === '/register' ||
+                              location.pathname === '/auth/callback' ||
                               location.pathname === '/terms' ||
                               location.pathname === '/privacy' ||
                               location.pathname.startsWith('/onboarding');
@@ -117,7 +119,7 @@ function App() {
   const location = useLocation();
   const hideBottomBar = React.useMemo(() => {
     const p = location.pathname;
-    return p === '/login' || p === '/register' || p === '/terms' || p === '/privacy' || p.startsWith('/onboarding');
+    return p === '/login' || p === '/register' || p === '/auth/callback' || p === '/terms' || p === '/privacy' || p.startsWith('/onboarding');
   }, [location.pathname]);
   return (
     <SettingsProvider>
@@ -138,6 +140,7 @@ function App() {
                   <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
                   <Route path="/terms" element={<TermsAndConditions />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/user-info" element={<UserInfoForm />} />
