@@ -493,7 +493,7 @@ export function ConfessionPage({ onBack, universityId, collegeName, collegeFullN
     
     setLoading(true);
     try {
-      const response = await fetch(`${getServerUrl()}/api/confessions?cursor=${cursor}&limit=10&campus=${universityId}`);
+      const response = await fetch(`${getServerUrl()}/api/confessions?cursor=${cursor}&limit=10&campus=${universityId}&sessionId=${encodeURIComponent(sessionId)}`);
       const result = await response.json();
       
       if (result.success && result.data.items.length > 0) {
@@ -621,7 +621,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
       characterCount: (serverConfession.content || '').length,
       authorAlias: aliasValue,
       score: serverConfession.score || 0,
-      userVote: serverConfession.userVote || 0,
+      userVote: typeof serverConfession.userVote === 'number' ? serverConfession.userVote : 0,
       reactions: reactionsValue,
       backgroundImageUrl: serverConfession.backgroundImageUrl || null,
       creatorSessionId: serverConfession.sessionId || serverConfession.session_id || null,
@@ -677,7 +677,8 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
         alert('Please select a valid college/campus.');
         return;
       }
-      const response = await apiFetch(`${getServerUrl()}/api/confessions?cursor=0&limit=10&campus=${campusCode}`);
+      // Pass sessionId to get user's vote status
+      const response = await apiFetch(`${getServerUrl()}/api/confessions?cursor=0&limit=10&campus=${campusCode}&sessionId=${encodeURIComponent(sessionId)}`);
       const result = await response.json();
 
       if (result.success && result.data.items.length > 0) {
@@ -759,7 +760,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
 
       isFetchingRef.current = true;
       try {
-        const response = await apiFetch(`${getServerUrl()}/api/confessions?cursor=0&limit=${Math.max(confessionsLengthRef.current, 10)}&campus=${universityId}`);
+        const response = await apiFetch(`${getServerUrl()}/api/confessions?cursor=0&limit=${Math.max(confessionsLengthRef.current, 10)}&campus=${universityId}&sessionId=${encodeURIComponent(sessionId)}`);
         const result = await response.json();
 
         if (result.success && result.data.items.length >= confessionsLengthRef.current) {

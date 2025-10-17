@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Confession Voting</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #0a0a0a;
+            color: #fff;
+        }
+        .test-section {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #F4E3B5;
+        }
+        .result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .result.success {
+            background-color: #1a3d1a;
+            border: 1px solid #2d5f2d;
+        }
+        .result.error {
+            background-color: #3d1a1a;
+            border: 1px solid #5f2d2d;
+        }
+        .result.info {
+            background-color: #1a1a3d;
+            border: 1px solid #2d2d5f;
+        }
+        button {
+            background: #F4E3B5;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        button:hover {
+            background: #e6d5a5;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        pre {
+            background: #000;
+            padding: 10px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗳️ Confession Voting Test</h1>
+    <p>This page tests the confession upvote/downvote functionality.</p>
+
+    <div class="test-section">
+        <h2>Setup</h2>
+        <div id="setup-info" class="result info">
+            <strong>Session ID:</strong> <span id="session-id">Loading...</span><br>
+            <strong>Server URL:</strong> <span id="server-url">Loading...</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 1: Fetch Confessions with Vote Status</h2>
+        <button onclick="testFetchConfessions()">Run Test</button>
+        <div id="test1-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Upvote a Confession</h2>
+        <input type="text" id="confession-id-upvote" placeholder="Enter confession ID" style="width: 300px; padding: 8px; border-radius: 6px; border: 1px solid #333; background: #000; color: #fff;">
+        <button onclick="testUpvote()">Upvote</button>
+        <div id="test2-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Downvote a Confession</h2>
+        <input type="text" id="confession-id-downvote" placeholder="Enter confession ID" style="width: 300px; padding: 8px; border-radius: 6px; border: 1px solid #333; background: #000; color: #fff;">
+        <button onclick="testDownvote()">Downvote</button>
+        <div id="test3-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Remove Vote (Toggle)</h2>
+        <input type="text" id="confession-id-toggle" placeholder="Enter confession ID" style="width: 300px; padding: 8px; border-radius: 6px; border: 1px solid #333; background: #000; color: #fff;">
+        <button onclick="testToggleUpvote()">Toggle Upvote</button>
+        <button onclick="testToggleDownvote()">Toggle Downvote</button>
+        <div id="test4-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 5: Fetch Single Confession with Vote</h2>
+        <input type="text" id="confession-id-single" placeholder="Enter confession ID" style="width: 300px; padding: 8px; border-radius: 6px; border: 1px solid #333; background: #000; color: #fff;">
+        <button onclick="testFetchSingleConfession()">Fetch</button>
+        <div id="test5-result"></div>
+    </div>
+
+    <script>
+        const SERVER_URL = 'http://localhost:5000';
+        const SESSION_KEY = 'confession_session_id';
+        
+        // Get or create session ID
+        let sessionId = localStorage.getItem(SESSION_KEY);
+        if (!sessionId) {
+            sessionId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            localStorage.setItem(SESSION_KEY, sessionId);
+        }
+        
+        document.getElementById('session-id').textContent = sessionId;
+        document.getElementById('server-url').textContent = SERVER_URL;
+
+        function displayResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+
+        async function testFetchConfessions() {
+            displayResult('test1-result', '⏳ Fetching confessions...', 'info');
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/api/confessions?limit=5&campus=general&sessionId=${encodeURIComponent(sessionId)}`);
+                const data = await response.json();
+                
+                if (data.success && data.data.items.length > 0) {
+                    const confessions = data.data.items;
+                    let html = '<strong>✅ Success!</strong> Fetched ' + confessions.length + ' confessions:<br><br>';
+                    
+                    confessions.forEach((c, idx) => {
+                        html += `<strong>Confession ${idx + 1}:</strong><br>`;
+                        html += `ID: ${c.id}<br>`;
+                        html += `Score: ${c.score}<br>`;
+                        html += `User Vote: ${c.userVote} (${c.userVote === 1 ? '👍 Upvoted' : c.userVote === -1 ? '👎 Downvoted' : '⚪ No vote'})<br>`;
+                        html += `Content: ${c.content.substring(0, 50)}...<br><br>`;
+                    });
+                    
+                    displayResult('test1-result', html, 'success');
+                } else {
+                    displayResult('test1-result', '❌ No confessions found', 'error');
+                }
+            } catch (error) {
+                displayResult('test1-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testUpvote() {
+            const confessionId = document.getElementById('confession-id-upvote').value.trim();
+            if (!confessionId) {
+                displayResult('test2-result', '❌ Please enter a confession ID', 'error');
+                return;
+            }
+            
+            displayResult('test2-result', '⏳ Upvoting...', 'info');
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/api/confessions/${confessionId}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ direction: 1, sessionId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResult('test2-result', 
+                        `✅ Success!<br>Score: ${data.data.score}<br>Your Vote: ${data.data.userVote} (${data.data.userVote === 1 ? '👍 Upvoted' : data.data.userVote === 0 ? '⚪ Vote removed' : '👎 Downvoted'})`,
+                        'success'
+                    );
+                } else {
+                    displayResult('test2-result', `❌ Failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                displayResult('test2-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDownvote() {
+            const confessionId = document.getElementById('confession-id-downvote').value.trim();
+            if (!confessionId) {
+                displayResult('test3-result', '❌ Please enter a confession ID', 'error');
+                return;
+            }
+            
+            displayResult('test3-result', '⏳ Downvoting...', 'info');
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/api/confessions/${confessionId}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ direction: -1, sessionId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResult('test3-result', 
+                        `✅ Success!<br>Score: ${data.data.score}<br>Your Vote: ${data.data.userVote} (${data.data.userVote === 1 ? '👍 Upvoted' : data.data.userVote === -1 ? '👎 Downvoted' : '⚪ Vote removed'})`,
+                        'success'
+                    );
+                } else {
+                    displayResult('test3-result', `❌ Failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                displayResult('test3-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testToggleUpvote() {
+            const confessionId = document.getElementById('confession-id-toggle').value.trim();
+            if (!confessionId) {
+                displayResult('test4-result', '❌ Please enter a confession ID', 'error');
+                return;
+            }
+            
+            displayResult('test4-result', '⏳ Toggling upvote...', 'info');
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/api/confessions/${confessionId}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ direction: 1, sessionId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResult('test4-result', 
+                        `✅ Success!<br>Score: ${data.data.score}<br>Your Vote: ${data.data.userVote} (${data.data.userVote === 1 ? '👍 Upvoted' : data.data.userVote === 0 ? '⚪ Vote removed' : '👎 Downvoted'})`,
+                        'success'
+                    );
+                } else {
+                    displayResult('test4-result', `❌ Failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                displayResult('test4-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testToggleDownvote() {
+            const confessionId = document.getElementById('confession-id-toggle').value.trim();
+            if (!confessionId) {
+                displayResult('test4-result', '❌ Please enter a confession ID', 'error');
+                return;
+            }
+            
+            displayResult('test4-result', '⏳ Toggling downvote...', 'info');
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/api/confessions/${confessionId}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ direction: -1, sessionId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResult('test4-result', 
+                        `✅ Success!<br>Score: ${data.data.score}<br>Your Vote: ${data.data.userVote} (${data.data.userVote === 1 ? '👍 Upvoted' : data.data.userVote === -1 ? '👎 Downvoted' : '⚪ Vote removed'})`,
+                        'success'
+                    );
+                } else {
+                    displayResult('test4-result', `❌ Failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                displayResult('test4-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testFetchSingleConfession() {
+            const confessionId = document.getElementById('confession-id-single').value.trim();
+            if (!confessionId) {
+                displayResult('test5-result', '❌ Please enter a confession ID', 'error');
+                return;
+            }
+            
+            displayResult('test5-result', '⏳ Fetching confession...', 'info');
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/api/confessions/${confessionId}?sessionId=${encodeURIComponent(sessionId)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const c = data.data;
+                    let html = '<strong>✅ Success!</strong><br><br>';
+                    html += `<strong>ID:</strong> ${c.id}<br>`;
+                    html += `<strong>Score:</strong> ${c.score}<br>`;
+                    html += `<strong>User Vote:</strong> ${c.userVote} (${c.userVote === 1 ? '👍 Upvoted' : c.userVote === -1 ? '👎 Downvoted' : '⚪ No vote'})<br>`;
+                    html += `<strong>Content:</strong> ${c.content.substring(0, 100)}...<br>`;
+                    
+                    displayResult('test5-result', html, 'success');
+                } else {
+                    displayResult('test5-result', `❌ Failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                displayResult('test5-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run the first test
+        setTimeout(() => testFetchConfessions(), 500);
+    </script>
+</body>
+</html>
+

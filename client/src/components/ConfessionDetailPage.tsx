@@ -293,7 +293,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
         // If not found locally, try to fetch from server
         if (!foundConfession) {
           try {
-            const response = await fetch(`${getServerUrl()}/api/confessions/${confessionId}`);
+            const response = await fetch(`${getServerUrl()}/api/confessions/${confessionId}?sessionId=${encodeURIComponent(sessionId)}`);
             const result = await response.json();
             if (result.success) {
               foundConfession = result.data;
@@ -328,7 +328,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
             timestamp: new Date(foundConfession.timestamp || foundConfession.createdAt),
             authorAlias: normalizedAuthorAlias,
             score: foundConfession.score || 0,
-            userVote: foundConfession.userVote || 0,
+            userVote: typeof foundConfession.userVote === 'number' ? foundConfession.userVote : 0,
             reactions: foundConfession.reactions || {},
             backgroundImageUrl: foundConfession.backgroundImageUrl,
             poll: foundConfession.poll,

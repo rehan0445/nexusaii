@@ -111,6 +111,39 @@ const normalizeReply = (row) => {
   };
 };
 
+// Helper function to fetch user votes for multiple confessions
+const getUserVotesForConfessions = async (confessionIds, sessionId) => {
+  if (!sessionId || !Array.isArray(confessionIds) || confessionIds.length === 0) {
+    return {};
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('confession_votes')
+      .select('confession_id, vote')
+      .eq('voter_session_id', sessionId)
+      .in('confession_id', confessionIds);
+
+    if (error) {
+      console.error('Error fetching user votes:', error);
+      return {};
+    }
+
+    // Create a map of confession_id -> vote
+    const votesMap = {};
+    if (Array.isArray(data)) {
+      data.forEach(row => {
+        votesMap[row.confession_id] = safeNumber(row.vote, 0);
+      });
+    }
+
+    return votesMap;
+  } catch (error) {
+    console.error('Failed to fetch user votes:', error);
+    return {};
+  }
+};
+
 const parseFallbackConfession = (entry) => {
   const normalized = normalizeConfession(entry);
   if (!normalized) return null;
@@ -811,6 +844,26 @@ router.get("/", async (req, res) => {
     } else if (campus) {
       items = items.map((item) => ({ ...item, campus: item.campus || campus }));
     }
+
+    // Fetch user votes for these confessions
+    const sessionId = req.query.sessionId;
+    if (sessionId && items.length > 0) {
+      const confessionIds = items.map(item => item.id);
+      const userVotes = await getUserVotesForConfessions(confessionIds, sessionId);
+      
+      // Add userVote to each item
+      items = items.map(item => ({
+        ...item,
+        userVote: userVotes[item.id] || 0
+      }));
+    } else {
+      // Ensure userVote field exists even if no sessionId
+      items = items.map(item => ({
+        ...item,
+        userVote: 0
+      }));
+    }
+
     items.forEach((item) => upsertConfession(item));
     await writeFallback();
 
@@ -1632,7 +1685,27 @@ router.get("/:id", async (req, res) => {
     return res.status(404).json({ success: false, message: "Confession not found" });
   }
 
-  return res.json({ success: true, data: confession });
+  // Fetch user's vote for this confession
+  const sessionId = req.query.sessionId;
+  let userVote = 0;
+  if (sessionId) {
+    try {
+      const { data, error } = await supabase
+        .from('confession_votes')
+        .select('vote')
+        .eq('confession_id', id)
+        .eq('voter_session_id', sessionId)
+        .maybeSingle();
+
+      if (!error && data) {
+        userVote = safeNumber(data.vote, 0);
+      }
+    } catch (error) {
+      console.error('Error fetching user vote:', error);
+    }
+  }
+
+  return res.json({ success: true, data: { ...confession, userVote } });
 });
 
 export default router;
