@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, MessageCircle, Eye, Star } from 'lucide-react';
+import { X, MessageCircle, Star } from 'lucide-react';
 import { incrementView } from '../utils/viewsManager';
 import { AnimeCharacter } from '../utils/animeCharacters';
 
@@ -183,16 +183,6 @@ const EditorChoiceReels: React.FC<EditorChoiceReelsProps> = ({ isOpen, onClose, 
                   </div>
                 </div>
 
-                {/* Side Actions - Right Side */}
-                <div className="absolute right-4 bottom-32 z-[305] flex flex-col space-y-6">
-                  {/* Views Count */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-14 h-14 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white">
-                      <Eye className="w-7 h-7" />
-                    </div>
-                    <span className="text-white text-xs mt-1 drop-shadow-md">12.4K views</span>
-                  </div>
-                </div>
 
                 {/* Progress Dots */}
                 <div className="absolute right-6 top-1/2 -translate-y-1/2 z-[305] flex flex-col space-y-2">
