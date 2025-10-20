@@ -209,7 +209,6 @@ const EditorChoiceReels: React.FC<EditorChoiceReelsProps> = ({ isOpen, onClose, 
             })}
           </div>
         </div>
-      </div>
 
         {/* Swipe Hint - Show on first load */}
         {currentIndex === 0 && (
