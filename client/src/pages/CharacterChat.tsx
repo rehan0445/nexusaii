@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 import {
   ArrowLeft,
   Send,
@@ -859,6 +860,7 @@ function CharacterChat() {
       // Show typing indicator
       setIsTyping(true);
 
+      const traceId = uuidv4();
       const response = await axios.post("/api/v1/chat/ai/claude", {
         question: enhancedPrompt,
         modelName: characterId,
@@ -868,10 +870,14 @@ function CharacterChat() {
         incognitoMode: isIncognito,
         characterData: character, // Send full character data for accurate personality
         persistentContext: isIncognito ? null : persistentMemory, // Send persistent memory for context continuity
-        userId: currentUser?.uid // Add userId for affection tracking
+        userId: currentUser?.uid, // Add userId for affection tracking
+        traceId
       });
       
       const aiResponse = response.data.answer || response.data;
+      if (response.data.finishReason === 'length') {
+        console.warn(`[${response.data.traceId || traceId}] Assistant reply was truncated (finish_reason=length).`);
+      }
       const responseTypingDelay = response.data.typingDelay || 2000;
       const affectionGain = response.data.affectionGain;
       const questTrigger = response.data.questTrigger;
@@ -1242,22 +1248,31 @@ IMPORTANT: You can respond in one of these formats (choose what feels natural):
 2. Just thoughts: [THINKS: Your character's internal thoughts as they continue]
 3. Both: [THINKS: internal thoughts] [SAYS: what they say]
 
+Do NOT output the word "continue". Resume seamlessly without prefacing or repeating earlier text.
+
 Choose the format that feels most natural for continuing the conversation.`;
 
       console.log('Sending continue request to API...');
       
+      const traceId = uuidv4();
       const response = await axios.post("/api/v1/chat/ai/claude", {
         question: continuePrompt,
         modelName: characterId,
         mood: currentMood.name,
         customInstructions: isIncognito ? null : customInstructions,
         conversationHistory: isIncognito ? incognitoMessages : messages,
-        incognitoMode: isIncognito
+        incognitoMode: isIncognito,
+        characterData: character,
+        persistentContext: isIncognito ? null : persistentMemory,
+        traceId
       });
       
       console.log('API response received:', response.data);
       
       const aiResponse = response.data.answer || response.data;
+      if (response.data.finishReason === 'length') {
+        console.warn(`[${response.data.traceId || traceId}] Assistant continuation was truncated (finish_reason=length).`);
+      }
       const parsedResponse = parseAIResponse(aiResponse);
       
       const continuationMessage: Message = {
@@ -2353,8 +2368,7 @@ Choose the format that feels most natural for continuing the conversation.`;
                   backgroundColor: isIncognito ? '#1a1a1a80' : '#27272a80',
                   borderColor: colorScheme.border,
                   color: colorScheme.text,
-                  border: '1px solid',
-                  focusRingColor: colorScheme.accent
+                  border: '1px solid'
                 }}
                 rows={1}
                 onKeyDown={(e) => {

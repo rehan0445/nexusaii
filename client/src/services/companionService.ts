@@ -172,18 +172,19 @@ function buildSystemMessage(character: any, emotion: ChatSession["emotion"]): st
     neutral: "Respond naturally in your authentic voice.",
   };
 
+  const quirks = Array.isArray(character.personality.quirks) ? character.personality.quirks.join(", ") : "";
   return `${character.personality.background}
 
 You are ${character.name}, ${character.role}.
 Personality: ${character.personality.traits.join(", ")}
 Speaking Style: ${character.personality.speakingStyle}
-Quirks: ${character.personality.quirks.slice(0, 3).join(", ")}
+Quirks: ${quirks}
 
 ${emotionalCues[emotion]}
 
 IMPORTANT:
 - Use natural dialogue, not narration or asterisks
-- Keep responses concise (2-4 sentences max)
+- Keep responses concise but expressive
 - Stay true to your character
 - Show emotion through words, not descriptions`;
 }
@@ -241,7 +242,7 @@ async function executeRequest(sessionId: string, userMessage: string, userName =
   const payload = {
     model: session.model,
     messages: fullConversation,
-    max_tokens: 150, // Optimize token usage
+    max_tokens: 400,
     temperature: 0.8,
     venice_parameters: {
       include_venice_system_prompt: false,

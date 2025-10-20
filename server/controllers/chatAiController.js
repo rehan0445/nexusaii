@@ -2,6 +2,7 @@
 import affectionService from '../services/affectionService.js';
 import memoryService from '../services/memoryService.js';
 import questService from '../services/questService.js';
+import { randomUUID } from 'node:crypto';
 
 // Request queue for Venice AI to handle 10k concurrent users
 const requestQueue = {
@@ -40,7 +41,9 @@ export const chatAiClaude = async (req, res) => {
   console.log(`📊 Venice AI Queue: ${requestQueue.pending}/${requestQueue.maxConcurrent} concurrent requests`);
 
   try {
-    const { question, modelName, mood, customInstructions, conversationHistory, incognitoMode, characterData, persistentContext } = req.body;
+    const { question, modelName, mood, customInstructions, conversationHistory, incognitoMode, characterData, persistentContext, traceId: clientTraceId } = req.body;
+
+    const traceId = clientTraceId || randomUUID();
 
     if (!question) {
       return res
@@ -56,6 +59,34 @@ export const chatAiClaude = async (req, res) => {
 
     // Use qwen3-4b as the single model for all characters
     const veniceModel = 'qwen3-4b';
+
+    // Cheap token estimator (approximate)
+    const estimateTokens = (text = '') => Math.ceil((text || '').length / 4);
+
+    // Sanitize characterData to ensure required persona fields exist
+    const safeCharacterData = characterData ? {
+      ...characterData,
+      personality: {
+        ...characterData.personality,
+        speakingStyle: characterData?.personality?.speakingStyle || `${modelName}'s natural speaking style`,
+        traits: Array.isArray(characterData?.personality?.traits) ? characterData.personality.traits : [],
+        quirks: Array.isArray(characterData?.personality?.quirks) ? characterData.personality.quirks : []
+      }
+    } : null;
+
+    // Build persona/system prompt WITHOUT embedding persistent memory (memory added separately)
+    const personaPrompt = buildCharacterPrompt(modelName, safeCharacterData, mood, customInstructions, incognitoMode, null, null);
+
+    // Build memory prompt (separate system message) when available
+    const memoryPrompt = (!incognitoMode && persistentContext) ? (
+      `PERSISTENT MEMORY (User-specific context):\n` +
+      `• Relationship Status: ${persistentContext.relationship_status || 'just met'}\n` +
+      `• Conversation Tone: ${persistentContext.conversation_tone || 'friendly'}\n` +
+      `${persistentContext.remembered_facts && persistentContext.remembered_facts.length > 0 ? `• Key Facts About User: ${persistentContext.remembered_facts.join(', ')}` : ''}\n` +
+      `${persistentContext.key_events && persistentContext.key_events.length > 0 ? `• Recent Events: ${persistentContext.key_events.slice(-3).map(e => e.description || e).join('; ')}` : ''}\n` +
+      `${persistentContext.summary ? `• Conversation Summary: ${persistentContext.summary}` : ''}\n` +
+      `IMPORTANT: Use this memory to maintain continuity across sessions.\n`
+    ) : null;
 
     // Create cache key for identical requests
     const cacheKey = `${modelName}-${question}-${mood || 'neutral'}-${incognitoMode ? 'incognito' : 'normal'}`;
@@ -90,34 +121,48 @@ export const chatAiClaude = async (req, res) => {
       }
     }
 
-    // Build character-focused prompt using character data and persistent context
-    const systemPrompt = buildCharacterPrompt(modelName, characterData, mood, customInstructions, incognitoMode, persistentContext, affectionContext);
+    // Build character-focused prompt using character data (memory added separately below)
 
-    // Prepare conversation history for Venice AI
-    const messages = [];
-    
-    // Add conversation history if provided - keep last 30 messages for better context
-    if (conversationHistory && conversationHistory.length > 0) {
-      // Filter out empty messages and keep last 30 for context
-      const validHistory = conversationHistory
-        .filter(msg => msg && (msg.text || msg.message) && msg.sender)
-        .slice(-30); // Increased from 10 to 30 messages for better context retention
-      
-      validHistory.forEach(msg => {
-        messages.push({
-          role: msg.sender === 'user' ? 'user' : 'assistant',
-          content: msg.text || msg.message || ''
-        });
-      });
-      
-      console.log(`📝 Including ${validHistory.length} previous messages for context`);
+    // Prepare conversation history for Venice AI with token budgeting
+    const historyMessages = [];
+    const validHistory = (conversationHistory || [])
+      .filter(msg => msg && (msg.text || msg.message) && msg.sender)
+      .map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.text || msg.message || ''
+      }));
+
+    // Token budget allocation
+    // Assume conservative input budget ~3200 tokens to leave room for completion
+    const INPUT_BUDGET = 3200;
+    const personaTokens = estimateTokens(personaPrompt);
+    const memoryTokens = estimateTokens(memoryPrompt || '');
+    // Reserve at least 400 tokens for completion
+    const RESERVED_FOR_COMPLETION = 400;
+    let remainingForHistory = Math.max(0, INPUT_BUDGET - personaTokens - memoryTokens - RESERVED_FOR_COMPLETION);
+
+    // Include most recent messages until token budget is met
+    for (let i = validHistory.length - 1; i >= 0; i--) {
+      const msg = validHistory[i];
+      const cost = estimateTokens(`${msg.role}: ${msg.content}`);
+      if (cost <= remainingForHistory) {
+        historyMessages.unshift(msg);
+        remainingForHistory -= cost;
+      } else {
+        break;
+      }
     }
 
-    // Add current user message
-    messages.push({
-      role: 'user',
-      content: question
-    });
+    // Add current user message at the end
+    const currentUserMessage = { role: 'user', content: question };
+
+    // Compose final messages array with role-separated system prompts
+    const finalMessages = [
+      { role: 'system', content: personaPrompt },
+      ...(memoryPrompt ? [{ role: 'system', content: memoryPrompt }] : []),
+      ...historyMessages,
+      currentUserMessage
+    ];
 
     // Check if API key is available
     if (!process.env.VENICE_API_KEY) {
@@ -125,13 +170,18 @@ export const chatAiClaude = async (req, res) => {
       throw new Error('Venice AI API key not configured');
     }
 
+    const startTime = Date.now();
     console.log('🔑 Venice AI Request:', {
+      traceId,
       model: veniceModel,
       character: modelName,
       hasApiKey: !!process.env.VENICE_API_KEY,
-      messageCount: messages.length,
-      conversationHistoryLength: conversationHistory?.length || 0,
-      contextMessagesIncluded: messages.length - 1, // -1 for current message
+      historyProvided: conversationHistory?.length || 0,
+      historyIncluded: historyMessages.length,
+      personaTokens,
+      memoryTokens,
+      inputBudget: INPUT_BUDGET,
+      reservedForCompletion: RESERVED_FOR_COMPLETION,
       hasCharacterData: !!characterData,
       hasPersistentContext: !!persistentContext,
       hasAffectionContext: !!affectionContext,
@@ -174,12 +224,9 @@ export const chatAiClaude = async (req, res) => {
         },
         body: JSON.stringify({
           model: veniceModel,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...messages
-          ],
+          messages: finalMessages,
           temperature: temperature,
-          max_tokens: 600, // Reduced from 1200 for faster generation
+          max_tokens: 400,
           top_p: 0.92,
           frequency_penalty: 0.2,
           presence_penalty: 0.2,
@@ -215,12 +262,61 @@ export const chatAiClaude = async (req, res) => {
     }
 
     const responseText = veniceData.choices[0].message.content.trim();
+    const finishReason = veniceData.choices?.[0]?.finish_reason || null;
+    const usage = veniceData.usage || null;
+
+    console.log('🧾 Venice response meta:', {
+      traceId,
+      finishReason,
+      usage
+    });
 
     // Ensure response is text-only (no code or image generation)
     const cleanedResponse = sanitizeResponse(responseText);
 
+    // If response was cut off, attempt a single auto-resume
+    let finalAnswer = cleanedResponse;
+    if (finishReason === 'length') {
+      try {
+        const tailHistory = historyMessages.slice(-3);
+        const resumeMessages = [
+          { role: 'system', content: personaPrompt },
+          ...(memoryPrompt ? [{ role: 'system', content: memoryPrompt }] : []),
+          ...tailHistory,
+          { role: 'assistant', content: cleanedResponse },
+          { role: 'user', content: 'Resume exactly where you stopped in your last message. Do not repeat content and do not output the word "continue". Continue seamlessly.' }
+        ];
+
+        const resumeResp = await fetch('https://api.venice.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: veniceModel,
+            messages: resumeMessages,
+            temperature: temperature,
+            max_tokens: 600,
+            top_p: 0.92,
+            frequency_penalty: 0.2,
+            presence_penalty: 0.2,
+            stream: false
+          })
+        });
+        if (resumeResp.ok) {
+          const resumeData = await resumeResp.json();
+          const resumeText = resumeData.choices?.[0]?.message?.content?.trim() || '';
+          const cleanedResume = sanitizeResponse(resumeText);
+          finalAnswer = `${finalAnswer}${finalAnswer.endsWith('\n') ? '' : '\n'}${cleanedResume}`.trim();
+        }
+    } catch (error_) {
+      console.warn('⚠️ Auto-resume failed:', error_?.message || error_);
+      }
+    }
+
     // Calculate typing delay based on response length and character speed
-    const responseLength = cleanedResponse.length;
+    const responseLength = finalAnswer.length;
     const baseDelay = Math.max(responseLength * typingSpeed, 1000); // Minimum 1 second
     const maxDelay = 4000; // Maximum 4 seconds
     const typingDelay = Math.min(baseDelay, maxDelay);
@@ -244,20 +340,25 @@ export const chatAiClaude = async (req, res) => {
     // Cache the response for future identical requests
     if (!conversationHistory?.length) {
       responseCache.set(cacheKey, {
-        answer: cleanedResponse,
+        answer: finalAnswer,
         timestamp: Date.now()
       });
       console.log('💾 Cached response for:', cacheKey.substring(0, 50));
     }
 
+    const latencyMs = Date.now() - startTime;
     res.status(200).json({
       success: true,
       modelName,
       question,
-      answer: cleanedResponse,
+      answer: finalAnswer,
       mood: mood || 'neutral',
       incognitoMode: incognitoMode || false,
       typingDelay, // How long to show typing indicator
+      traceId,
+      finishReason,
+      usage,
+      latencyMs,
       affectionGain: affectionUpdate ? {
         points: 1,
         leveledUp: affectionUpdate.leveledUp,
@@ -283,16 +384,16 @@ export const chatAiClaude = async (req, res) => {
 // Sanitize response to ensure text-only (no code blocks, images)
 const sanitizeResponse = (text) => {
   // Remove code blocks (```...```)
-  let cleaned = text.replace(/```[\s\S]*?```/g, '[Code content removed - text only mode]');
+  let cleaned = text.replaceAll(/```[\s\S]*?```/g, '[Code content removed - text only mode]');
   
   // Remove inline code (`...`)
-  cleaned = cleaned.replace(/`[^`]+`/g, '');
+  cleaned = cleaned.replaceAll(/`[^`]+`/g, '');
   
   // Remove image references
-  cleaned = cleaned.replace(/!\[.*?\]\(.*?\)/g, '[Image removed - text only mode]');
+  cleaned = cleaned.replaceAll(/!\[.*?\]\(.*?\)/g, '[Image removed - text only mode]');
   
   // Remove HTML img tags
-  cleaned = cleaned.replace(/<img[^>]*>/gi, '');
+  cleaned = cleaned.replaceAll(/<img[^>]*>/gi, '');
   
   return cleaned.trim();
 };
