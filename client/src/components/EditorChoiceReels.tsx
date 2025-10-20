@@ -155,7 +155,7 @@ const EditorChoiceReels: React.FC<EditorChoiceReelsProps> = ({ isOpen, onClose, 
                 </div>
 
                 {/* Character Info - Bottom Section */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 pb-12 z-[305]">
+                <div className="absolute bottom-0 left-0 right-0 p-6 z-[305]">
                   <div className="max-w-2xl mx-auto">
                     {/* Character Name */}
                     <h2 className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
@@ -185,24 +185,12 @@ const EditorChoiceReels: React.FC<EditorChoiceReelsProps> = ({ isOpen, onClose, 
 
                 {/* Side Actions - Right Side */}
                 <div className="absolute right-4 bottom-32 z-[305] flex flex-col space-y-6">
-                  {/* Views Button */}
+                  {/* Views Count */}
                   <div className="flex flex-col items-center">
                     <div className="w-14 h-14 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white">
                       <Eye className="w-7 h-7" />
                     </div>
-                    <span className="text-white text-xs mt-1 drop-shadow-md">Views</span>
-                  </div>
-
-                  {/* Chat Button */}
-                  <div className="flex flex-col items-center">
-                    <button
-                      onClick={() => handleChatNow(charData, slug)}
-                      className="w-14 h-14 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors group"
-                      aria-label="Chat"
-                    >
-                      <MessageCircle className="w-7 h-7 group-hover:text-amber-400 transition-colors" />
-                    </button>
-                    <span className="text-white text-xs mt-1 drop-shadow-md">Chat</span>
+                    <span className="text-white text-xs mt-1 drop-shadow-md">12.4K views</span>
                   </div>
                 </div>
 
@@ -232,7 +220,7 @@ const EditorChoiceReels: React.FC<EditorChoiceReelsProps> = ({ isOpen, onClose, 
 
       {/* Swipe Hint - Show on first load */}
       {currentIndex === 0 && (
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-[305] flex flex-col items-center animate-bounce">
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-[305] flex flex-col items-center animate-bounce">
           <div className="w-8 h-8 border-2 border-white/70 rounded-full flex items-center justify-center">
             <div className="w-2 h-2 bg-white/70 rounded-full"></div>
           </div>
