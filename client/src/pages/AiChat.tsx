@@ -11,7 +11,6 @@ import {
   Filter,
   ChevronUp,
   ChevronDown,
-  Plus,
   Minus,
   Menu,
   Hash,
@@ -42,6 +41,8 @@ import { incrementView } from "../utils/viewsManager";
 import { useResponsive } from "../hooks/useResponsive";
 // import { CreateCharacterModal } from "../components/CreateCharacterModal";
 import CompanionBanners from "../components/CompanionBanners";
+import EditorChoiceReels from "../components/EditorChoiceReels";
+import { animeCharacters } from "../utils/animeCharacters";
 
 // Add genre categories
 const genreCategories = [
@@ -450,8 +451,18 @@ function AiChat() {
   const [refreshingLikes, setRefreshingLikes] = useState(false);
   const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
   const [chatHistory, setChatHistory] = useState<{ user: string; ai: string }[]>([]);
+  const [showEditorChoice, setShowEditorChoice] = useState(false);
   const [tagSearch, setTagSearch] = useState("");
   const { isMobile, isDesktop } = useResponsive();
+  
+  // Editor's Choice Characters
+  const editorChoiceCharacters = [
+    { 'naruto-uzumaki': animeCharacters['naruto-uzumaki'] },
+    { 'makima': animeCharacters['makima'] },
+    { 'batman-bruce': animeCharacters['batman-bruce'] },
+    { 'iron-man-tony': animeCharacters['iron-man-tony'] },
+    { 'yoda': animeCharacters['yoda'] }
+  ];
   
   // Find by ID state
   const [showFindByIdModal, setShowFindByIdModal] = useState(false);
@@ -3012,19 +3023,21 @@ function AiChat() {
         onClose={() => setShowFullLeaderboard(false)}
       />
 
-      {/* Floating Action Button → Coming Soon - Hidden when trending page is open */}
+      {/* Editor's Choice Button - Hidden when trending page is open */}
       {!showFullLeaderboard && (
         <div className="fixed bottom-28 right-6 z-[150]" style={{ bottom: 'calc(7rem + env(safe-area-inset-bottom))' }}>
           <div className="relative group">
             <button
-              disabled
-              className="w-14 h-14 bg-zinc-700 text-zinc-400 rounded-full shadow-lg flex items-center justify-center cursor-not-allowed opacity-60"
-              aria-label="Create new companion (Coming Soon)"
+              onClick={() => setShowEditorChoice(true)}
+              className="relative w-16 h-16 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:shadow-amber-500/50 hover:scale-110 transition-all duration-300 animate-pulse"
+              aria-label="Editor's Choice"
             >
-              <Plus className="w-6 h-6" />
+              <Star className="w-7 h-7 fill-white" />
+              {/* Glow effect */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 blur-xl opacity-60 animate-pulse" />
             </button>
-            <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-zinc-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-              Coming Soon
+            <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap font-bold shadow-lg">
+              ✨ Editor's Choice
             </div>
           </div>
         </div>
@@ -3216,6 +3229,13 @@ function AiChat() {
           </div>
         </div>
       )}
+
+      {/* Editor's Choice Reels Modal */}
+      <EditorChoiceReels
+        isOpen={showEditorChoice}
+        onClose={() => setShowEditorChoice(false)}
+        characters={editorChoiceCharacters}
+      />
     </div>
   );
 }

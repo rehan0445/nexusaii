@@ -1,0 +1,283 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { X, ChevronUp, ChevronDown, MessageCircle, Heart, Star } from 'lucide-react';
+import { incrementView } from '../utils/viewsManager';
+import { AnimeCharacter } from '../utils/animeCharacters';
+
+interface EditorChoiceReelsProps {
+  isOpen: boolean;
+  onClose: () => void;
+  characters: AnimeCharacter[];
+}
+
+const EditorChoiceReels: React.FC<EditorChoiceReelsProps> = ({ isOpen, onClose, characters }) => {
+  const navigate = useNavigate();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number>(0);
+  const scrollTimeout = useRef<NodeJS.Timeout>();
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowUp' && currentIndex > 0) {
+        e.preventDefault();
+        scrollToIndex(currentIndex - 1);
+      } else if (e.key === 'ArrowDown' && currentIndex < characters.length - 1) {
+        e.preventDefault();
+        scrollToIndex(currentIndex + 1);
+      } else if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, currentIndex, characters.length, onClose]);
+
+  // Handle touch gestures
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const touchEndY = e.changedTouches[0].clientY;
+    const diff = touchStartY.current - touchEndY;
+
+    if (Math.abs(diff) > 50) { // Minimum swipe distance
+      if (diff > 0 && currentIndex < characters.length - 1) {
+        // Swipe up - next character
+        scrollToIndex(currentIndex + 1);
+      } else if (diff < 0 && currentIndex > 0) {
+        // Swipe down - previous character
+        scrollToIndex(currentIndex - 1);
+      }
+    }
+  };
+
+  // Handle mouse wheel scroll
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    
+    if (isScrolling) return;
+
+    if (scrollTimeout.current) {
+      clearTimeout(scrollTimeout.current);
+    }
+
+    scrollTimeout.current = setTimeout(() => {
+      if (e.deltaY > 0 && currentIndex < characters.length - 1) {
+        scrollToIndex(currentIndex + 1);
+      } else if (e.deltaY < 0 && currentIndex > 0) {
+        scrollToIndex(currentIndex - 1);
+      }
+    }, 50);
+  };
+
+  const scrollToIndex = (index: number) => {
+    setIsScrolling(true);
+    setCurrentIndex(index);
+    
+    setTimeout(() => {
+      setIsScrolling(false);
+    }, 600);
+  };
+
+  const handleChatNow = async (character: AnimeCharacter, slug: string) => {
+    try {
+      await incrementView(slug);
+    } catch (error) {
+      console.error('Failed to increment view:', error);
+    }
+    navigate(`/chat/${slug}`);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 z-[300] bg-black"
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Close Button */}
+      <button
+        onClick={onClose}
+        className="absolute top-6 right-6 z-[310] w-12 h-12 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+        aria-label="Close Editor's Choice"
+      >
+        <X className="w-6 h-6" />
+      </button>
+
+      {/* Editor's Choice Badge */}
+      <div className="absolute top-6 left-6 z-[310] flex items-center space-x-2 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 px-4 py-2 rounded-full shadow-lg">
+        <Star className="w-5 h-5 text-white fill-white animate-pulse" />
+        <span className="text-white font-bold text-sm">Editor's Choice</span>
+      </div>
+
+      {/* Navigation Arrows */}
+      {currentIndex > 0 && (
+        <button
+          onClick={() => scrollToIndex(currentIndex - 1)}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(50%+200px)] z-[310] w-12 h-12 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors"
+          aria-label="Previous character"
+        >
+          <ChevronUp className="w-6 h-6" />
+        </button>
+      )}
+
+      {currentIndex < characters.length - 1 && (
+        <button
+          onClick={() => scrollToIndex(currentIndex + 1)}
+          className="absolute bottom-32 left-1/2 -translate-x-1/2 z-[310] w-12 h-12 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors"
+          aria-label="Next character"
+        >
+          <ChevronDown className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Reels Container */}
+      <div
+        ref={containerRef}
+        className="h-full w-full overflow-hidden"
+        style={{ scrollSnapType: 'y mandatory' }}
+      >
+        <div
+          className="h-full transition-transform duration-600 ease-out"
+          style={{
+            transform: `translateY(-${currentIndex * 100}vh)`
+          }}
+        >
+          {characters.map((character, index) => {
+            const slug = Object.keys(character)[0] || '';
+            const charData = character[slug as keyof typeof character] as AnimeCharacter;
+            
+            return (
+              <div
+                key={slug || `char-${index}`}
+                className="h-screen w-full relative flex items-center justify-center"
+                style={{ scrollSnapAlign: 'start' }}
+              >
+                {/* Character Image Background */}
+                <div className="absolute inset-0">
+                  <img
+                    src={charData.image}
+                    alt={charData.name}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Gradient Overlays */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/50" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80" />
+                </div>
+
+                {/* Character Info - Bottom Section */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 pb-12 z-[305]">
+                  <div className="max-w-2xl mx-auto">
+                    {/* Character Name */}
+                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+                      {charData.name}
+                    </h2>
+                    
+                    {/* Character Role */}
+                    <p className="text-xl md:text-2xl text-amber-400 font-medium mb-4 drop-shadow-lg">
+                      {charData.role}
+                    </p>
+
+                    {/* Character Description */}
+                    <p className="text-base md:text-lg text-white/90 mb-6 leading-relaxed drop-shadow-md max-w-xl">
+                      {charData.description}
+                    </p>
+
+                    {/* Character Tags */}
+                    {charData.tags && charData.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-6">
+                        {charData.tags.slice(0, 4).map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-medium border border-white/30"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Chat Now Button */}
+                    <button
+                      onClick={() => handleChatNow(charData, slug)}
+                      className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white rounded-xl font-bold text-lg shadow-2xl hover:shadow-amber-500/50 transform hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-3 group"
+                    >
+                      <MessageCircle className="w-6 h-6 group-hover:animate-bounce" />
+                      <span>Chat Now</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Side Actions - Right Side */}
+                <div className="absolute right-4 bottom-32 z-[305] flex flex-col space-y-6">
+                  {/* Like Button */}
+                  <div className="flex flex-col items-center">
+                    <button
+                      onClick={() => handleChatNow(charData, slug)}
+                      className="w-14 h-14 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors group"
+                      aria-label="Like"
+                    >
+                      <Heart className="w-7 h-7 group-hover:fill-red-500 group-hover:text-red-500 transition-colors" />
+                    </button>
+                    <span className="text-white text-xs mt-1 drop-shadow-md">Like</span>
+                  </div>
+
+                  {/* Chat Button */}
+                  <div className="flex flex-col items-center">
+                    <button
+                      onClick={() => handleChatNow(charData, slug)}
+                      className="w-14 h-14 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors group"
+                      aria-label="Chat"
+                    >
+                      <MessageCircle className="w-7 h-7 group-hover:text-amber-400 transition-colors" />
+                    </button>
+                    <span className="text-white text-xs mt-1 drop-shadow-md">Chat</span>
+                  </div>
+                </div>
+
+                {/* Progress Dots */}
+                <div className="absolute right-6 top-1/2 -translate-y-1/2 z-[305] flex flex-col space-y-2">
+                  {characters.map((char, dotIndex) => {
+                    const dotSlug = Object.keys(char)[0] || `dot-${dotIndex}`;
+                    return (
+                      <button
+                        key={dotSlug}
+                        onClick={() => scrollToIndex(dotIndex)}
+                        className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                          dotIndex === currentIndex
+                            ? 'bg-amber-500 h-8'
+                            : 'bg-white/50 hover:bg-white/80'
+                        }`}
+                        aria-label={`Go to character ${dotIndex + 1}`}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Swipe Hint - Show on first load */}
+      {currentIndex === 0 && (
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-[305] flex flex-col items-center animate-bounce">
+          <ChevronDown className="w-8 h-8 text-white/70" />
+          <span className="text-white/70 text-sm mt-2">Swipe up for more</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default EditorChoiceReels;
+
