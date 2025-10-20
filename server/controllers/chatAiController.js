@@ -190,8 +190,9 @@ export const chatAiClaude = async (req, res) => {
     });
     
     // Log first 3 messages for debugging context
-    if (messages.length > 1) {
-      console.log('📖 Sample context messages:', messages.slice(0, Math.min(3, messages.length)));
+    if (finalMessages.length > 1) {
+      const sample = finalMessages.slice(0, Math.min(3, finalMessages.length));
+      console.log('📖 Sample context messages:', sample.map(m => ({ role: m.role, length: (m.content || '').length })));
     }
 
     // Validate character data is present
