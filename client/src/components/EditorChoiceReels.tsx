@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, ChevronUp, ChevronDown, MessageCircle, Heart, Star } from 'lucide-react';
+import { X, MessageCircle, Eye, Star } from 'lucide-react';
 import { incrementView } from '../utils/viewsManager';
 import { AnimeCharacter } from '../utils/animeCharacters';
 
@@ -119,26 +119,6 @@ const EditorChoiceReels: React.FC<EditorChoiceReelsProps> = ({ isOpen, onClose, 
         <span className="text-white font-bold text-sm">Editor's Choice</span>
       </div>
 
-      {/* Navigation Arrows */}
-      {currentIndex > 0 && (
-        <button
-          onClick={() => scrollToIndex(currentIndex - 1)}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(50%+200px)] z-[310] w-12 h-12 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors"
-          aria-label="Previous character"
-        >
-          <ChevronUp className="w-6 h-6" />
-        </button>
-      )}
-
-      {currentIndex < characters.length - 1 && (
-        <button
-          onClick={() => scrollToIndex(currentIndex + 1)}
-          className="absolute bottom-32 left-1/2 -translate-x-1/2 z-[310] w-12 h-12 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors"
-          aria-label="Next character"
-        >
-          <ChevronDown className="w-6 h-6" />
-        </button>
-      )}
 
       {/* Reels Container */}
       <div
@@ -192,43 +172,25 @@ const EditorChoiceReels: React.FC<EditorChoiceReelsProps> = ({ isOpen, onClose, 
                       {charData.description}
                     </p>
 
-                    {/* Character Tags */}
-                    {charData.tags && charData.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-6">
-                        {charData.tags.slice(0, 4).map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-medium border border-white/30"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Chat Now Button */}
+                    {/* Chat Button */}
                     <button
                       onClick={() => handleChatNow(charData, slug)}
-                      className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white rounded-xl font-bold text-lg shadow-2xl hover:shadow-amber-500/50 transform hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-3 group"
+                      className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white rounded-lg font-medium text-base shadow-xl hover:shadow-amber-500/50 transform hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2 group"
                     >
-                      <MessageCircle className="w-6 h-6 group-hover:animate-bounce" />
-                      <span>Chat Now</span>
+                      <MessageCircle className="w-5 h-5 group-hover:animate-bounce" />
+                      <span>Chat</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Side Actions - Right Side */}
                 <div className="absolute right-4 bottom-32 z-[305] flex flex-col space-y-6">
-                  {/* Like Button */}
+                  {/* Views Button */}
                   <div className="flex flex-col items-center">
-                    <button
-                      onClick={() => handleChatNow(charData, slug)}
-                      className="w-14 h-14 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors group"
-                      aria-label="Like"
-                    >
-                      <Heart className="w-7 h-7 group-hover:fill-red-500 group-hover:text-red-500 transition-colors" />
-                    </button>
-                    <span className="text-white text-xs mt-1 drop-shadow-md">Like</span>
+                    <div className="w-14 h-14 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white">
+                      <Eye className="w-7 h-7" />
+                    </div>
+                    <span className="text-white text-xs mt-1 drop-shadow-md">Views</span>
                   </div>
 
                   {/* Chat Button */}
@@ -271,7 +233,9 @@ const EditorChoiceReels: React.FC<EditorChoiceReelsProps> = ({ isOpen, onClose, 
       {/* Swipe Hint - Show on first load */}
       {currentIndex === 0 && (
         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-[305] flex flex-col items-center animate-bounce">
-          <ChevronDown className="w-8 h-8 text-white/70" />
+          <div className="w-8 h-8 border-2 border-white/70 rounded-full flex items-center justify-center">
+            <div className="w-2 h-2 bg-white/70 rounded-full"></div>
+          </div>
           <span className="text-white/70 text-sm mt-2">Swipe up for more</span>
         </div>
       )}
