@@ -872,7 +872,7 @@ function CharacterChat() {
         persistentContext: isIncognito ? null : persistentMemory, // Send persistent memory for context continuity
         userId: currentUser?.uid, // Add userId for affection tracking
         traceId
-      });
+      }, { withCredentials: true, headers: currentUser?.uid ? { 'x-user-id': currentUser.uid } : {} });
       
       const aiResponse = response.data.answer || response.data;
       if (response.data.finishReason === 'length') {
@@ -1265,7 +1265,7 @@ Choose the format that feels most natural for continuing the conversation.`;
         characterData: character,
         persistentContext: isIncognito ? null : persistentMemory,
         traceId
-      });
+      }, { withCredentials: true, headers: currentUser?.uid ? { 'x-user-id': currentUser.uid } : {} });
       
       console.log('API response received:', response.data);
       
