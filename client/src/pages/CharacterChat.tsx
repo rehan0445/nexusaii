@@ -2028,20 +2028,6 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
               />
               <div>
                 <h1 className="text-lg font-bold text-white">{character.name}</h1>
-                {/* Affection Meter */}
-                {!isIncognito && affectionStatus && (
-                  <div className="mt-1">
-                    <AffectionMeter
-                      visibleLevel={affectionStatus.affection_visible_level || 1}
-                      affectionPoints={affectionStatus.affection_level || 0}
-                      pointsToNextLevel={affectionStatus.pointsToNextLevel || 0}
-                      tierName={affectionStatus.tier?.name || 'Acquaintance'}
-                      tierColor={affectionStatus.tier?.color || 'gray'}
-                      progressPercent={affectionStatus.progressPercent || 0}
-                      showDetails={true}
-                    />
-                  </div>
-                )}
               </div>
             </div>
           </div>
