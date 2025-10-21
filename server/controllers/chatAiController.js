@@ -382,6 +382,48 @@ export const chatAiClaude = async (req, res) => {
   }
 };
 
+// Heuristic to strip leading meta-thinking paragraphs even when not tagged
+function stripLeadingMetaThinking(rawText) {
+  if (!rawText) return '';
+  const paragraphs = rawText
+    .replace(/\r\n/g, '\n')
+    .split(/\n{2,}/g)
+    .map(p => p.trim())
+    .filter(p => p.length > 0);
+
+  if (paragraphs.length === 0) return '';
+
+  const metaPatterns = [
+    /^(ok(ay)?|hmm|well|so)\b/i,
+    /\bthe user\b/i,
+    /\bi need to\b/i,
+    /\bi should\b/i,
+    /\blet me (think|process)\b/i,
+    /\b(in the )?previous (interaction|message|response)\b/i,
+    /\bcurrent mood\b/i,
+    /\b(system|instructions|format)\b/i,
+    /\b(as|respond) (as|like) [A-Za-z][A-Za-z\s'\-]+\b/i,
+    /\bcheck(ing)? the (history|context)\b/i,
+    /\bthe response (should|needs to)\b/i,
+    /\b(make sure|ensure)\b/i
+  ];
+
+  let startIndex = 0;
+  while (startIndex < paragraphs.length) {
+    const p = paragraphs[startIndex];
+    const isMeta = metaPatterns.some(rx => rx.test(p));
+    if (!isMeta) break;
+    startIndex += 1;
+  }
+
+  // If all paragraphs looked meta, keep the last one to avoid empty response
+  const kept = startIndex >= paragraphs.length
+    ? [paragraphs[paragraphs.length - 1]]
+    : paragraphs.slice(startIndex);
+
+  return kept.join('\n\n');
+}
+
 // Sanitize response to ensure text-only (no code blocks, images)
 const sanitizeResponse = (text) => {
   if (!text) return '';
@@ -414,6 +456,9 @@ const sanitizeResponse = (text) => {
   // Remove HTML img tags
   cleaned = cleaned.replace(/<img[^>]*>/gi, '');
   
+  // Remove leading meta-thinking paragraphs (heuristic)
+  cleaned = stripLeadingMetaThinking(cleaned);
+
   // Clean up multiple newlines and trim
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n').trim();
   

@@ -1039,23 +1039,46 @@ function CharacterChat() {
   };
 
   const parseAIResponse = (response: string) => {
-    // Remove all thinking tags and content (CRITICAL: Hide AI reasoning from users)
-    let cleanedResponse = response;
+    // Remove all thinking and meta-analysis before rendering
+    let cleanedResponse = response || '';
     
     // Remove <think>...</think> tags and their content
     cleanedResponse = cleanedResponse.replace(/<think>[\s\S]*?<\/think>/gi, '');
     
-    // Remove [THINKS: ...] format tags
+    // Remove [THINKS: ...] and [SAYS: ...] format tags
     cleanedResponse = cleanedResponse.replace(/\[THINKS?:?\s*.*?\]/gi, '');
+    cleanedResponse = cleanedResponse.replace(/\[SAYS?:?\s*.*?\]/gi, '');
+
+    // Heuristic: strip leading meta-thinking paragraphs even if not tagged
+    const paragraphs = cleanedResponse
+      .replace(/\r\n/g, '\n')
+      .split(/\n{2,}/g)
+      .map(p => p.trim())
+      .filter(p => p.length > 0);
+    const metaPatterns = [
+      /^(ok(ay)?|hmm|well|so)\b/i,
+      /\bthe user\b/i,
+      /\bi need to\b/i,
+      /\bi should\b/i,
+      /\blet me (think|process)\b/i,
+      /\b(in the )?previous (interaction|message|response)\b/i,
+      /\bcurrent mood\b/i,
+      /\b(system|instructions|format)\b/i,
+      /\b(as|respond) (as|like) [A-Za-z][A-Za-z\s'\-]+\b/i,
+      /\bcheck(ing)? the (history|context)\b/i,
+      /\bthe response (should|needs to)\b/i,
+      /\b(make sure|ensure)\b/i
+    ];
+    let startIndex = 0;
+    while (startIndex < paragraphs.length && metaPatterns.some(rx => rx.test(paragraphs[startIndex]))) {
+      startIndex += 1;
+    }
+    const keptParas = startIndex >= paragraphs.length
+      ? [paragraphs[paragraphs.length - 1] || '']
+      : paragraphs.slice(startIndex);
+    cleanedResponse = keptParas.join('\n\n');
     
     // Look for [SAYS: ...] format if present
-    const speechMatch = cleanedResponse.match(/\[SAYS?:?\s*(.*?)\]/i);
-    
-    if (speechMatch) {
-      // Extract only the speech content
-      return { thoughts: undefined, speech: speechMatch[1].trim() };
-    }
-    
     // Otherwise use the cleaned response as speech
     return { thoughts: undefined, speech: cleanedResponse.trim() };
   };
