@@ -889,59 +889,27 @@ function CharacterChat() {
       // Parse AI response for thoughts and speech
       const parsedResponse = parseAIResponse(aiResponse);
       
-      // Create separate messages for thoughts and speech if both exist
-      const aiMessages: Message[] = [];
-      
-      if (parsedResponse.thoughts) {
-        const thoughtMessage = { 
-          id: `thought-${Date.now()}`,
-          text: parsedResponse.thoughts, 
-          sender: "ai" as const, 
-          timestamp: Date.now(),
-          thoughts: parsedResponse.thoughts,
-          message_type: "ai_thought" as const
-        };
-        aiMessages.push(thoughtMessage);
-      }
-      
-      if (parsedResponse.speech) {
-        const speechMessage = { 
-          id: `speech-${Date.now()}`,
-          text: parsedResponse.speech, 
-          sender: "ai" as const, 
-          timestamp: Date.now(),
-          speech: parsedResponse.speech,
-          message_type: "ai_speech" as const
-        };
-        aiMessages.push(speechMessage);
-      }
-      
-      // If no structured response, create fallback message
-      if (aiMessages.length === 0) {
-        const fallbackMessage = { 
-          id: `fallback-${Date.now()}`,
-          text: aiResponse, 
-          sender: "ai" as const, 
-          timestamp: Date.now(),
-          speech: aiResponse,
-          message_type: "ai_speech" as const
-        };
-        aiMessages.push(fallbackMessage);
-      }
+      // Create a single AI message (no more separate thought messages)
+      const aiMessage: Message = { 
+        id: `ai-${Date.now()}`,
+        text: parsedResponse.speech || aiResponse, 
+        sender: "ai" as const, 
+        timestamp: Date.now(),
+        speech: parsedResponse.speech || aiResponse,
+        message_type: "ai_speech" as const
+      };
       
       // Play message sound
       playMessageSound();
 
       // Store last AI message ID for animation
-      if (aiMessages.length > 0) {
-        setLastAiMessageId(aiMessages[aiMessages.length - 1].id || null);
-      }
+      setLastAiMessageId(aiMessage.id || null);
 
-      // Add AI responses to appropriate message array
+      // Add AI response to appropriate message array
       if (isIncognito) {
-        setIncognitoMessages(prev => [...prev, ...aiMessages]);
+        setIncognitoMessages(prev => [...prev, aiMessage]);
       } else {
-        setMessages(prev => [...prev, ...aiMessages]);
+        setMessages(prev => [...prev, aiMessage]);
       }
 
       // Handle affection level-up
@@ -996,26 +964,24 @@ function CharacterChat() {
         }
       }
       
-      // Store AI messages in Supabase if not in incognito mode
+      // Store AI message in Supabase if not in incognito mode
       if (!isIncognito) {
         if (currentUser && characterId) {
-          console.log(`💾 Storing ${aiMessages.length} AI messages`);
-          for (const aiMsg of aiMessages) {
-            const storeResponse = await axios.post(
-              "/api/v1/chat/companion/store-message",
-              {
-                character_id: characterId,
-                message_type: aiMsg.message_type,
-                content: aiMsg.thoughts || aiMsg.speech || aiMsg.text
-              },
-              { withCredentials: true, headers: { 'x-user-id': currentUser.uid } }
-            );
-            console.log(`✅ AI message stored: ${aiMsg.message_type}`);
-          }
+          console.log(`💾 Storing AI message`);
+          await axios.post(
+            "/api/v1/chat/companion/store-message",
+            {
+              character_id: characterId,
+              message_type: aiMessage.message_type,
+              content: aiMessage.speech || aiMessage.text
+            },
+            { withCredentials: true, headers: { 'x-user-id': currentUser.uid } }
+          );
+          console.log(`✅ AI message stored: ${aiMessage.message_type}`);
+        }
           
           // Update chat metadata for "My Chats" display
-          const lastMessage = aiMessages[aiMessages.length - 1];
-          const lastMessageContent = lastMessage?.speech || lastMessage?.text || "Chat started";
+          const lastMessageContent = aiMessage?.speech || aiMessage?.text || "Chat started";
           
           try {
             console.log("📝 Updating chat metadata for My Chats...");
@@ -1035,7 +1001,7 @@ function CharacterChat() {
           }
           
           // Sync persistent context (non-blocking)
-          syncContextToSupabase(userMessage, aiMessages);
+          syncContextToSupabase(userMessage, [aiMessage]);
         }
       } else {
         // Store AI messages in incognito table
@@ -1043,14 +1009,12 @@ function CharacterChat() {
           const profileResponse = await axios.get(`/api/v1/profile/${currentUser.uid}`);
           const profileName = profileResponse.data?.username || currentUser.displayName || "Anonymous";
           
-          for (const aiMsg of aiMessages) {
-            await axios.post("/api/v1/chat/companion/store-incognito", {
-              user_profile_name: profileName,
-              character_id: characterId,
-              message_type: aiMsg.message_type,
-              content: aiMsg.thoughts || aiMsg.speech || aiMsg.text
-            });
-          }
+          await axios.post("/api/v1/chat/companion/store-incognito", {
+            user_profile_name: profileName,
+            character_id: characterId,
+            message_type: aiMessage.message_type,
+            content: aiMessage.speech || aiMessage.text
+          });
         }
       }
       
@@ -1076,42 +1040,26 @@ function CharacterChat() {
   };
 
   const parseAIResponse = (response: string) => {
-    // Look for patterns like [THINKS: ...] and [SAYS: ...]
+    // Look for patterns like [THINKS: ...] and [SAYS: ...] but ignore thinking content
     const thoughtsMatch = response.match(/\[THINKS?:?\s*(.*?)\]/i);
     const speechMatch = response.match(/\[SAYS?:?\s*(.*?)\]/i);
     
-    let thoughts = thoughtsMatch ? thoughtsMatch[1].trim() : null;
     let speech = speechMatch ? speechMatch[1].trim() : null;
     
-    // If we have both, use both
-    if (thoughts && speech) {
-      return { thoughts: thoughts || undefined, speech: speech || undefined };
+    // If we have speech from [SAYS: ...] format, use it
+    if (speech) {
+      return { thoughts: undefined, speech: speech };
     }
     
-    // If we only have thoughts, that's fine - show only thinking
-    if (thoughts && !speech) {
-      return { thoughts: thoughts || undefined, speech: undefined };
+    // If we only have thoughts (no speech), ignore the thinking and use the whole response
+    if (thoughtsMatch && !speech) {
+      // Remove the thinking part and use the rest as speech
+      const cleanedResponse = response.replace(/\[THINKS?:?\s*.*?\]/gi, '').trim();
+      return { thoughts: undefined, speech: cleanedResponse || response.trim() };
     }
     
-    // If we only have speech, that's fine too
-    if (speech && !thoughts) {
-      return { thoughts: undefined, speech: speech || undefined };
-    }
-    
-    // If no structured format, try to split by common patterns
-    if (!thoughts && !speech) {
-      // Look for (thinking: ...) or *thinking: ...*
-      const altThoughtsMatch = response.match(/[\(\*]thinking:?\s*(.*?)[\)\*]/i);
-      if (altThoughtsMatch) {
-        thoughts = altThoughtsMatch[1].trim();
-        speech = response.replace(altThoughtsMatch[0], '').trim();
-      } else {
-        // Default: use entire response as speech
-        speech = response;
-      }
-    }
-    
-    return { thoughts: thoughts || undefined, speech: speech || undefined };
+    // If no structured format, use the whole response as speech
+    return { thoughts: undefined, speech: response.trim() };
   };
 
   const startIntro = () => {
@@ -1188,17 +1136,11 @@ User: ${userMessage}${userThoughtsContext}
 
 Respond as ${character?.name} with the specified mood and context in mind. ${incognitoMode ? 'This is an incognito conversation.' : 'Follow all custom instructions provided.'}
 
-IMPORTANT: You can respond in one of these formats (choose randomly):
-1. Just speech (most common): [SAYS: What your character says]
-2. Just thoughts (sometimes): [THINKS: Your character's internal thoughts]
-3. Both thoughts and speech (occasionally): [THINKS: internal thoughts] [SAYS: what they say]
-
-Choose the format that feels most natural for the conversation. Don't always include thinking - sometimes just respond directly. When you do include thinking, make it meaningful and insightful.
+IMPORTANT: Respond directly as your character without using [THINKS:] or [SAYS:] format. Just speak naturally as the character would, incorporating their personality, quirks, and speaking style directly into your response.
 
 Examples:
-- [SAYS: That's a great question! I'd love to hear more about your perspective on that.]
-- [THINKS: They seem genuinely curious about this topic, I should share something personal...]
-- [THINKS: I wonder if they're feeling the same way I am...] [SAYS: You know, I've been thinking about that too.]`;
+- "That's a great question! I'd love to hear more about your perspective on that."
+- "You know, I've been thinking about that too..."`;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1243,14 +1185,9 @@ Your last response was: "${targetMessage.text}"
 
 Please continue your previous response naturally. Expand on what you were saying, add more details, share additional thoughts, or elaborate on the topic. Maintain the same tone, personality, and context. This should feel like a natural continuation of your previous message.
 
-IMPORTANT: You can respond in one of these formats (choose what feels natural):
-1. Just speech: [SAYS: What your character says as they continue]
-2. Just thoughts: [THINKS: Your character's internal thoughts as they continue]
-3. Both: [THINKS: internal thoughts] [SAYS: what they say]
+IMPORTANT: Respond directly as your character without using [THINKS:] or [SAYS:] format. Just speak naturally as the character would, continuing from where you left off.
 
-Do NOT output the word "continue". Resume seamlessly without prefacing or repeating earlier text.
-
-Choose the format that feels most natural for continuing the conversation.`;
+Do NOT output the word "continue". Resume seamlessly without prefacing or repeating earlier text.`;
 
       console.log('Sending continue request to API...');
       
@@ -1276,11 +1213,11 @@ Choose the format that feels most natural for continuing the conversation.`;
       const parsedResponse = parseAIResponse(aiResponse);
       
       const continuationMessage: Message = {
-        text: aiResponse,
+        text: parsedResponse.speech || aiResponse,
         sender: "ai",
         timestamp: Date.now(),
-        thoughts: parsedResponse.thoughts,
-        speech: parsedResponse.speech
+        speech: parsedResponse.speech || aiResponse,
+        message_type: "ai_speech"
       };
       
       console.log('Adding continuation message:', continuationMessage);
