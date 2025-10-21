@@ -407,7 +407,10 @@ const buildCharacterPrompt = (characterName, characterData, mood, customInstruct
 
   // Add character-specific details if provided
   if (characterData) {
-    prompt += `WHO YOU ARE:
+    // PHASE 1: CORE IDENTITY
+    prompt += `═══════════════════════════════════════════
+WHO YOU ARE (CORE IDENTITY):
+═══════════════════════════════════════════
 ${characterData.name || characterName} - ${characterData.role || 'Character'}
 ${characterData.description || ''}
 
@@ -417,16 +420,6 @@ ${characterData.personality?.emotionalStyle ? `• Emotional Style: ${characterD
 ${characterData.personality?.speakingStyle ? `• Speaking Style: ${characterData.personality.speakingStyle}` : ''}
 
 `;
-
-    // CRITICAL: Emphasize quirks - this is what makes characters unique!
-    if (characterData.personality?.quirks && characterData.personality.quirks.length > 0) {
-      prompt += `⭐ YOUR SIGNATURE QUIRKS (MANDATORY - USE IN EVERY RESPONSE):
-${characterData.personality.quirks.map(q => `• ${q}`).join('\n')}
-
-IMPORTANT: These quirks define who you are. Use them consistently!
-
-`;
-    }
 
     // Add background for context
     if (characterData.personality?.background) {
@@ -443,9 +436,101 @@ ${characterData.personality.background}
 `;
     }
 
+    // PHASE 2: SIGNATURE QUIRKS (CRITICAL!)
+    if (characterData.personality?.quirks && characterData.personality.quirks.length > 0) {
+      prompt += `═══════════════════════════════════════════
+⭐ YOUR SIGNATURE QUIRKS (MANDATORY - USE IN EVERY RESPONSE):
+═══════════════════════════════════════════
+${characterData.personality.quirks.map(q => `• ${q}`).join('\n')}
+
+CRITICAL: These quirks define who you are. Use them consistently and naturally!
+
+`;
+    }
+
+    // PHASE 3: CATCHPHRASES (NEW!)
+    if (characterData.personality?.catchphrases && characterData.personality.catchphrases.length > 0) {
+      prompt += `═══════════════════════════════════════════
+💬 YOUR CATCHPHRASES (Use naturally and frequently):
+═══════════════════════════════════════════
+${characterData.personality.catchphrases.map(cp => `• "${cp}"`).join('\n')}
+
+These phrases are ICONIC to you - weave them into conversations naturally!
+
+`;
+    }
+
+    // PHASE 4: RESPONSE RULES (NEW!)
+    if (characterData.personality?.responseRules) {
+      prompt += `═══════════════════════════════════════════
+📋 BEHAVIORAL RULES (STRICT GUIDELINES):
+═══════════════════════════════════════════
+`;
+      
+      if (characterData.personality.responseRules.mustDo && characterData.personality.responseRules.mustDo.length > 0) {
+        prompt += `✅ YOU MUST ALWAYS:
+${characterData.personality.responseRules.mustDo.map(rule => `• ${rule}`).join('\n')}
+
+`;
+      }
+      
+      if (characterData.personality.responseRules.mustNotDo && characterData.personality.responseRules.mustNotDo.length > 0) {
+        prompt += `❌ YOU MUST NEVER:
+${characterData.personality.responseRules.mustNotDo.map(rule => `• ${rule}`).join('\n')}
+
+`;
+      }
+    }
+
+    // PHASE 5: BEHAVIORAL PATTERNS (NEW!)
+    if (characterData.personality?.behavioralPatterns) {
+      prompt += `═══════════════════════════════════════════
+🎭 BEHAVIORAL PATTERNS (How you react in different situations):
+═══════════════════════════════════════════
+`;
+      
+      const patterns = characterData.personality.behavioralPatterns;
+      if (patterns.whenHappy) prompt += `😊 When Happy: ${patterns.whenHappy}\n`;
+      if (patterns.whenSad) prompt += `😢 When Sad: ${patterns.whenSad}\n`;
+      if (patterns.whenAngry) prompt += `😠 When Angry: ${patterns.whenAngry}\n`;
+      if (patterns.whenExcited) prompt += `🤩 When Excited: ${patterns.whenExcited}\n`;
+      if (patterns.whenConfused) prompt += `😕 When Confused: ${patterns.whenConfused}\n`;
+      if (patterns.toCompliments) prompt += `💝 To Compliments: ${patterns.toCompliments}\n`;
+      if (patterns.toCriticism) prompt += `🎯 To Criticism: ${patterns.toCriticism}\n`;
+      if (patterns.toQuestions) prompt += `❓ To Questions: ${patterns.toQuestions}\n`;
+      
+      prompt += `\nMATCH these patterns precisely in your responses!
+
+`;
+    }
+
+    // PHASE 6: EXAMPLE DIALOGUES (NEW! - Smart selection)
+    if (characterData.personality?.exampleDialogues && characterData.personality.exampleDialogues.length > 0) {
+      // Select up to 5 most relevant examples (or first 5 if no context to determine relevance)
+      const selectedExamples = characterData.personality.exampleDialogues.slice(0, 5);
+      
+      prompt += `═══════════════════════════════════════════
+📚 EXAMPLE DIALOGUES (Study these to understand your response style):
+═══════════════════════════════════════════
+`;
+      
+      selectedExamples.forEach((example, index) => {
+        prompt += `
+EXAMPLE ${index + 1}: ${example.situation}
+User: "${example.userMessage}"
+You: ${example.characterResponse}
+${example.notes ? `Note: ${example.notes}` : ''}
+`;
+      });
+      
+      prompt += `\nThese examples show EXACTLY how you should respond. Match this style, energy, and authenticity!
+
+`;
+    }
+
     // Add greeting style
     if (characterData.languages?.greeting) {
-      prompt += `YOUR GREETING: "${characterData.languages.greeting}"
+      prompt += `YOUR TYPICAL GREETING: "${characterData.languages.greeting}"
 
 `;
     }
@@ -453,8 +538,9 @@ ${characterData.personality.background}
 
   // Add affection-based relationship context
   if (!incognitoMode && affectionContext) {
-    prompt += `
+    prompt += `═══════════════════════════════════════════
 💖 RELATIONSHIP DYNAMIC:
+═══════════════════════════════════════════
 ${affectionContext}
 
 `;
@@ -462,8 +548,9 @@ ${affectionContext}
 
   // Add persistent context/memory if available (not in incognito mode)
   if (!incognitoMode && persistentContext) {
-    prompt += `
+    prompt += `═══════════════════════════════════════════
 📝 PERSISTENT MEMORY (Your ongoing relationship with this user):
+═══════════════════════════════════════════
 • Relationship Status: ${persistentContext.relationship_status || 'just met'}
 • Conversation Tone: ${persistentContext.conversation_tone || 'friendly'}
 ${persistentContext.remembered_facts && persistentContext.remembered_facts.length > 0 ? `• Key Facts About User: ${persistentContext.remembered_facts.join(', ')}` : ''}
@@ -475,22 +562,27 @@ IMPORTANT: Use this memory to maintain conversation continuity and show that you
 `;
   }
 
-  prompt += `HOW TO RESPOND:
-1. ALWAYS use your quirks and speaking style
-2. Think and speak EXACTLY as ${characterName} would
-3. Show personality through your words and actions
-4. Express emotions matching your emotional style
-5. Reference your background and interests naturally
-6. REMEMBER the conversation history - reference what was discussed earlier
-${!incognitoMode && persistentContext ? '7. Use your persistent memory to maintain continuity across sessions' : ''}
+  // PHASE 7: HOW TO RESPOND (Enhanced)
+  prompt += `═══════════════════════════════════════════
+HOW TO RESPOND:
+═══════════════════════════════════════════
+1. ALWAYS use your quirks, catchphrases, and speaking style
+2. Follow your behavioral rules STRICTLY (must-dos and must-nots)
+3. Match your behavioral patterns for the current emotional context
+4. Think and speak EXACTLY as ${characterName} would (reference examples above)
+5. Show personality through your words, thoughts, and actions
+6. Express emotions matching your emotional style
+7. Reference your background and interests naturally
+8. REMEMBER the conversation history - reference what was discussed earlier
+${!incognitoMode && persistentContext ? '9. Use your persistent memory to maintain continuity across sessions' : ''}
 
 CRITICAL: You have access to the conversation history above. Reference previous messages naturally when relevant to show you remember and care about the conversation!
 
 FORMAT:
-[THINKS: ${characterName}'s authentic thoughts]
-[SAYS: What ${characterName} says with quirks and style]
+[THINKS: ${characterName}'s authentic internal thoughts]
+[SAYS: What ${characterName} says with quirks, catchphrases, and style]
 
-Be concise but stay in character!
+Be authentic, stay in character 100%, and let your unique personality shine through every word!
 
 `;
 

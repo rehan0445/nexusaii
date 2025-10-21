@@ -286,3 +286,6 @@ User → Registers → Email link → Railway /auth/callback
 4. Verify user lands on companion page after email verification
 5. Done! Email verification now works correctly 🎉
 
+
+
+
