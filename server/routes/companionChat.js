@@ -2,6 +2,7 @@ import express from 'express';
 import { supabase } from '../config/supabase.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 import affectionService from '../services/affectionService.js';
+import proactiveMessageService from '../services/proactiveMessageService.js';
 
 const router = express.Router();
 
@@ -315,6 +316,71 @@ function generateContextBasedHints(messages, characterName) {
   // Return unique hints, max 5
   return [...new Set(hints)].slice(0, 5);
 }
+
+// Generate proactive message for inactive user
+router.post('/proactive-message', requireAuth, async (req, res) => {
+  try {
+    const { character_id } = req.body;
+    const user_id = req.userId || req.user?.id || req.body?.user_id;
+
+    if (!user_id || !character_id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'user_id and character_id are required' 
+      });
+    }
+
+    console.log(`📱 Generating proactive message: user=${user_id}, character=${character_id}`);
+
+    // Generate proactive message
+    const proactiveMessage = await proactiveMessageService.generateProactiveMessage(user_id, character_id);
+
+    if (proactiveMessage) {
+      // Store the proactive message in chat
+      const { data, error } = await supabase
+        .from('companion_chat_messages')
+        .insert([
+          {
+            user_id,
+            character_id,
+            message_type: 'ai_speech',
+            content: proactiveMessage,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ])
+        .select();
+
+      if (error) {
+        console.error('❌ Error storing proactive message:', error);
+        return res.status(500).json({ 
+          success: false, 
+          error: 'Failed to store proactive message' 
+        });
+      }
+
+      console.log(`✅ Proactive message generated and stored: ${proactiveMessage}`);
+
+      res.json({ 
+        success: true, 
+        message: data?.[0],
+        proactiveMessage 
+      });
+    } else {
+      res.json({ 
+        success: false, 
+        message: 'No proactive message generated' 
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Error in /proactive-message:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
 
 export default router;
 

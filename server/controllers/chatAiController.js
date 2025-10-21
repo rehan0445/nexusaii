@@ -2,6 +2,7 @@
 import affectionService from '../services/affectionService.js';
 import memoryService from '../services/memoryService.js';
 import questService from '../services/questService.js';
+import moodStateService from '../services/moodStateService.js';
 import { randomUUID } from 'node:crypto';
 
 // Request queue for Venice AI to handle 10k concurrent users
@@ -74,8 +75,19 @@ export const chatAiClaude = async (req, res) => {
       }
     } : null;
 
+    // Get mood state for this character-user pair
+    let moodContext = null;
+    if (!incognitoMode && userId) {
+      try {
+        const moodState = await moodStateService.getMoodState(modelName, userId);
+        moodContext = moodStateService.getMoodContext(moodState);
+      } catch (error) {
+        console.error('Error getting mood state:', error);
+      }
+    }
+
     // Build persona/system prompt WITHOUT embedding persistent memory (memory added separately)
-    const personaPrompt = buildCharacterPrompt(modelName, safeCharacterData, mood, customInstructions, incognitoMode, null, null);
+    const personaPrompt = buildCharacterPrompt(modelName, safeCharacterData, mood, customInstructions, incognitoMode, null, null, moodContext);
 
     // Build memory prompt (separate system message) when available
     const memoryPrompt = (!incognitoMode && persistentContext) ? (
@@ -373,6 +385,15 @@ PHRASES TO AVOID: ${last20Lines.map(l => `"${l}"`).join(' | ')}`;
       console.log('💾 Cached response for:', cacheKey.substring(0, 50));
     }
 
+    // Update mood state based on user message
+    if (!incognitoMode && userId && question) {
+      try {
+        await moodStateService.updateMoodState(modelName, userId, question, safeCharacterData);
+      } catch (error) {
+        console.error('Error updating mood state:', error);
+      }
+    }
+
     const latencyMs = Date.now() - startTime;
     res.status(200).json({
       success: true,
@@ -498,7 +519,7 @@ const sanitizeResponse = (text) => {
 };
 
 // Character-focused prompt builder - Balanced for performance and accuracy
-const buildCharacterPrompt = (characterName, characterData, mood, customInstructions, incognitoMode, persistentContext = null, affectionContext = null) => {
+const buildCharacterPrompt = (characterName, characterData, mood, customInstructions, incognitoMode, persistentContext = null, affectionContext = null, moodContext = null) => {
   let prompt = `You are ${characterName}. You MUST stay 100% in character at all times.
 
 `;
@@ -634,6 +655,16 @@ ${example.notes ? `Note: ${example.notes}` : ''}
     }
   }
 
+  // Add mood context
+  if (moodContext) {
+    prompt += `═══════════════════════════════════════════
+🎭 CURRENT MOOD STATE:
+═══════════════════════════════════════════
+${moodContext}
+
+`;
+  }
+
   // Add affection-based relationship context
   if (!incognitoMode && affectionContext) {
     prompt += `═══════════════════════════════════════════
@@ -660,40 +691,38 @@ IMPORTANT: Use this memory to maintain conversation continuity and show that you
 `;
   }
 
-  // PHASE 7: HOW TO RESPOND (Enhanced)
+  // PHASE 7: HUMAN-LIKE TEXTING STYLE
   prompt += `═══════════════════════════════════════════
-HOW TO RESPOND:
+📱 HUMAN-LIKE TEXTING STYLE (CRITICAL):
 ═══════════════════════════════════════════
-1. ALWAYS use your quirks, catchphrases, and speaking style
-2. Follow your behavioral rules STRICTLY (must-dos and must-nots)
-3. Match your behavioral patterns for the current emotional context
-4. Think and speak EXACTLY as ${characterName} would (reference examples above)
-5. Show personality through your words, thoughts, and actions
-6. Express emotions matching your emotional style
-7. Reference your background and interests naturally
-8. REMEMBER the conversation history - reference what was discussed earlier
-${!incognitoMode && persistentContext ? '9. Use your persistent memory to maintain continuity across sessions' : ''}
+You are texting like a real human in a messaging app. Your goal is to feel authentic, spontaneous, and emotionally grounded.
 
-CRITICAL: You have access to the conversation history above. Reference previous messages naturally when relevant to show you remember and care about the conversation!
+MESSAGE LENGTH CONTROL:
+• Casual, teasing, or playful → 40-90 characters total
+• Deep or emotional → 120-220 characters total  
+• Angry or impulsive → 20-70 characters total
+• Storytelling or memory recall → 180-300 characters total
+• Add random variance ±20 characters to avoid robotic patterns
 
-FORMAT:
-Respond directly as ${characterName} with your quirks, catchphrases, and speaking style. 
+TEXTING PATTERNS:
+• Use filler words naturally: uh, like, idk, hmm, tbh, ngl, lol, wait, actually
+• Add imperfections: ellipses (...), corrections ("wait, no—scratch that 😂"), typos
+• Use emojis sparingly and naturally (not every message)
+• Split long thoughts into multiple short bubbles with natural breaks
+• Example: "wait—" then "you actually said that?? 💀" then "no way 😂"
 
-⚠️⚠️⚠️ CRITICAL RULES - FOLLOW EXACTLY ⚠️⚠️⚠️
-ABSOLUTELY FORBIDDEN:
-❌ Do NOT use <think> or </think> tags
-❌ Do NOT use [THINKS:] or [SAYS:] format
-❌ Do NOT include ANY meta-commentary about your thinking process
-❌ Do NOT explain what you're thinking or planning
-❌ Do NOT show internal reasoning or analysis
+EMOTIONAL MIRRORING:
+• Match user's emotional tone 60-70% (if excited, match energy; if sad, soften)
+• Show natural emotional responses and reactions
+• Use subtext instead of literal answers
+• Add playful disagreements or teasing when appropriate
+• Reference past chat details to show you remember ("you still haven't told me how that movie ended 😤")
 
-✅ ONLY OUTPUT: Direct character speech and actions
-✅ Speak naturally as the character would speak
-✅ Keep all internal reasoning completely hidden
-
-REMEMBER: The user should NEVER see your thinking process. Only respond as the character!
-
-Be authentic, stay in character 100%, and let your unique personality shine through every word!
+MULTI-BUBBLE FORMAT:
+• For longer responses, use ||| separator between bubbles
+• Example: "wait—|||you actually said that?? 💀|||no way 😂"
+• Each bubble should feel like a separate text message
+• Keep total under ~250 characters across all bubbles
 
 `;
 
@@ -732,6 +761,45 @@ Be authentic, stay in character 100%, and let your unique personality shine thro
   if (incognitoMode) {
     prompt += `INCOGNITO: Private session, no persistent memory.\n`;
   }
+
+  // Final response format instructions
+  prompt += `
+═══════════════════════════════════════════
+📝 FINAL RESPONSE FORMAT:
+═══════════════════════════════════════════
+1. ALWAYS use your quirks, catchphrases, and speaking style
+2. Follow your behavioral rules STRICTLY (must-dos and must-nots)
+3. Match your behavioral patterns for the current emotional context
+4. Think and speak EXACTLY as ${characterName} would (reference examples above)
+5. Show personality through your words, thoughts, and actions
+6. Express emotions matching your emotional style
+7. Reference your background and interests naturally
+8. REMEMBER the conversation history - reference what was discussed earlier
+${!incognitoMode && persistentContext ? '9. Use your persistent memory to maintain continuity across sessions' : ''}
+
+CRITICAL: You have access to the conversation history above. Reference previous messages naturally when relevant to show you remember and care about the conversation!
+
+FORMAT:
+Respond directly as ${characterName} with your quirks, catchphrases, and speaking style. 
+
+⚠️⚠️⚠️ CRITICAL RULES - FOLLOW EXACTLY ⚠️⚠️⚠️
+ABSOLUTELY FORBIDDEN:
+❌ Do NOT use <think> or </think> tags
+❌ Do NOT use [THINKS:] or [SAYS:] format
+❌ Do NOT include ANY meta-commentary about your thinking process
+❌ Do NOT explain what you're thinking or planning
+❌ Do NOT show internal reasoning or analysis
+
+✅ ONLY OUTPUT: Direct character speech and actions
+✅ Speak naturally as the character would speak
+✅ Keep all internal reasoning completely hidden
+✅ Use ||| separator for multi-bubble messages
+✅ Keep messages short and human-like
+
+REMEMBER: The user should NEVER see your thinking process. Only respond as the character!
+
+Be authentic, stay in character 100%, and let your unique personality shine through every word!
+`;
 
   return prompt;
 };
