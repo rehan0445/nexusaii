@@ -384,8 +384,14 @@ export const chatAiClaude = async (req, res) => {
 
 // Sanitize response to ensure text-only (no code blocks, images)
 const sanitizeResponse = (text) => {
+  // Remove thinking process tags (CRITICAL: Hide AI reasoning from users)
+  let cleaned = text.replaceAll(/<think>[\s\S]*?<\/think>/gi, '');
+  
+  // Remove [THINKS:] format tags
+  cleaned = cleaned.replaceAll(/\[THINKS?:?\s*.*?\]/gi, '');
+  
   // Remove code blocks (```...```)
-  let cleaned = text.replaceAll(/```[\s\S]*?```/g, '[Code content removed - text only mode]');
+  cleaned = cleaned.replaceAll(/```[\s\S]*?```/g, '[Code content removed - text only mode]');
   
   // Remove inline code (`...`)
   cleaned = cleaned.replaceAll(/`[^`]+`/g, '');
@@ -579,7 +585,14 @@ ${!incognitoMode && persistentContext ? '9. Use your persistent memory to mainta
 CRITICAL: You have access to the conversation history above. Reference previous messages naturally when relevant to show you remember and care about the conversation!
 
 FORMAT:
-Respond directly as ${characterName} with your quirks, catchphrases, and speaking style. Do not use [THINKS:] or [SAYS:] format - just speak naturally as the character.
+Respond directly as ${characterName} with your quirks, catchphrases, and speaking style. 
+
+CRITICAL RULES:
+- Do NOT use <think> tags or show your reasoning process
+- Do NOT use [THINKS:] or [SAYS:] format
+- Do NOT include meta-commentary about what you're thinking
+- Just speak naturally and directly as the character
+- Your internal reasoning must stay hidden from the user
 
 Be authentic, stay in character 100%, and let your unique personality shine through every word!
 

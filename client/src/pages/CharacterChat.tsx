@@ -1039,26 +1039,25 @@ function CharacterChat() {
   };
 
   const parseAIResponse = (response: string) => {
-    // Look for patterns like [THINKS: ...] and [SAYS: ...] but ignore thinking content
-    const thoughtsMatch = response.match(/\[THINKS?:?\s*(.*?)\]/i);
-    const speechMatch = response.match(/\[SAYS?:?\s*(.*?)\]/i);
+    // Remove all thinking tags and content (CRITICAL: Hide AI reasoning from users)
+    let cleanedResponse = response;
     
-    let speech = speechMatch ? speechMatch[1].trim() : null;
+    // Remove <think>...</think> tags and their content
+    cleanedResponse = cleanedResponse.replace(/<think>[\s\S]*?<\/think>/gi, '');
     
-    // If we have speech from [SAYS: ...] format, use it
-    if (speech) {
-      return { thoughts: undefined, speech: speech };
+    // Remove [THINKS: ...] format tags
+    cleanedResponse = cleanedResponse.replace(/\[THINKS?:?\s*.*?\]/gi, '');
+    
+    // Look for [SAYS: ...] format if present
+    const speechMatch = cleanedResponse.match(/\[SAYS?:?\s*(.*?)\]/i);
+    
+    if (speechMatch) {
+      // Extract only the speech content
+      return { thoughts: undefined, speech: speechMatch[1].trim() };
     }
     
-    // If we only have thoughts (no speech), ignore the thinking and use the whole response
-    if (thoughtsMatch && !speech) {
-      // Remove the thinking part and use the rest as speech
-      const cleanedResponse = response.replace(/\[THINKS?:?\s*.*?\]/gi, '').trim();
-      return { thoughts: undefined, speech: cleanedResponse || response.trim() };
-    }
-    
-    // If no structured format, use the whole response as speech
-    return { thoughts: undefined, speech: response.trim() };
+    // Otherwise use the cleaned response as speech
+    return { thoughts: undefined, speech: cleanedResponse.trim() };
   };
 
   const startIntro = () => {
