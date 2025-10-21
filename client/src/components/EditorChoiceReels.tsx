@@ -186,24 +186,6 @@ const EditorChoiceReels: React.FC<EditorChoiceReelsProps> = ({ isOpen, onClose, 
                   </div>
 
 
-                  {/* Progress Dots */}
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2 z-[305] flex flex-col space-y-2">
-                    {characters.map((char, dotIndex) => {
-                      const dotSlug = Object.keys(char)[0] || `dot-${dotIndex}`;
-                      return (
-                        <button
-                          key={dotSlug}
-                          onClick={() => scrollToIndex(dotIndex)}
-                          className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                            dotIndex === currentIndex
-                              ? 'bg-amber-500 h-8'
-                              : 'bg-white/50 hover:bg-white/80'
-                          }`}
-                          aria-label={`Go to character ${dotIndex + 1}`}
-                        />
-                      );
-                    })}
-                  </div>
                 </div>
               );
             })}
