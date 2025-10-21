@@ -455,14 +455,12 @@ function AiChat() {
   const [tagSearch, setTagSearch] = useState("");
   const { isMobile, isDesktop } = useResponsive();
   
-  // Editor's Choice Characters
-  const editorChoiceCharacters = [
-    { 'naruto-uzumaki': animeCharacters['naruto-uzumaki'] },
-    { 'makima': animeCharacters['makima'] },
-    { 'batman-bruce': animeCharacters['batman-bruce'] },
-    { 'iron-man-tony': animeCharacters['iron-man-tony'] },
-    { 'yoda': animeCharacters['yoda'] }
-  ];
+  // Editor's Choice Characters - All available characters
+  const editorChoiceCharacters = useMemo(() => {
+    return Object.entries(animeCharacters).map(([slug, character]) => ({
+      [slug]: character
+    }));
+  }, [animeCharacters]);
   
   // Find by ID state
   const [showFindByIdModal, setShowFindByIdModal] = useState(false);
