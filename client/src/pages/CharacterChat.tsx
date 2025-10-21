@@ -47,6 +47,29 @@ import {
   updateContextFromConversation,
   extractUserPreferences
 } from "../utils/contextExtractor";
+
+// Helper function to render messages with asterisk styling
+const renderMessageWithAsterisks = (text: string) => {
+  if (!text) return text;
+  
+  // Split text by asterisk patterns and render accordingly
+  const parts = text.split(/(\*[^*]+\*)/g);
+  
+  return parts.map((part, index) => {
+    if (part.startsWith('*') && part.endsWith('*')) {
+      // This is an asterisk-wrapped action/thought
+      const content = part.slice(1, -1); // Remove asterisks
+      return (
+        <span key={index} className="text-gray-400 opacity-60 italic">
+          {content}
+        </span>
+      );
+    }
+    // Regular text
+    return part;
+  });
+};
+
 // Interactive features
 import TypingIndicator from "../components/TypingIndicator";
 import AffectionMeter from "../components/AffectionMeter";
@@ -522,6 +545,73 @@ function CharacterChat() {
     }
   }, [isIncognito]);
 
+  // Inactivity detection for proactive messages
+  useEffect(() => {
+    if (!currentUser || !characterId || isIncognito) return;
+
+    let inactivityTimer: NodeJS.Timeout | null = null;
+    const inactivityThreshold = 10 * 60 * 1000; // 10 minutes
+
+    const resetInactivityTimer = () => {
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+      }
+      
+      inactivityTimer = setTimeout(async () => {
+        // User has been inactive for 10 minutes, generate proactive message
+        try {
+          console.log('📱 User inactive for 10 minutes, generating proactive message...');
+          
+          const response = await axios.post('/api/v1/companion/proactive-message', {
+            character_id: characterId
+          }, { 
+            withCredentials: true, 
+            headers: { 'x-user-id': currentUser.uid } 
+          });
+
+          if (response.data.success && response.data.proactiveMessage) {
+            // Add proactive message to chat
+            const proactiveMessage: Message = {
+              id: `proactive-${Date.now()}`,
+              text: response.data.proactiveMessage,
+              sender: "ai" as const,
+              timestamp: Date.now(),
+              speech: response.data.proactiveMessage,
+              message_type: "ai_speech" as const
+            };
+
+            setMessages(prev => [...prev, proactiveMessage]);
+            playMessageSound();
+          }
+        } catch (error) {
+          console.error('Error generating proactive message:', error);
+        }
+      }, inactivityThreshold);
+    };
+
+    // Reset timer on any user activity
+    const handleUserActivity = () => {
+      resetInactivityTimer();
+    };
+
+    // Listen for user activity
+    window.addEventListener('click', handleUserActivity);
+    window.addEventListener('keydown', handleUserActivity);
+    window.addEventListener('scroll', handleUserActivity);
+
+    // Start the timer
+    resetInactivityTimer();
+
+    return () => {
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+      }
+      window.removeEventListener('click', handleUserActivity);
+      window.removeEventListener('keydown', handleUserActivity);
+      window.removeEventListener('scroll', handleUserActivity);
+    };
+  }, [currentUser, characterId, isIncognito]);
+
   // Socket.IO: Listen for character-initiated messages
   useEffect(() => {
     if (!currentUser || !characterId || isIncognito) return;
@@ -889,27 +979,90 @@ function CharacterChat() {
       // Parse AI response for thoughts and speech
       const parsedResponse = parseAIResponse(aiResponse);
       
-      // Create a single AI message (no more separate thought messages)
-      const aiMessage: Message = { 
-        id: `ai-${Date.now()}`,
-        text: parsedResponse.speech || aiResponse, 
-        sender: "ai" as const, 
-        timestamp: Date.now(),
-        speech: parsedResponse.speech || aiResponse,
-        message_type: "ai_speech" as const
-      };
+      // Check if response contains message splitting markers (|||)
+      const responseText = parsedResponse.speech || aiResponse;
+      const messageParts = responseText.split('|||').map((part: string) => part.trim()).filter((part: string) => part.length > 0);
       
-      // Play message sound
-      playMessageSound();
-
-      // Store last AI message ID for animation
-      setLastAiMessageId(aiMessage.id || null);
-
-      // Add AI response to appropriate message array
-      if (isIncognito) {
-        setIncognitoMessages(prev => [...prev, aiMessage]);
+      let aiMessage: Message | null = null;
+      
+      if (messageParts.length > 1) {
+        // Multiple messages - send them sequentially with delays
+        console.log(`📱 Splitting response into ${messageParts.length} messages:`, messageParts);
+        
+        for (let i = 0; i < messageParts.length; i++) {
+          const part: string = messageParts[i];
+          const messageId = `ai-${Date.now()}-${i}`;
+          
+          // Calculate delay based on message length
+          let delay = 800; // default
+          if (part.length < 50) delay = 800;
+          else if (part.length < 100) delay = 1500;
+          else delay = 2500;
+          
+          // Show typing indicator before each message (except first)
+          if (i > 0) {
+            setIsTyping(true);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            setIsTyping(false);
+          }
+          
+          const splitMessage: Message = { 
+            id: messageId,
+            text: part, 
+            sender: "ai" as const, 
+            timestamp: Date.now(),
+            speech: part,
+            message_type: "ai_speech" as const
+          };
+          
+          // Set the last message as the main aiMessage for processing
+          if (i === messageParts.length - 1) {
+            aiMessage = splitMessage;
+          }
+          
+          // Add message to chat
+          if (isIncognito) {
+            setIncognitoMessages(prev => [...prev, splitMessage]);
+          } else {
+            setMessages(prev => [...prev, splitMessage]);
+          }
+          
+          // Store in database (only for non-incognito)
+          if (!isIncognito && currentUser?.uid) {
+            try {
+              await axios.post('/api/v1/companion/store-message', {
+                character_id: characterId,
+                message_type: 'ai_speech',
+                content: part
+              }, { withCredentials: true, headers: { 'x-user-id': currentUser.uid } });
+            } catch (error) {
+              console.error('Error storing split message:', error);
+            }
+          }
+        }
       } else {
-        setMessages(prev => [...prev, aiMessage]);
+        // Single message - use existing logic
+        aiMessage = { 
+          id: `ai-${Date.now()}`,
+          text: responseText, 
+          sender: "ai" as const, 
+          timestamp: Date.now(),
+          speech: responseText,
+          message_type: "ai_speech" as const
+        };
+        
+        // Play message sound
+        playMessageSound();
+
+        // Store last AI message ID for animation
+        setLastAiMessageId(aiMessage.id || null);
+
+        // Add AI response to appropriate message array
+        if (isIncognito) {
+          setIncognitoMessages(prev => [...prev, aiMessage!]);
+        } else {
+          setMessages(prev => [...prev, aiMessage!]);
+        }
       }
 
       // Handle affection level-up
@@ -965,55 +1118,57 @@ function CharacterChat() {
       }
       
       // Store AI message in Supabase if not in incognito mode
-      if (!isIncognito) {
-        if (currentUser && characterId) {
-          console.log(`💾 Storing AI message`);
-          await axios.post(
-            "/api/v1/chat/companion/store-message",
-            {
-              character_id: characterId,
-              message_type: aiMessage.message_type,
-              content: aiMessage.speech || aiMessage.text
-            },
-            { withCredentials: true, headers: { 'x-user-id': currentUser.uid } }
-          );
-          console.log(`✅ AI message stored: ${aiMessage.message_type}`);
-          
-          // Update chat metadata for "My Chats" display
-          const lastMessageContent = aiMessage?.speech || aiMessage?.text || "Chat started";
-          
-          try {
-            console.log("📝 Updating chat metadata for My Chats...");
+      if (aiMessage) {
+        if (!isIncognito) {
+          if (currentUser && characterId) {
+            console.log(`💾 Storing AI message`);
             await axios.post(
-              "/api/nexus-chats/update-companion-chat",
+              "/api/v1/chat/companion/store-message",
               {
-                characterId: characterId,
-                characterName: character?.name || "Character",
-                characterAvatar: character?.image || null,
-                lastMessage: lastMessageContent
+                character_id: characterId,
+                message_type: aiMessage.message_type,
+                content: aiMessage.speech || aiMessage.text
               },
               { withCredentials: true, headers: { 'x-user-id': currentUser.uid } }
             );
-            console.log("✅ Chat metadata updated for My Chats");
-          } catch (metaError) {
-            console.error("❌ Failed to update chat metadata:", metaError);
+            console.log(`✅ AI message stored: ${aiMessage.message_type}`);
+            
+            // Update chat metadata for "My Chats" display
+            const lastMessageContent = aiMessage?.speech || aiMessage?.text || "Chat started";
+            
+            try {
+              console.log("📝 Updating chat metadata for My Chats...");
+              await axios.post(
+                "/api/nexus-chats/update-companion-chat",
+                {
+                  characterId: characterId,
+                  characterName: character?.name || "Character",
+                  characterAvatar: character?.image || null,
+                  lastMessage: lastMessageContent
+                },
+                { withCredentials: true, headers: { 'x-user-id': currentUser.uid } }
+              );
+              console.log("✅ Chat metadata updated for My Chats");
+            } catch (metaError) {
+              console.error("❌ Failed to update chat metadata:", metaError);
+            }
+            
+            // Sync persistent context (non-blocking)
+            syncContextToSupabase(userMessage, [aiMessage]);
           }
-          
-          // Sync persistent context (non-blocking)
-          syncContextToSupabase(userMessage, [aiMessage]);
-        }
-      } else {
-        // Store AI messages in incognito table
-        if (currentUser && characterId) {
-          const profileResponse = await axios.get(`/api/v1/profile/${currentUser.uid}`);
-          const profileName = profileResponse.data?.username || currentUser.displayName || "Anonymous";
-          
-          await axios.post("/api/v1/chat/companion/store-incognito", {
-            user_profile_name: profileName,
-            character_id: characterId,
-            message_type: aiMessage.message_type,
-            content: aiMessage.speech || aiMessage.text
-          });
+        } else {
+          // Store AI messages in incognito table
+          if (currentUser && characterId) {
+            const profileResponse = await axios.get(`/api/v1/profile/${currentUser.uid}`);
+            const profileName = profileResponse.data?.username || currentUser.displayName || "Anonymous";
+            
+            await axios.post("/api/v1/chat/companion/store-incognito", {
+              user_profile_name: profileName,
+              character_id: characterId,
+              message_type: aiMessage.message_type,
+              content: aiMessage.speech || aiMessage.text
+            });
+          }
         }
       }
       
@@ -2157,11 +2312,11 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                       {/* Use letter-by-letter animation for last AI message */}
                       {msg.id === lastAiMessageId ? (
                         <div className="whitespace-pre-wrap">
-                          {msg.speech || msg.text}
+                          {renderMessageWithAsterisks(msg.speech || msg.text)}
                         </div>
                       ) : (
                         <p>
-                          {msg.speech || msg.text}
+                          {renderMessageWithAsterisks(msg.speech || msg.text)}
                         </p>
                       )}
                     </div>
