@@ -384,25 +384,46 @@ export const chatAiClaude = async (req, res) => {
 
 // Sanitize response to ensure text-only (no code blocks, images)
 const sanitizeResponse = (text) => {
-  // Remove thinking process tags (CRITICAL: Hide AI reasoning from users)
-  let cleaned = text.replaceAll(/<think>[\s\S]*?<\/think>/gi, '');
+  if (!text) return '';
   
-  // Remove [THINKS:] format tags
-  cleaned = cleaned.replaceAll(/\[THINKS?:?\s*.*?\]/gi, '');
+  // CRITICAL: Remove ALL thinking process tags - multiple passes to catch nested/complex patterns
+  let cleaned = text;
+  
+  // Remove <think>...</think> tags (all variants, case-insensitive, multiline)
+  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gim, '');
+  cleaned = cleaned.replace(/<think>/gi, ''); // Remove opening tags without closing
+  cleaned = cleaned.replace(/<\/think>/gi, ''); // Remove closing tags without opening
+  
+  // Remove [THINKS:] and [SAYS:] format tags
+  cleaned = cleaned.replace(/\[THINKS?:?\s*[^\]]*\]/gim, '');
+  cleaned = cleaned.replace(/\[SAYS?:?\s*[^\]]*\]/gim, '');
+  
+  // Remove any remaining meta-commentary patterns
+  cleaned = cleaned.replace(/\*thinks?:?[^\*]*\*/gim, '');
+  cleaned = cleaned.replace(/\(thinks?:?[^\)]*\)/gim, '');
   
   // Remove code blocks (```...```)
-  cleaned = cleaned.replaceAll(/```[\s\S]*?```/g, '[Code content removed - text only mode]');
+  cleaned = cleaned.replace(/```[\s\S]*?```/g, '[Code content removed - text only mode]');
   
   // Remove inline code (`...`)
-  cleaned = cleaned.replaceAll(/`[^`]+`/g, '');
+  cleaned = cleaned.replace(/`[^`]+`/g, '');
   
   // Remove image references
-  cleaned = cleaned.replaceAll(/!\[.*?\]\(.*?\)/g, '[Image removed - text only mode]');
+  cleaned = cleaned.replace(/!\[.*?\]\(.*?\)/g, '[Image removed - text only mode]');
   
   // Remove HTML img tags
-  cleaned = cleaned.replaceAll(/<img[^>]*>/gi, '');
+  cleaned = cleaned.replace(/<img[^>]*>/gi, '');
   
-  return cleaned.trim();
+  // Clean up multiple newlines and trim
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n').trim();
+  
+  console.log('🧹 Sanitized response:', {
+    originalLength: text.length,
+    cleanedLength: cleaned.length,
+    hadThinkingTags: text.includes('<think>') || text.includes('[THINKS')
+  });
+  
+  return cleaned;
 };
 
 // Character-focused prompt builder - Balanced for performance and accuracy
@@ -587,12 +608,19 @@ CRITICAL: You have access to the conversation history above. Reference previous 
 FORMAT:
 Respond directly as ${characterName} with your quirks, catchphrases, and speaking style. 
 
-CRITICAL RULES:
-- Do NOT use <think> tags or show your reasoning process
-- Do NOT use [THINKS:] or [SAYS:] format
-- Do NOT include meta-commentary about what you're thinking
-- Just speak naturally and directly as the character
-- Your internal reasoning must stay hidden from the user
+⚠️⚠️⚠️ CRITICAL RULES - FOLLOW EXACTLY ⚠️⚠️⚠️
+ABSOLUTELY FORBIDDEN:
+❌ Do NOT use <think> or </think> tags
+❌ Do NOT use [THINKS:] or [SAYS:] format
+❌ Do NOT include ANY meta-commentary about your thinking process
+❌ Do NOT explain what you're thinking or planning
+❌ Do NOT show internal reasoning or analysis
+
+✅ ONLY OUTPUT: Direct character speech and actions
+✅ Speak naturally as the character would speak
+✅ Keep all internal reasoning completely hidden
+
+REMEMBER: The user should NEVER see your thinking process. Only respond as the character!
 
 Be authentic, stay in character 100%, and let your unique personality shine through every word!
 
