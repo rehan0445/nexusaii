@@ -132,14 +132,38 @@ export const chatAiClaude = async (req, res) => {
         content: msg.text || msg.message || ''
       }));
 
+    // Build anti-repetition guard from the last 20 lines spoken by the assistant
+    let avoidRepeatPrompt = '';
+    try {
+      const assistantOnlyText = validHistory
+        .filter(m => m.role === 'assistant')
+        .map(m => m.content || '')
+        .join('\n');
+      const assistantLines = assistantOnlyText
+        .replace(/\r\n/g, '\n')
+        .split(/\n/g)
+        .map(l => l.trim())
+        .filter(Boolean);
+      const last20Lines = assistantLines.slice(-20).map(l => l.slice(0, 160));
+      if (last20Lines.length > 0) {
+        avoidRepeatPrompt =
+          `AVOID REPETITION (strict): Do NOT repeat or closely paraphrase any of these recent lines. ` +
+          `Use fresh wording, advance the scene, introduce new details, and avoid looping.
+PHRASES TO AVOID: ${last20Lines.map(l => `"${l}"`).join(' | ')}`;
+      }
+    } catch (e) {
+      console.warn('avoidRepeatPrompt build failed:', e?.message || e);
+    }
+
     // Token budget allocation
     // Assume conservative input budget ~3200 tokens to leave room for completion
     const INPUT_BUDGET = 3200;
     const personaTokens = estimateTokens(personaPrompt);
     const memoryTokens = estimateTokens(memoryPrompt || '');
+    const avoidTokens = estimateTokens(avoidRepeatPrompt || '');
     // Reserve at least 400 tokens for completion
     const RESERVED_FOR_COMPLETION = 400;
-    let remainingForHistory = Math.max(0, INPUT_BUDGET - personaTokens - memoryTokens - RESERVED_FOR_COMPLETION);
+    let remainingForHistory = Math.max(0, INPUT_BUDGET - personaTokens - memoryTokens - avoidTokens - RESERVED_FOR_COMPLETION);
 
     // Include most recent messages until token budget is met
     for (let i = validHistory.length - 1; i >= 0; i--) {
@@ -160,6 +184,7 @@ export const chatAiClaude = async (req, res) => {
     const finalMessages = [
       { role: 'system', content: personaPrompt },
       ...(memoryPrompt ? [{ role: 'system', content: memoryPrompt }] : []),
+      ...(avoidRepeatPrompt ? [{ role: 'system', content: avoidRepeatPrompt }] : []),
       ...historyMessages,
       currentUserMessage
     ];
@@ -207,9 +232,10 @@ export const chatAiClaude = async (req, res) => {
     }
 
     // Make request to Venice AI (OpenAI-compatible API) with timeout
-    const temperature = mood === 'romantic' ? 0.85 : 
-                       mood === 'playful' ? 0.9 : 
-                       mood === 'angry' ? 0.5 : 0.8;
+    // Slightly higher creativity and stronger anti-repeat penalties
+    const temperature = mood === 'romantic' ? 0.9 : 
+                       mood === 'playful' ? 0.92 : 
+                       mood === 'angry' ? 0.6 : 0.9;
     
     // Create AbortController for timeout
     const controller = new AbortController();
@@ -228,9 +254,9 @@ export const chatAiClaude = async (req, res) => {
           messages: finalMessages,
           temperature: temperature,
           max_tokens: 400,
-          top_p: 0.92,
-          frequency_penalty: 0.2,
-          presence_penalty: 0.2,
+          top_p: 0.95,
+          frequency_penalty: 0.65,
+          presence_penalty: 0.55,
           stream: false
         }),
         signal: controller.signal
