@@ -45,6 +45,7 @@ export const chatAiClaude = async (req, res) => {
     const { question, modelName, mood, customInstructions, conversationHistory, incognitoMode, characterData, persistentContext, traceId: clientTraceId } = req.body;
 
     const traceId = clientTraceId || randomUUID();
+    const userId = req.body.userId || req.userId || req.user?.id;
 
     if (!question) {
       return res
