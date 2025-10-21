@@ -978,7 +978,6 @@ function CharacterChat() {
             { withCredentials: true, headers: { 'x-user-id': currentUser.uid } }
           );
           console.log(`✅ AI message stored: ${aiMessage.message_type}`);
-        }
           
           // Update chat metadata for "My Chats" display
           const lastMessageContent = aiMessage?.speech || aiMessage?.text || "Chat started";
