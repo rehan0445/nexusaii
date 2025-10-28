@@ -9,6 +9,8 @@ const Register: React.FC = () => {
   const { userLoggedin } = useAuth();
   const navigate = useNavigate();
 
+  const appBaseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -72,7 +74,7 @@ const Register: React.FC = () => {
             name: formData.name,
             full_name: formData.name,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${appBaseUrl}/auth/callback`,
         },
       });
 
