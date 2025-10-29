@@ -66,6 +66,9 @@ const Register: React.FC = () => {
 
     setIsLoading(true);
     try {
+      // Register user with Supabase Auth
+      // Note: Email verification is disabled in Supabase dashboard
+      // Users will get instant access without needing to verify email
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -74,33 +77,43 @@ const Register: React.FC = () => {
             name: formData.name,
             full_name: formData.name,
           },
+          // Email redirect URL (not used when verification is disabled)
           emailRedirectTo: `${appBaseUrl}/auth/callback`,
         },
       });
 
       if (error) {
+        console.error('❌ Registration error:', error);
         alert(error.message || "Registration failed");
         return;
       }
 
       if (data.user) {
         console.log('✅ Registration successful:', data.user.email);
-        console.log('📍 Navigating to companion page...');
+        console.log('📍 User ID:', data.user.id);
         
-        // Check if email confirmation is required
+        // With email verification disabled, session is created immediately
         if (data.session) {
           // User is automatically logged in - redirect to companion page
-          console.log('✅ Session exists, redirecting to /companion');
+          console.log('✅ Session created automatically');
+          console.log('🚀 Redirecting to companion page...');
+          
+          // Set onboarding completion flags
+          localStorage.setItem('hasSeenOnboarding', 'true');
           localStorage.setItem('hasCompletedOnboarding', 'true');
+          
+          // Redirect to companion page
           navigate("/companion", { replace: true });
         } else {
-          // Email confirmation required - show modal
+          // This should not happen when email verification is disabled
+          // But keeping as fallback for when verification is re-enabled
+          console.warn('⚠️  No session created - email verification may be enabled');
           setRegisteredEmail(formData.email);
           setShowEmailModal(true);
         }
       }
     } catch (error: any) {
-      console.error("Email registration error:", error);
+      console.error("❌ Email registration error:", error);
       alert(error.message || "Registration failed");
     } finally {
       setIsLoading(false);

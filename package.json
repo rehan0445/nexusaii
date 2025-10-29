@@ -14,7 +14,8 @@
     "install:dev": "npm install && cd client && npm install && cd ../server && npm install && cd ../server && npm install nodemon --save-dev",
     "clean": "rm -rf node_modules client/node_modules server/node_modules",
     "disable-firebase": "node disable-firebase.js",
-    "restore-firebase": "node restore-firebase.js"
+    "restore-firebase": "node restore-firebase.js",
+    "verify-users": "node verify-existing-users.js"
   },
   "keywords": [
     "ai",
@@ -30,9 +31,11 @@
     "concurrently": "^8.2.2"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
     "@types/uuid": "^11.0.0",
     "all": "^0.0.0",
     "axios": "^1.11.0",
+    "dotenv": "^16.3.1",
     "socket.io-client": "^4.8.1",
     "uuid": "^13.0.0"
   }

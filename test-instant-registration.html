@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Instant Registration - Nexus</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d1b4e 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    h1 {
+      color: #f4c430;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    .subtitle {
+      color: #999;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .section {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #ccc;
+      font-size: 14px;
+    }
+    
+    input {
+      width: 100%;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #f4c430;
+    }
+    
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #f4c430 0%, #e8b922 100%);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+    }
+    
+    button:disabled {
+      background: #666;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .log {
+      background: #000;
+      border-radius: 8px;
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+    
+    .log-entry {
+      margin-bottom: 5px;
+    }
+    
+    .log-success { color: #4ade80; }
+    .log-error { color: #ef4444; }
+    .log-info { color: #60a5fa; }
+    .log-warning { color: #fbbf24; }
+    
+    .status-box {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    .status-box.success {
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid #4ade80;
+      color: #4ade80;
+    }
+    
+    .status-box.error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+    }
+    
+    .status-box.info {
+      background: rgba(96, 165, 250, 0.1);
+      border: 1px solid #60a5fa;
+      color: #60a5fa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Test Instant Registration</h1>
+    <p class="subtitle">Test email verification disabled flow</p>
+
+    <div id="statusBox" class="status-box info">
+      Ready to test registration flow
+    </div>
+
+    <div class="section">
+      <h3 style="margin-bottom: 15px;">📝 Test Registration</h3>
+      
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="testName" value="Test User" placeholder="Enter name">
+      </div>
+
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="testEmail" placeholder="test@example.com">
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="testPassword" value="test123456" placeholder="Minimum 6 characters">
+      </div>
+
+      <button id="registerBtn" onclick="testRegistration()">
+        🚀 Test Registration
+      </button>
+    </div>
+
+    <div class="section">
+      <h3 style="margin-bottom: 10px;">📊 Test Results</h3>
+      <div id="log" class="log">
+        <div class="log-entry log-info">⏳ Waiting to start test...</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3 style="margin-bottom: 10px;">✅ Expected Results</h3>
+      <ul style="padding-left: 20px; color: #ccc; line-height: 1.8;">
+        <li>Registration completes successfully</li>
+        <li>User receives immediate session</li>
+        <li>No email verification required</li>
+        <li>User is marked as verified</li>
+        <li>Can login immediately</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Add your Supabase credentials
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+    let supabase;
+    const logEl = document.getElementById('log');
+    const statusBox = document.getElementById('statusBox');
+
+    function log(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function setStatus(message, type = 'info') {
+      statusBox.textContent = message;
+      statusBox.className = `status-box ${type}`;
+    }
+
+    function initSupabase() {
+      if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+        log('⚠️  Please update Supabase credentials in the script', 'warning');
+        setStatus('⚠️ Update Supabase credentials in script', 'error');
+        return false;
+      }
+
+      try {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        log('✅ Supabase client initialized', 'success');
+        return true;
+      } catch (error) {
+        log('❌ Failed to initialize Supabase: ' + error.message, 'error');
+        setStatus('Failed to initialize Supabase', 'error');
+        return false;
+      }
+    }
+
+    async function testRegistration() {
+      if (!initSupabase()) return;
+
+      const btn = document.getElementById('registerBtn');
+      const name = document.getElementById('testName').value;
+      const email = document.getElementById('testEmail').value;
+      const password = document.getElementById('testPassword').value;
+
+      if (!email || !password || !name) {
+        log('❌ Please fill in all fields', 'error');
+        setStatus('Please fill in all fields', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        log('❌ Password must be at least 6 characters', 'error');
+        setStatus('Password too short', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Testing...';
+      logEl.innerHTML = '';
+      setStatus('⏳ Testing registration...', 'info');
+
+      try {
+        log('🚀 Starting registration test...', 'info');
+        log(`📧 Email: ${email}`, 'info');
+        log(`👤 Name: ${name}`, 'info');
+
+        // Sign out first if logged in
+        log('🔐 Signing out any existing session...', 'info');
+        await supabase.auth.signOut();
+
+        // Test registration
+        log('📝 Calling signUp...', 'info');
+        const { data, error } = await supabase.auth.signUp({
+          email: email,
+          password: password,
+          options: {
+            data: {
+              name: name,
+              full_name: name,
+            }
+          }
+        });
+
+        if (error) {
+          log(`❌ Registration error: ${error.message}`, 'error');
+          setStatus('❌ Registration failed', 'error');
+          btn.disabled = false;
+          btn.textContent = '🚀 Test Registration';
+          return;
+        }
+
+        log('✅ Registration API call successful', 'success');
+
+        // Check user
+        if (data.user) {
+          log(`✅ User created: ${data.user.email}`, 'success');
+          log(`   - User ID: ${data.user.id}`, 'success');
+          log(`   - Email Confirmed: ${data.user.email_confirmed_at ? 'Yes' : 'No'}`, data.user.email_confirmed_at ? 'success' : 'warning');
+          log(`   - Created At: ${new Date(data.user.created_at).toLocaleString()}`, 'info');
+        } else {
+          log('⚠️  No user data returned', 'warning');
+        }
+
+        // Check session
+        if (data.session) {
+          log('✅ Session created immediately!', 'success');
+          log(`   - Access Token: ${data.session.access_token.substring(0, 20)}...`, 'success');
+          log(`   - Expires: ${new Date(data.session.expires_at * 1000).toLocaleString()}`, 'info');
+          log('', 'info');
+          log('🎉 TEST PASSED!', 'success');
+          log('✅ Email verification is DISABLED', 'success');
+          log('✅ User can login immediately', 'success');
+          log('✅ Instant access to platform', 'success');
+          setStatus('✅ Test Passed - Instant Registration Working!', 'success');
+        } else {
+          log('⚠️  No session returned', 'warning');
+          log('❌ Email verification may be ENABLED', 'error');
+          log('', 'info');
+          log('📋 NEXT STEPS:', 'warning');
+          log('1. Go to Supabase Dashboard', 'warning');
+          log('2. Authentication → Providers → Email', 'warning');
+          log('3. Disable "Confirm email" toggle', 'warning');
+          log('4. Save and test again', 'warning');
+          setStatus('⚠️ Email verification still enabled', 'error');
+        }
+
+        // Try to get current session
+        log('', 'info');
+        log('🔍 Checking current session...', 'info');
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session) {
+          log('✅ Active session confirmed', 'success');
+          log('✅ User is logged in and ready to use the app', 'success');
+        } else {
+          log('⚠️  No active session', 'warning');
+        }
+
+      } catch (error) {
+        log(`❌ Unexpected error: ${error.message}`, 'error');
+        console.error(error);
+        setStatus('❌ Test failed', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Test Registration';
+      }
+    }
+
+    // Generate random email for testing
+    window.addEventListener('load', () => {
+      const randomEmail = `test${Math.floor(Math.random() * 10000)}@example.com`;
+      document.getElementById('testEmail').value = randomEmail;
+      log('ℹ️  Random test email generated', 'info');
+      log('ℹ️  Update Supabase credentials above to start testing', 'info');
+    });
+  </script>
+</body>
+</html>
+
