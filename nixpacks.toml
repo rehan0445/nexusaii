@@ -14,3 +14,7 @@ cmds = ["cd client && npm run build"]
 [start]
 cmd = "cd server && npm start"
 
+[healthcheck]
+httpPath = "/health"
+httpTimeout = 10
+
