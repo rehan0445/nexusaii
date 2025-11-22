@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Character Chat API</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    .test-section {
+      background: #2a2a2a;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      border-left: 4px solid #4CAF50;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .result {
+      background: #1a1a1a;
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .success { border-left-color: #4CAF50; }
+    .error { border-left-color: #f44336; }
+    .loading { opacity: 0.6; }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      background: #333;
+      border: 1px solid #555;
+      color: #fff;
+      border-radius: 4px;
+    }
+    h1 { color: #4CAF50; }
+    h2 { color: #64B5F6; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Character Chat API Debug Tool</h1>
+  <p>Test the Venice API integration for character chat</p>
+
+  <div class="test-section">
+    <h2>1. Backend URL Configuration</h2>
+    <label>Enter your backend URL (Railway domain):</label>
+    <input type="text" id="backendUrl" placeholder="https://your-app.railway.app" value="">
+    <button onclick="saveBackendUrl()">Save URL</button>
+    <div id="urlResult" class="result" style="display:none;"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>2. Test Health Check</h2>
+    <button onclick="testHealth()">Test Health Endpoint</button>
+    <div id="healthResult" class="result" style="display:none;"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>3. Test Debug Environment</h2>
+    <button onclick="testDebugEnv()">Test Debug Endpoint</button>
+    <div id="debugResult" class="result" style="display:none;"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>4. Test Character Chat API</h2>
+    <label>Message to send:</label>
+    <input type="text" id="testMessage" value="Hello! How are you?" placeholder="Enter test message">
+    <button onclick="testCharacterChat()">Send to Character API</button>
+    <div id="chatResult" class="result" style="display:none;"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>5. Check Railway Logs</h2>
+    <p>After testing, check your Railway logs for:</p>
+    <ul>
+      <li>✅ "🔑 Venice AI Request:" - Shows API request details</li>
+      <li>✅ "🧾 Venice response meta:" - Shows response metadata</li>
+      <li>❌ "❌ Venice AI Error Response:" - Shows any errors</li>
+    </ul>
+  </div>
+
+  <script>
+    let backendUrl = localStorage.getItem('backendUrl') || '';
+    if (backendUrl) {
+      document.getElementById('backendUrl').value = backendUrl;
+    }
+
+    function saveBackendUrl() {
+      backendUrl = document.getElementById('backendUrl').value.trim();
+      if (!backendUrl) {
+        alert('Please enter a backend URL');
+        return;
+      }
+      // Remove trailing slash
+      backendUrl = backendUrl.replace(/\/$/, '');
+      localStorage.setItem('backendUrl', backendUrl);
+      
+      const result = document.getElementById('urlResult');
+      result.style.display = 'block';
+      result.textContent = `✅ Backend URL saved: ${backendUrl}`;
+    }
+
+    async function testHealth() {
+      if (!backendUrl) {
+        alert('Please enter and save backend URL first');
+        return;
+      }
+
+      const result = document.getElementById('healthResult');
+      result.style.display = 'block';
+      result.classList.add('loading');
+      result.textContent = '⏳ Testing health endpoint...';
+
+      try {
+        const response = await fetch(`${backendUrl}/api/v1/chat/companion/health`);
+        const data = await response.json();
+        
+        result.classList.remove('loading');
+        result.textContent = `✅ Health Check Response:\n\n${JSON.stringify(data, null, 2)}`;
+        
+        if (data.configuration?.has_api_key && data.configuration?.api_key_valid) {
+          result.textContent += '\n\n✅ Venice API key is properly configured!';
+        } else {
+          result.textContent += '\n\n❌ Venice API key issue detected!';
+        }
+      } catch (error) {
+        result.classList.remove('loading');
+        result.textContent = `❌ Error:\n${error.message}`;
+      }
+    }
+
+    async function testDebugEnv() {
+      if (!backendUrl) {
+        alert('Please enter and save backend URL first');
+        return;
+      }
+
+      const result = document.getElementById('debugResult');
+      result.style.display = 'block';
+      result.classList.add('loading');
+      result.textContent = '⏳ Testing debug endpoint...';
+
+      try {
+        const response = await fetch(`${backendUrl}/api/v1/chat/companion/debug-env`);
+        const data = await response.json();
+        
+        result.classList.remove('loading');
+        result.textContent = `✅ Debug Environment Response:\n\n${JSON.stringify(data, null, 2)}`;
+        
+        if (data.deployment_check?.backend_ready) {
+          result.textContent += '\n\n✅ Backend is ready for Venice API calls!';
+        } else {
+          result.textContent += '\n\n❌ Backend not ready - check configuration!';
+        }
+      } catch (error) {
+        result.classList.remove('loading');
+        result.textContent = `❌ Error:\n${error.message}`;
+      }
+    }
+
+    async function testCharacterChat() {
+      if (!backendUrl) {
+        alert('Please enter and save backend URL first');
+        return;
+      }
+
+      const message = document.getElementById('testMessage').value;
+      if (!message) {
+        alert('Please enter a test message');
+        return;
+      }
+
+      const result = document.getElementById('chatResult');
+      result.style.display = 'block';
+      result.classList.add('loading');
+      result.textContent = '⏳ Sending message to character API...\n(This may take 3-10 seconds)';
+
+      try {
+        const requestBody = {
+          question: message,
+          modelName: 'test-character',
+          mood: 'neutral',
+          conversationHistory: [],
+          incognitoMode: true,
+          characterData: {
+            name: 'Test Character',
+            personality: {
+              traits: ['friendly', 'helpful'],
+              quirks: ['loves testing'],
+              speakingStyle: 'casual and friendly'
+            }
+          },
+          traceId: `test-${Date.now()}`
+        };
+
+        console.log('📤 Sending request:', requestBody);
+
+        const startTime = Date.now();
+        const response = await fetch(`${backendUrl}/api/v1/chat/ai/claude`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify(requestBody)
+        });
+
+        const latency = Date.now() - startTime;
+        const data = await response.json();
+        
+        result.classList.remove('loading');
+        
+        console.log('📥 Received response:', data);
+
+        if (response.ok && data.success !== false) {
+          result.textContent = `✅ Character API Response (${latency}ms):\n\n`;
+          result.textContent += `Answer: ${data.answer || 'No answer'}\n\n`;
+          result.textContent += `Full Response:\n${JSON.stringify(data, null, 2)}`;
+          
+          if (data.answer && !data.answer.includes('apologize')) {
+            result.textContent += '\n\n✅ SUCCESS! Character responded correctly!';
+          } else if (data.answer?.includes('apologize')) {
+            result.textContent += '\n\n❌ Got error message. Check Railway logs for details.';
+          }
+        } else {
+          result.textContent = `❌ API Error (${response.status}):\n\n${JSON.stringify(data, null, 2)}`;
+          result.textContent += '\n\n📋 Troubleshooting:\n';
+          result.textContent += '1. Check Railway logs for Venice API errors\n';
+          result.textContent += '2. Verify VENICE_API_KEY is set correctly\n';
+          result.textContent += '3. Check if Venice API key has access to qwen3-4b model\n';
+        }
+      } catch (error) {
+        result.classList.remove('loading');
+        result.textContent = `❌ Network Error:\n${error.message}\n\n`;
+        result.textContent += 'Possible causes:\n';
+        result.textContent += '- Backend not running\n';
+        result.textContent += '- CORS issues\n';
+        result.textContent += '- Wrong backend URL\n';
+        console.error('Error:', error);
+      }
+    }
+  </script>
+</body>
+</html>
+

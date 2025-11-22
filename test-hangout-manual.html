@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangout Fixes Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .user-panel {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .messages {
+            height: 300px;
+            overflow-y: auto;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 8px;
+            background: #333;
+            border-radius: 4px;
+        }
+        .message.sent {
+            background: #0066cc;
+        }
+        .message.received {
+            background: #cc6600;
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #333;
+            color: #fff;
+        }
+        button {
+            background: #0066cc;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.connected {
+            background: #2d5a2d;
+            color: #90ee90;
+        }
+        .status.disconnected {
+            background: #5a2d2d;
+            color: #ee9090;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Hangout Fixes Test</h1>
+    <p>This page tests the hangout message visibility and room creation fixes.</p>
+    
+    <div class="container">
+        <!-- User 1 Panel -->
+        <div class="user-panel">
+            <h2>👤 User 1</h2>
+            <div class="status disconnected" id="status1">Disconnected</div>
+            <div>
+                <input type="text" id="roomId1" placeholder="Room ID" value="test-room-123">
+                <button onclick="connectUser1()">Connect</button>
+                <button onclick="joinRoom1()">Join Room</button>
+            </div>
+            <div>
+                <input type="text" id="message1" placeholder="Type message...">
+                <button onclick="sendMessage1()">Send</button>
+            </div>
+            <div class="messages" id="messages1"></div>
+            <div class="log" id="log1"></div>
+        </div>
+
+        <!-- User 2 Panel -->
+        <div class="user-panel">
+            <h2>👤 User 2</h2>
+            <div class="status disconnected" id="status2">Disconnected</div>
+            <div>
+                <input type="text" id="roomId2" placeholder="Room ID" value="test-room-123">
+                <button onclick="connectUser2()">Connect</button>
+                <button onclick="joinRoom2()">Join Room</button>
+            </div>
+            <div>
+                <input type="text" id="message2" placeholder="Type message...">
+                <button onclick="sendMessage2()">Send</button>
+            </div>
+            <div class="messages" id="messages2"></div>
+            <div class="log" id="log2"></div>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <h3>🎯 Test Instructions</h3>
+        <ol>
+            <li><strong>Connect Both Users:</strong> Click "Connect" for both User 1 and User 2</li>
+            <li><strong>Join Same Room:</strong> Make sure both users have the same Room ID, then click "Join Room" for both</li>
+            <li><strong>Send Messages:</strong> Type messages in either user's input and click "Send"</li>
+            <li><strong>Verify Visibility:</strong> Messages should appear in BOTH users' message areas</li>
+            <li><strong>Check Logs:</strong> Monitor the logs for connection status and message events</li>
+        </ol>
+        
+        <h3>✅ Expected Results</h3>
+        <ul>
+            <li>Both users should show "Connected" status</li>
+            <li>Messages sent by User 1 should appear in User 2's messages</li>
+            <li>Messages sent by User 2 should appear in User 1's messages</li>
+            <li>Logs should show successful joins and message events</li>
+        </ul>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        let socket1 = null;
+        let socket2 = null;
+        let currentRoom1 = null;
+        let currentRoom2 = null;
+
+        function log(user, message) {
+            const logElement = document.getElementById(`log${user}`);
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateStatus(user, connected) {
+            const statusElement = document.getElementById(`status${user}`);
+            statusElement.textContent = connected ? 'Connected' : 'Disconnected';
+            statusElement.className = `status ${connected ? 'connected' : 'disconnected'}`;
+        }
+
+        function addMessage(user, message, isSent = false) {
+            const messagesElement = document.getElementById(`messages${user}`);
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+            messageDiv.innerHTML = `<strong>${message.userName || 'User'}:</strong> ${message.content}`;
+            messagesElement.appendChild(messageDiv);
+            messagesElement.scrollTop = messagesElement.scrollHeight;
+        }
+
+        function connectUser1() {
+            if (socket1) {
+                socket1.disconnect();
+            }
+
+            socket1 = io('http://localhost:8002', {
+                auth: {
+                    token: 'test-token-1',
+                    userId: 'test-user-1'
+                }
+            });
+
+            socket1.on('connect', () => {
+                updateStatus(1, true);
+                log(1, '✅ Connected to server');
+            });
+
+            socket1.on('disconnect', () => {
+                updateStatus(1, false);
+                log(1, '❌ Disconnected from server');
+            });
+
+            socket1.on('receive-hangout-message', (message) => {
+                log(1, `📨 Received message: ${message.content}`);
+                addMessage(1, message, false);
+            });
+
+            socket1.on('hangout-room-history', (messages) => {
+                log(1, `📚 Received ${messages.length} historical messages`);
+                messages.forEach(msg => addMessage(1, msg, false));
+            });
+
+            socket1.on('error', (error) => {
+                log(1, `❌ Error: ${error.message}`);
+            });
+        }
+
+        function connectUser2() {
+            if (socket2) {
+                socket2.disconnect();
+            }
+
+            socket2 = io('http://localhost:8002', {
+                auth: {
+                    token: 'test-token-2',
+                    userId: 'test-user-2'
+                }
+            });
+
+            socket2.on('connect', () => {
+                updateStatus(2, true);
+                log(2, '✅ Connected to server');
+            });
+
+            socket2.on('disconnect', () => {
+                updateStatus(2, false);
+                log(2, '❌ Disconnected from server');
+            });
+
+            socket2.on('receive-hangout-message', (message) => {
+                log(2, `📨 Received message: ${message.content}`);
+                addMessage(2, message, false);
+            });
+
+            socket2.on('hangout-room-history', (messages) => {
+                log(2, `📚 Received ${messages.length} historical messages`);
+                messages.forEach(msg => addMessage(2, msg, false));
+            });
+
+            socket2.on('error', (error) => {
+                log(2, `❌ Error: ${error.message}`);
+            });
+        }
+
+        function joinRoom1() {
+            if (!socket1 || !socket1.connected) {
+                log(1, '❌ Not connected to server');
+                return;
+            }
+
+            const roomId = document.getElementById('roomId1').value;
+            if (!roomId) {
+                log(1, '❌ Please enter a room ID');
+                return;
+            }
+
+            currentRoom1 = roomId;
+            socket1.emit('join-hangout-room', {
+                roomId: roomId,
+                userId: 'test-user-1'
+            });
+
+            log(1, `🏠 Joining room: ${roomId}`);
+        }
+
+        function joinRoom2() {
+            if (!socket2 || !socket2.connected) {
+                log(2, '❌ Not connected to server');
+                return;
+            }
+
+            const roomId = document.getElementById('roomId2').value;
+            if (!roomId) {
+                log(2, '❌ Please enter a room ID');
+                return;
+            }
+
+            currentRoom2 = roomId;
+            socket2.emit('join-hangout-room', {
+                roomId: roomId,
+                userId: 'test-user-2'
+            });
+
+            log(2, `🏠 Joining room: ${roomId}`);
+        }
+
+        function sendMessage1() {
+            if (!socket1 || !socket1.connected) {
+                log(1, '❌ Not connected to server');
+                return;
+            }
+
+            if (!currentRoom1) {
+                log(1, '❌ Not in a room');
+                return;
+            }
+
+            const messageInput = document.getElementById('message1');
+            const content = messageInput.value.trim();
+            if (!content) {
+                log(1, '❌ Please enter a message');
+                return;
+            }
+
+            const message = {
+                roomId: currentRoom1,
+                userId: 'test-user-1',
+                content: content,
+                userName: 'Test User 1'
+            };
+
+            socket1.emit('send-hangout-message', message);
+            addMessage(1, message, true);
+            messageInput.value = '';
+            log(1, `📤 Sent message: ${content}`);
+        }
+
+        function sendMessage2() {
+            if (!socket2 || !socket2.connected) {
+                log(2, '❌ Not connected to server');
+                return;
+            }
+
+            if (!currentRoom2) {
+                log(2, '❌ Not in a room');
+                return;
+            }
+
+            const messageInput = document.getElementById('message2');
+            const content = messageInput.value.trim();
+            if (!content) {
+                log(2, '❌ Please enter a message');
+                return;
+            }
+
+            const message = {
+                roomId: currentRoom2,
+                userId: 'test-user-2',
+                content: content,
+                userName: 'Test User 2'
+            };
+
+            socket2.emit('send-hangout-message', message);
+            addMessage(2, message, true);
+            messageInput.value = '';
+            log(2, `📤 Sent message: ${content}`);
+        }
+
+        // Allow Enter key to send messages
+        document.getElementById('message1').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage1();
+            }
+        });
+
+        document.getElementById('message2').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage2();
+            }
+        });
+    </script>
+</body>
+</html>

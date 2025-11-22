@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Axios Configuration Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 10px;
+            height: 600px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #0066cc;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .success {
+            color: #90ee90;
+        }
+        .error {
+            color: #ee9090;
+        }
+        .warning {
+            color: #ffcc00;
+        }
+        .info {
+            color: #87ceeb;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #333;
+            color: #fff;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Axios Configuration Debug Test</h1>
+    <p>This page tests the axios configuration and authentication to identify the root cause of 401 errors.</p>
+    
+    <div class="test-section">
+        <h2>🎯 Test Scenarios</h2>
+        <button onclick="testAxiosConfig()">Test Axios Configuration</button>
+        <button onclick="testAuthentication()">Test Authentication</button>
+        <button onclick="testHangoutEndpoint()">Test Hangout Endpoint</button>
+        <button onclick="testMessagePersistence()">Test Message Persistence</button>
+        <button onclick="testAllAxiosIssues()">Test All Axios Issues</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔑 Authentication Test</h3>
+        <input type="text" id="supabaseToken" placeholder="Paste Supabase JWT token here (optional)">
+        <button onclick="setAuthToken()">Set Auth Token</button>
+        <button onclick="clearAuthToken()">Clear Auth Token</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>📊 Debug Results</h3>
+        <div class="log" id="testLog"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+        }
+
+        function setAuthToken() {
+            const token = document.getElementById('supabaseToken').value.trim();
+            if (token) {
+                localStorage.setItem('nexus-auth', JSON.stringify({
+                    currentSession: {
+                        access_token: token
+                    }
+                }));
+                log(`✅ Auth token set in localStorage`, 'success');
+            } else {
+                log(`❌ Please enter a valid token`, 'error');
+            }
+        }
+
+        function clearAuthToken() {
+            localStorage.removeItem('nexus-auth');
+            log(`🗑️ Auth token cleared from localStorage`, 'info');
+        }
+
+        // Simulate the centralized API configuration
+        function getServerUrl() {
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            // Special handling for 10.x.x.x network range
+            if (hostname.startsWith('10.')) {
+                const port = hostname === '10.87.73.163' ? '8000' : '8002';
+                return `${protocol}//${hostname}:${port}`;
+            }
+            
+            // Use same hostname as frontend with backend port
+            return `${protocol}//${hostname}:8002`;
+        }
+
+        // Get auth token from localStorage (simulating the app's auth system)
+        function getAuthToken() {
+            try {
+                const authData = localStorage.getItem('nexus-auth');
+                if (authData) {
+                    const parsed = JSON.parse(authData);
+                    return parsed?.currentSession?.access_token || parsed?.access_token || parsed?.session?.access_token;
+                }
+            } catch (error) {
+                log(`❌ Error parsing auth data: ${error.message}`, 'error');
+            }
+            return null;
+        }
+
+        async function testAxiosConfig() {
+            log('🧪 Testing Axios Configuration...', 'info');
+            
+            const detectedUrl = getServerUrl();
+            log(`🔧 Detected API URL: ${detectedUrl}`, 'info');
+            log(`🔧 Current hostname: ${window.location.hostname}`, 'info');
+            log(`🔧 Current protocol: ${window.location.protocol}`, 'info');
+            
+            // Test if this matches what axios should be using
+            if (detectedUrl.includes('10.87.73.163:8000')) {
+                log(`✅ API URL correctly detected for 10.87.73.163:8000`, 'success');
+            } else if (detectedUrl.includes('localhost:8002')) {
+                log(`⚠️ API URL detected as localhost:8002 - this might be the issue!`, 'warning');
+            } else {
+                log(`⚠️ Unexpected API URL: ${detectedUrl}`, 'warning');
+            }
+        }
+
+        async function testAuthentication() {
+            log('🧪 Testing Authentication...', 'info');
+            
+            const token = getAuthToken();
+            if (!token) {
+                log(`❌ No auth token found in localStorage`, 'error');
+                log(`💡 Set a token using the input field above`, 'info');
+                return;
+            }
+            
+            log(`🔑 Found auth token: ${token.substring(0, 20)}...`, 'info');
+            
+            // Test if the token is properly formatted
+            try {
+                const parts = token.split('.');
+                if (parts.length === 3) {
+                    log(`✅ Token appears to be a valid JWT (3 parts)`, 'success');
+                } else {
+                    log(`⚠️ Token doesn't appear to be a valid JWT (${parts.length} parts)`, 'warning');
+                }
+            } catch (error) {
+                log(`❌ Error validating token format: ${error.message}`, 'error');
+            }
+        }
+
+        async function testHangoutEndpoint() {
+            log('🧪 Testing Hangout Endpoint (the failing one)...', 'info');
+            
+            const token = getAuthToken();
+            const apiUrl = getServerUrl();
+            const testRoomId = 'room-1759573909580-u5x2jc0s4';
+            const messagesEndpoint = `${apiUrl}/api/hangout/rooms/${testRoomId}/messages`;
+            
+            log(`🔍 Testing endpoint: ${messagesEndpoint}`, 'info');
+            log(`🔧 Expected baseURL: ${apiUrl}`, 'info');
+            
+            // Simulate what axios should be doing
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json, text/plain, */*'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+                log(`🔑 Adding Authorization header with token`, 'info');
+            } else {
+                log(`⚠️ No token available - request will likely fail with 401`, 'warning');
+            }
+            
+            log(`🔧 Request headers:`, 'info');
+            Object.entries(headers).forEach(([key, value]) => {
+                log(`  ${key}: ${value}`, 'info');
+            });
+            
+            try {
+                const response = await fetch(messagesEndpoint, {
+                    method: 'GET',
+                    headers,
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Hangout endpoint working! Found ${data.messages?.length || 0} messages`, 'success');
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Hangout endpoint failed: ${response.status} ${response.statusText}`, 'error');
+                    log(`📊 Error details: ${JSON.stringify(errorData)}`, 'error');
+                    
+                    if (response.status === 401) {
+                        log(`🔍 This is the 401 Unauthorized error you're experiencing`, 'error');
+                        if (!token) {
+                            log(`💡 The issue is missing Authorization header`, 'info');
+                        } else {
+                            log(`💡 The issue might be invalid or expired token`, 'info');
+                        }
+                    }
+                }
+            } catch (error) {
+                log(`❌ Hangout endpoint test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testMessagePersistence() {
+            log('🧪 Testing Message Persistence (simulating the failing call)...', 'info');
+            
+            const token = getAuthToken();
+            const apiUrl = getServerUrl();
+            const testRoomId = 'room-1759573909580-u5x2jc0s4';
+            const messagesEndpoint = `${apiUrl}/api/hangout/rooms/${testRoomId}/messages`;
+            
+            log(`📨 Simulating MessagePersistenceService.loadFromAPI call`, 'info');
+            log(`🔧 Endpoint: ${messagesEndpoint}`, 'info');
+            
+            // Simulate the axios call that's failing
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json, text/plain, */*'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+                log(`🔑 Adding Authorization header (this should fix the 401)`, 'info');
+            } else {
+                log(`⚠️ No Authorization header - this will cause 401 error`, 'warning');
+            }
+            
+            try {
+                const response = await fetch(messagesEndpoint, {
+                    method: 'GET',
+                    headers,
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Message persistence working! Found ${data.messages?.length || 0} messages`, 'success');
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Message persistence failed: ${response.status} ${response.statusText}`, 'error');
+                    log(`📊 Error details: ${JSON.stringify(errorData)}`, 'error');
+                    
+                    if (response.status === 401) {
+                        log(`🔍 This matches the error from MessagePersistenceService.loadFromAPI`, 'error');
+                    }
+                }
+            } catch (error) {
+                log(`❌ Message persistence test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAllAxiosIssues() {
+            log('🚀 Starting comprehensive axios configuration debug...', 'info');
+            clearLog();
+            
+            // Test 1: Axios Configuration
+            await testAxiosConfig();
+            
+            // Wait a moment, then test Authentication
+            setTimeout(async () => {
+                await testAuthentication();
+            }, 1000);
+            
+            // Wait a moment, then test Hangout Endpoint
+            setTimeout(async () => {
+                await testHangoutEndpoint();
+            }, 2000);
+            
+            // Wait a moment, then test Message Persistence
+            setTimeout(async () => {
+                await testMessagePersistence();
+            }, 3000);
+            
+            // Final summary
+            setTimeout(() => {
+                log('🎯 Axios Configuration Debug Summary:', 'info');
+                log('✅ Base URL: Should be http://10.87.73.163:8000', 'info');
+                log('✅ Authentication: Should include Authorization header', 'info');
+                log('✅ Hangout Endpoint: Should work without 401 errors', 'info');
+                log('✅ Message Persistence: Should work without 401 errors', 'info');
+                log('🔍 Check the results above to identify the root cause', 'info');
+            }, 4000);
+        }
+
+        // Log initial information
+        log('🔧 Axios Configuration Debug Test initialized', 'info');
+        log(`🌐 Current hostname: ${window.location.hostname}`, 'info');
+        log(`🔗 Current protocol: ${window.location.protocol}`, 'info');
+        log(`🎯 Detected API URL: ${getServerUrl()}`, 'info');
+        log(`🔑 Auth token in localStorage: ${getAuthToken() ? 'Found' : 'Not found'}`, 'info');
+        log('📋 Ready to debug axios configuration issues', 'info');
+    </script>
+</body>
+</html>

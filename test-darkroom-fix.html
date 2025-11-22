@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Room Fix Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #00ff00;
+        }
+        .container {
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #00ff00;
+            text-align: center;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: #0d0d0d;
+        }
+        .success { border-left: 4px solid #00ff00; }
+        .error { border-left: 4px solid #ff0000; color: #ff0000; }
+        .info { border-left: 4px solid #00aaff; color: #00aaff; }
+        .room-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .room-card {
+            background: #0d0d0d;
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+        .room-card:hover {
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            transform: translateY(-2px);
+        }
+        .room-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #00ff00;
+        }
+        .room-members {
+            font-size: 0.9em;
+            color: #00aa00;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #00cc00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        .console {
+            background: #000;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        .console-line {
+            margin: 2px 0;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            background: #0d0d0d;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            border-radius: 5px;
+        }
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+    </style>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>🌙 Dark Room Fix Verification</h1>
+
+    <div class="container">
+        <h2>Connection Status</h2>
+        <div id="connectionStatus" class="status info">Initializing...</div>
+    </div>
+
+    <div class="container">
+        <h2>Setup</h2>
+        <div class="input-group">
+            <input type="text" id="aliasInput" placeholder="Enter your alias..." value="TestUser">
+            <button onclick="connect()">Connect to Dark Room</button>
+            <button onclick="disconnect()" disabled id="disconnectBtn">Disconnect</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Create New Room</h2>
+        <div class="input-group">
+            <input type="text" id="roomName" placeholder="Room name..." value="Test Room">
+            <input type="text" id="roomDesc" placeholder="Description..." value="Testing user counts">
+            <button onclick="createRoom()" disabled id="createBtn">Create Room</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Available Rooms <button onclick="refreshRooms()" id="refreshBtn">🔄 Refresh</button></h2>
+        <div id="roomList" class="room-list"></div>
+    </div>
+
+    <div class="container">
+        <h2>Console Log</h2>
+        <div id="console" class="console"></div>
+    </div>
+
+    <script>
+        const SERVER_URL = 'http://localhost:8002';
+        let socket = null;
+        let currentAlias = '';
+        let currentRoom = null;
+
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.style.color = type === 'error' ? '#ff0000' : type === 'success' ? '#00ff00' : '#00aaff';
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(message, type) {
+            const status = document.getElementById('connectionStatus');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        async function fetchRooms() {
+            try {
+                log('Fetching rooms from API...');
+                const response = await fetch(`${SERVER_URL}/api/v1/darkroom/rooms`);
+                if (response.ok) {
+                    const rooms = await response.json();
+                    log(`✅ Fetched ${rooms.length} rooms`, 'success');
+                    displayRooms(rooms);
+                } else {
+                    log(`❌ Failed to fetch rooms: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error fetching rooms: ${error.message}`, 'error');
+            }
+        }
+
+        function displayRooms(rooms) {
+            const roomList = document.getElementById('roomList');
+            if (rooms.length === 0) {
+                roomList.innerHTML = '<div class="status info">No rooms available. Create one!</div>';
+                return;
+            }
+
+            roomList.innerHTML = rooms.map(room => `
+                <div class="room-card">
+                    <div class="room-name">${room.name}</div>
+                    <div class="room-members">👥 ${room.user_count || 0} members</div>
+                    <div style="font-size: 0.8em; color: #666;">ID: ${room.id}</div>
+                    <div style="font-size: 0.8em; color: #666;">${room.description || 'No description'}</div>
+                    <button onclick="joinRoom('${room.id}', '${room.name}')" ${!socket ? 'disabled' : ''}>
+                        Join Room
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function connect() {
+            const alias = document.getElementById('aliasInput').value.trim();
+            if (!alias) {
+                alert('Please enter an alias');
+                return;
+            }
+
+            currentAlias = alias;
+            log(`Connecting as ${alias}...`);
+            updateStatus('Connecting...', 'info');
+
+            socket = io(SERVER_URL, {
+                transports: ['websocket', 'polling'],
+                timeout: 20000
+            });
+
+            socket.on('connect', () => {
+                log('✅ Connected to server!', 'success');
+                updateStatus(`Connected as ${alias}`, 'success');
+                document.getElementById('disconnectBtn').disabled = false;
+                document.getElementById('createBtn').disabled = false;
+                fetchRooms();
+            });
+
+            socket.on('disconnect', () => {
+                log('❌ Disconnected from server', 'error');
+                updateStatus('Disconnected', 'error');
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('createBtn').disabled = true;
+            });
+
+            socket.on('user-count-update', (data) => {
+                log(`👥 User count update: Room ${data.roomId} now has ${data.count} users`, 'success');
+                fetchRooms(); // Refresh the room list
+            });
+
+            socket.on('room-joined', (data) => {
+                log(`✅ Successfully joined room ${data.roomId}. User count: ${data.userCount}`, 'success');
+                fetchRooms();
+            });
+
+            socket.on('room-created', (data) => {
+                log(`🏠 Room created: ${data.name}`, 'success');
+                fetchRooms();
+            });
+
+            socket.on('connect_error', (error) => {
+                log(`❌ Connection error: ${error.message}`, 'error');
+                updateStatus('Connection failed', 'error');
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                log('Disconnected');
+                updateStatus('Disconnected', 'info');
+            }
+        }
+
+        async function createRoom() {
+            const roomName = document.getElementById('roomName').value.trim();
+            const roomDesc = document.getElementById('roomDesc').value.trim();
+
+            if (!roomName) {
+                alert('Please enter a room name');
+                return;
+            }
+
+            try {
+                log(`Creating room: ${roomName}...`);
+                const response = await fetch(`${SERVER_URL}/api/v1/darkroom/create-group`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: roomName,
+                        description: roomDesc || 'User created group',
+                        createdBy: currentAlias,
+                        tags: []
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    log(`✅ Room created successfully: ${result.room.id}`, 'success');
+                    
+                    // Emit to socket
+                    socket.emit('create-room', {
+                        roomId: result.room.id,
+                        roomName: result.room.name,
+                        createdBy: currentAlias
+                    });
+
+                    // Clear inputs
+                    document.getElementById('roomName').value = '';
+                    document.getElementById('roomDesc').value = '';
+
+                    // Refresh rooms
+                    setTimeout(() => fetchRooms(), 500);
+                } else {
+                    log(`❌ Failed to create room: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error creating room: ${error.message}`, 'error');
+            }
+        }
+
+        function joinRoom(roomId, roomName) {
+            if (!socket) {
+                alert('Please connect first');
+                return;
+            }
+
+            log(`Joining room: ${roomName} (${roomId})...`);
+            currentRoom = roomId;
+
+            socket.emit('join-room', {
+                roomId: roomId,
+                groupId: roomId,
+                alias: currentAlias
+            });
+        }
+
+        function refreshRooms() {
+            log('Refreshing rooms...');
+            fetchRooms();
+        }
+
+        // Initial load
+        window.addEventListener('load', () => {
+            log('Test page loaded. Ready to test Dark Room fixes!');
+            fetchRooms();
+        });
+    </script>
+</body>
+</html>

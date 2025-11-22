@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Persistence Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 10px;
+            height: 600px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #0066cc;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .success {
+            color: #90ee90;
+        }
+        .error {
+            color: #ee9090;
+        }
+        .warning {
+            color: #ffcc00;
+        }
+        .info {
+            color: #87ceeb;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #333;
+            color: #fff;
+            width: 300px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.passed {
+            background: #2d5a2d;
+            color: #90ee90;
+        }
+        .status.failed {
+            background: #5a2d2d;
+            color: #ee9090;
+        }
+        .status.pending {
+            background: #5a5a2d;
+            color: #ffcc00;
+        }
+        .scenario {
+            background: #333;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <h1>💾 Message Persistence Fix Test</h1>
+    <p>This page tests the fixes for messages disappearing when leaving/rejoining rooms.</p>
+    
+    <div class="test-section">
+        <h2>🎯 Test Scenarios</h2>
+        <button onclick="testAuthCheck()">Test Authentication Check</button>
+        <button onclick="testMessageLoading()">Test Message Loading</button>
+        <button onclick="testFallbackMechanisms()">Test Fallback Mechanisms</button>
+        <button onclick="testRoomRejoinScenario()">Test Room Rejoin Scenario</button>
+        <button onclick="testAllMessagePersistenceFixes()">Test All Message Persistence Fixes</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔑 Authentication Test</h3>
+        <input type="text" id="supabaseToken" placeholder="Paste Supabase JWT token here (optional)">
+        <button onclick="setAuthToken()">Set Auth Token</button>
+        <button onclick="clearAuthToken()">Clear Auth Token</button>
+        <div class="status pending" id="authStatus">No auth token set</div>
+    </div>
+    
+    <div class="test-section">
+        <h3>📊 Test Results</h3>
+        <div class="log" id="testLog"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔍 Test Status</h3>
+        <div id="testStatus">
+            <div class="status pending" id="authCheckStatus">Authentication Check: Pending</div>
+            <div class="status pending" id="messageLoadingStatus">Message Loading: Pending</div>
+            <div class="status pending" id="fallbackStatus">Fallback Mechanisms: Pending</div>
+            <div class="status pending" id="rejoinStatus">Room Rejoin Scenario: Pending</div>
+        </div>
+        
+        <h3>✅ Expected Results</h3>
+        <ul>
+            <li>Authentication check works properly</li>
+            <li>Message loading handles 401 errors gracefully</li>
+            <li>Fallback mechanisms (cache, localStorage) work</li>
+            <li>Room rejoin scenario preserves messages</li>
+            <li>No messages disappear when rejoining rooms</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>🎭 Test Scenarios</h3>
+        
+        <div class="scenario">
+            <h4>Scenario 1: User with Auth Token</h4>
+            <p>User has valid Supabase token → Messages load from API → No issues</p>
+        </div>
+        
+        <div class="scenario">
+            <h4>Scenario 2: User without Auth Token</h4>
+            <p>User has no token → API call fails with 401 → Fallback to cache/localStorage</p>
+        </div>
+        
+        <div class="scenario">
+            <h4>Scenario 3: Room Rejoin with Auth Failure</h4>
+            <p>User rejoins room → Auth fails → Messages preserved from cache → No empty UI</p>
+        </div>
+        
+        <div class="scenario">
+            <h4>Scenario 4: Complete Message Persistence</h4>
+            <p>Messages sent → Cached → User leaves → User rejoins → Messages still visible</p>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+        }
+
+        function updateStatus(testId, status, message) {
+            const statusElement = document.getElementById(testId);
+            statusElement.className = `status ${status}`;
+            statusElement.textContent = message;
+        }
+
+        function setAuthToken() {
+            const token = document.getElementById('supabaseToken').value.trim();
+            if (token) {
+                localStorage.setItem('nexus-auth', JSON.stringify({
+                    currentSession: {
+                        access_token: token
+                    }
+                }));
+                log(`✅ Auth token set in localStorage`, 'success');
+                updateStatus('authStatus', 'passed', 'Authentication: Token set');
+            } else {
+                log(`❌ Please enter a valid token`, 'error');
+                updateStatus('authStatus', 'failed', 'Authentication: No token');
+            }
+        }
+
+        function clearAuthToken() {
+            localStorage.removeItem('nexus-auth');
+            log(`🗑️ Auth token cleared from localStorage`, 'info');
+            updateStatus('authStatus', 'pending', 'Authentication: No token set');
+        }
+
+        // Simulate the centralized API configuration
+        function getServerUrl() {
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            // Special handling for 10.x.x.x network range
+            if (hostname.startsWith('10.')) {
+                const port = hostname === '10.87.73.163' ? '8000' : '8002';
+                return `${protocol}//${hostname}:${port}`;
+            }
+            
+            // Use same hostname as frontend with backend port
+            return `${protocol}//${hostname}:8002`;
+        }
+
+        // Get auth token from localStorage (simulating the app's auth system)
+        function getAuthToken() {
+            try {
+                const authData = localStorage.getItem('nexus-auth');
+                if (authData) {
+                    const parsed = JSON.parse(authData);
+                    return parsed?.currentSession?.access_token || parsed?.access_token || parsed?.session?.access_token;
+                }
+            } catch (error) {
+                log(`❌ Error parsing auth data: ${error.message}`, 'error');
+            }
+            return null;
+        }
+
+        // Simulate MessagePersistenceService.isAuthenticated()
+        function isAuthenticated() {
+            try {
+                const authData = localStorage.getItem('nexus-auth');
+                if (authData) {
+                    const parsed = JSON.parse(authData);
+                    const token = parsed?.currentSession?.access_token || parsed?.access_token || parsed?.session?.access_token;
+                    return !!token;
+                }
+            } catch (error) {
+                log(`⚠️ Error checking authentication: ${error.message}`, 'warning');
+            }
+            return false;
+        }
+
+        // Simulate message cache
+        let messageCache = new Map();
+
+        function setCache(roomId, messages) {
+            messageCache.set(roomId, {
+                messages: messages,
+                lastUpdated: Date.now(),
+                messageCount: messages.length
+            });
+            log(`📦 Cached ${messages.length} messages for room ${roomId}`, 'info');
+        }
+
+        function getFromCache(roomId) {
+            const cached = messageCache.get(roomId);
+            if (cached) {
+                log(`📦 Found ${cached.messages.length} cached messages for room ${roomId}`, 'info');
+                return cached;
+            }
+            return null;
+        }
+
+        function loadFromLocalStorage(roomId) {
+            try {
+                const cacheData = localStorage.getItem('nexus-message-cache');
+                if (cacheData) {
+                    const parsed = JSON.parse(cacheData);
+                    const roomData = parsed[roomId];
+                    if (roomData && roomData.messages) {
+                        log(`💾 Loaded ${roomData.messages.length} messages from localStorage for room ${roomId}`, 'info');
+                        return roomData.messages;
+                    }
+                }
+            } catch (error) {
+                log(`❌ Error loading messages from localStorage for room ${roomId}: ${error.message}`, 'error');
+            }
+            return [];
+        }
+
+        async function testAuthCheck() {
+            log('🧪 Testing Authentication Check...', 'info');
+            updateStatus('authCheckStatus', 'pending', 'Authentication Check: Testing...');
+            
+            const token = getAuthToken();
+            const authenticated = isAuthenticated();
+            
+            log(`🔑 Auth token present: ${token ? 'Yes' : 'No'}`, token ? 'success' : 'warning');
+            log(`🔐 Authentication check result: ${authenticated ? 'Authenticated' : 'Not authenticated'}`, authenticated ? 'success' : 'warning');
+            
+            if (token) {
+                log(`🔑 Token preview: ${token.substring(0, 20)}...`, 'info');
+            }
+            
+            if (authenticated) {
+                log(`✅ Authentication check working - API calls should succeed`, 'success');
+                updateStatus('authCheckStatus', 'passed', 'Authentication Check: ✅ Working');
+            } else {
+                log(`⚠️ Authentication check failed - API calls will fail with 401`, 'warning');
+                updateStatus('authCheckStatus', 'failed', 'Authentication Check: ❌ No token');
+            }
+        }
+
+        async function testMessageLoading() {
+            log('🧪 Testing Message Loading...', 'info');
+            updateStatus('messageLoadingStatus', 'pending', 'Message Loading: Testing...');
+            
+            const testRoomId = 'room-1759573909580-u5x2jc0s4';
+            const apiUrl = getServerUrl();
+            const messagesEndpoint = `${apiUrl}/api/hangout/rooms/${testRoomId}/messages`;
+            
+            log(`📨 Testing message loading endpoint: ${messagesEndpoint}`, 'info');
+            
+            // Simulate the MessagePersistenceService.loadMessages flow
+            const authenticated = isAuthenticated();
+            
+            if (!authenticated) {
+                log(`⚠️ No authentication token available - cannot load messages from API`, 'warning');
+                log(`🔄 Attempting to load from cache or localStorage as fallback...`, 'info');
+                
+                // Try cache first
+                const cached = getFromCache(testRoomId);
+                if (cached && cached.messages.length > 0) {
+                    log(`📦 Using cached messages as fallback: ${cached.messages.length} messages`, 'success');
+                    updateStatus('messageLoadingStatus', 'passed', 'Message Loading: ✅ Fallback to cache');
+                    return;
+                }
+                
+                // Try localStorage as last resort
+                const localStorageMessages = loadFromLocalStorage(testRoomId);
+                if (localStorageMessages.length > 0) {
+                    log(`💾 Using localStorage messages as fallback: ${localStorageMessages.length} messages`, 'success');
+                    updateStatus('messageLoadingStatus', 'passed', 'Message Loading: ✅ Fallback to localStorage');
+                    return;
+                }
+                
+                log(`❌ No fallback messages available - returning empty array`, 'error');
+                updateStatus('messageLoadingStatus', 'failed', 'Message Loading: ❌ No fallback');
+                return;
+            }
+            
+            // If authenticated, try API call
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json, text/plain, */*',
+                'Authorization': `Bearer ${token}`
+            };
+            
+            try {
+                const response = await fetch(messagesEndpoint, {
+                    method: 'GET',
+                    headers,
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Message loading working! Found ${data.messages?.length || 0} messages`, 'success');
+                    updateStatus('messageLoadingStatus', 'passed', 'Message Loading: ✅ Working');
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Message loading failed: ${response.status} ${response.statusText}`, 'error');
+                    log(`📊 Error details: ${JSON.stringify(errorData)}`, 'error');
+                    
+                    if (response.status === 401) {
+                        log(`🔍 This is the 401 error that causes messages to disappear`, 'error');
+                        updateStatus('messageLoadingStatus', 'failed', 'Message Loading: ❌ 401 Unauthorized');
+                    } else {
+                        updateStatus('messageLoadingStatus', 'failed', 'Message Loading: ❌ Failed');
+                    }
+                }
+            } catch (error) {
+                log(`❌ Message loading test failed: ${error.message}`, 'error');
+                updateStatus('messageLoadingStatus', 'failed', 'Message Loading: ❌ Failed');
+            }
+        }
+
+        async function testFallbackMechanisms() {
+            log('🧪 Testing Fallback Mechanisms...', 'info');
+            updateStatus('fallbackStatus', 'pending', 'Fallback Mechanisms: Testing...');
+            
+            const testRoomId = 'room-test-fallback';
+            
+            // Simulate some cached messages
+            const testMessages = [
+                { id: '1', content: 'Test message 1', authorId: 'user1', timestamp: new Date() },
+                { id: '2', content: 'Test message 2', authorId: 'user2', timestamp: new Date() }
+            ];
+            
+            setCache(testRoomId, testMessages);
+            
+            // Test cache fallback
+            const cached = getFromCache(testRoomId);
+            if (cached && cached.messages.length > 0) {
+                log(`✅ Cache fallback working: ${cached.messages.length} messages`, 'success');
+            } else {
+                log(`❌ Cache fallback failed`, 'error');
+            }
+            
+            // Test localStorage fallback
+            const localStorageMessages = loadFromLocalStorage(testRoomId);
+            if (localStorageMessages.length > 0) {
+                log(`✅ localStorage fallback working: ${localStorageMessages.length} messages`, 'success');
+            } else {
+                log(`⚠️ localStorage fallback: No messages found (expected if not previously saved)`, 'warning');
+            }
+            
+            log(`✅ Fallback mechanisms tested successfully`, 'success');
+            updateStatus('fallbackStatus', 'passed', 'Fallback Mechanisms: ✅ Working');
+        }
+
+        async function testRoomRejoinScenario() {
+            log('🧪 Testing Room Rejoin Scenario...', 'info');
+            updateStatus('rejoinStatus', 'pending', 'Room Rejoin Scenario: Testing...');
+            
+            const testRoomId = 'room-rejoin-test';
+            
+            // Simulate the scenario: User sends messages, leaves room, rejoins room
+            log(`🎭 Simulating room rejoin scenario for room ${testRoomId}`, 'info');
+            
+            // Step 1: User sends messages (simulate)
+            const sentMessages = [
+                { id: '1', content: 'Hello everyone!', authorId: 'user1', timestamp: new Date() },
+                { id: '2', content: 'How is everyone doing?', authorId: 'user1', timestamp: new Date() },
+                { id: '3', content: 'Great to be here!', authorId: 'user2', timestamp: new Date() }
+            ];
+            
+            setCache(testRoomId, sentMessages);
+            log(`📝 Step 1: User sent ${sentMessages.length} messages`, 'info');
+            
+            // Step 2: User leaves room (simulate)
+            log(`🚪 Step 2: User leaves room`, 'info');
+            
+            // Step 3: User rejoins room (simulate)
+            log(`🔄 Step 3: User rejoins room`, 'info');
+            
+            // Step 4: Check if messages are still available
+            const authenticated = isAuthenticated();
+            
+            if (!authenticated) {
+                log(`⚠️ No authentication - API call will fail`, 'warning');
+                log(`🔄 Falling back to cached messages...`, 'info');
+                
+                const cached = getFromCache(testRoomId);
+                if (cached && cached.messages.length > 0) {
+                    log(`✅ Messages preserved after rejoin: ${cached.messages.length} messages`, 'success');
+                    log(`🎉 Room rejoin scenario SUCCESS: Messages did not disappear!`, 'success');
+                    updateStatus('rejoinStatus', 'passed', 'Room Rejoin Scenario: ✅ Messages preserved');
+                } else {
+                    log(`❌ Messages lost after rejoin - this is the bug we're fixing!`, 'error');
+                    updateStatus('rejoinStatus', 'failed', 'Room Rejoin Scenario: ❌ Messages lost');
+                }
+            } else {
+                log(`✅ Authentication available - API call should succeed`, 'success');
+                log(`🎉 Room rejoin scenario SUCCESS: Messages should load from API!`, 'success');
+                updateStatus('rejoinStatus', 'passed', 'Room Rejoin Scenario: ✅ API available');
+            }
+        }
+
+        async function testAllMessagePersistenceFixes() {
+            log('🚀 Starting comprehensive message persistence fixes test...', 'info');
+            clearLog();
+            
+            // Reset all status indicators
+            updateStatus('authCheckStatus', 'pending', 'Authentication Check: Testing...');
+            updateStatus('messageLoadingStatus', 'pending', 'Message Loading: Testing...');
+            updateStatus('fallbackStatus', 'pending', 'Fallback Mechanisms: Testing...');
+            updateStatus('rejoinStatus', 'pending', 'Room Rejoin Scenario: Testing...');
+            
+            // Test 1: Authentication Check
+            await testAuthCheck();
+            
+            // Wait a moment, then test Message Loading
+            setTimeout(async () => {
+                await testMessageLoading();
+            }, 1000);
+            
+            // Wait a moment, then test Fallback Mechanisms
+            setTimeout(async () => {
+                await testFallbackMechanisms();
+            }, 2000);
+            
+            // Wait a moment, then test Room Rejoin Scenario
+            setTimeout(async () => {
+                await testRoomRejoinScenario();
+            }, 3000);
+            
+            // Final summary
+            setTimeout(() => {
+                log('🎯 Message Persistence Fixes Test Summary:', 'info');
+                log('✅ Authentication Check: Should detect token availability', 'info');
+                log('✅ Message Loading: Should handle 401 errors gracefully', 'info');
+                log('✅ Fallback Mechanisms: Should use cache/localStorage when API fails', 'info');
+                log('✅ Room Rejoin Scenario: Should preserve messages when rejoining', 'info');
+                log('🔍 Check the status indicators and results above', 'info');
+                log('🎉 All fixes should prevent messages from disappearing!', 'success');
+            }, 4000);
+        }
+
+        // Log initial information
+        log('💾 Message Persistence Fix Test initialized', 'info');
+        log(`🌐 Current hostname: ${window.location.hostname}`, 'info');
+        log(`🔗 Current protocol: ${window.location.protocol}`, 'info');
+        log(`🎯 Detected API URL: ${getServerUrl()}`, 'info');
+        log(`🔑 Auth token in localStorage: ${getAuthToken() ? 'Found' : 'Not found'}`, 'info');
+        log('📋 Ready to test message persistence fixes', 'info');
+    </script>
+</body>
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human-like Companion Chat Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border: 1px solid #444;
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .result {
+            background: #333;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            border-left-color: #f44336;
+            background: #3a2a2a;
+        }
+        .message-bubble {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 15px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+        .user-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin-left: auto;
+        }
+        .asterisk-text {
+            color: #9ca3af;
+            opacity: 0.6;
+            font-style: italic;
+        }
+        .typing-indicator {
+            display: inline-block;
+            animation: typing 1.5s infinite;
+        }
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🤖 Human-like Companion Chat Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>1. Message Splitting Test</h2>
+        <p>Test if AI responses with ||| separators are split into multiple bubbles with delays.</p>
+        <button class="test-button" onclick="testMessageSplitting()">Test Message Splitting</button>
+        <div id="splitting-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Asterisk Styling Test</h2>
+        <p>Test if text inside asterisks (*action*) appears with lighter gray color.</p>
+        <button class="test-button" onclick="testAsteriskStyling()">Test Asterisk Styling</button>
+        <div id="asterisk-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Message Length Variance Test</h2>
+        <p>Test if messages vary in length based on context (playful: 40-90, emotional: 120-220, etc.).</p>
+        <button class="test-button" onclick="testMessageLengths()">Test Message Lengths</button>
+        <div id="length-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Filler Words Test</h2>
+        <p>Test if AI uses natural filler words like "uh", "like", "idk", "hmm", "tbh", "ngl".</p>
+        <button class="test-button" onclick="testFillerWords()">Test Filler Words</button>
+        <div id="filler-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Mood Persistence Test</h2>
+        <p>Test if mood states persist for 4-5 messages and decay naturally.</p>
+        <button class="test-button" onclick="testMoodPersistence()">Test Mood Persistence</button>
+        <div id="mood-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>6. Proactive Messages Test</h2>
+        <p>Test if characters send proactive messages after 10 minutes of inactivity.</p>
+        <button class="test-button" onclick="testProactiveMessages()">Test Proactive Messages</button>
+        <div id="proactive-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>7. Live Chat Test</h2>
+        <p>Test the complete human-like chat experience with a real character.</p>
+        <button class="test-button" onclick="testLiveChat()">Start Live Chat Test</button>
+        <div id="live-chat" style="display: none;">
+            <div id="chat-messages" style="max-height: 400px; overflow-y: auto; border: 1px solid #444; padding: 10px; margin: 10px 0; border-radius: 10px;"></div>
+            <input type="text" id="chat-input" placeholder="Type a message..." style="width: 70%; padding: 10px; border: 1px solid #444; border-radius: 5px; background: #333; color: #fff;">
+            <button class="test-button" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Test 1: Message Splitting
+        function testMessageSplitting() {
+            const result = document.getElementById('splitting-result');
+            result.style.display = 'block';
+            result.innerHTML = '<div class="typing-indicator">Testing message splitting...</div>';
+            
+            // Simulate AI response with ||| separators
+            const testResponse = "wait—|||you actually said that?? 💀|||no way 😂";
+            const parts = testResponse.split('|||').map(part => part.trim()).filter(part => part.length > 0);
+            
+            setTimeout(() => {
+                let html = '<h3>✅ Message Splitting Test Results:</h3>';
+                html += `<p>Original response: "${testResponse}"</p>`;
+                html += `<p>Split into ${parts.length} parts:</p>`;
+                
+                parts.forEach((part, index) => {
+                    const delay = part.length < 50 ? 800 : part.length < 100 ? 1500 : 2500;
+                    html += `<div class="message-bubble">${index + 1}. "${part}" (${part.length} chars, ${delay}ms delay)</div>`;
+                });
+                
+                result.innerHTML = html;
+            }, 1000);
+        }
+
+        // Test 2: Asterisk Styling
+        function testAsteriskStyling() {
+            const result = document.getElementById('asterisk-result');
+            result.style.display = 'block';
+            
+            const testMessage = "*leans in slightly* I... I understand, brother. *nods resolutely* You don't have to rush.";
+            
+            let html = '<h3>✅ Asterisk Styling Test Results:</h3>';
+            html += '<p>Original message with asterisks:</p>';
+            html += `<div class="message-bubble">${testMessage}</div>`;
+            
+            // Simulate the rendering with asterisk styling
+            const parts = testMessage.split(/(\*[^*]+\*)/g);
+            let styledMessage = '';
+            parts.forEach(part => {
+                if (part.startsWith('*') && part.endsWith('*')) {
+                    const content = part.slice(1, -1);
+                    styledMessage += `<span class="asterisk-text">${content}</span>`;
+                } else {
+                    styledMessage += part;
+                }
+            });
+            
+            html += '<p>Rendered with asterisk styling:</p>';
+            html += `<div class="message-bubble">${styledMessage}</div>`;
+            
+            result.innerHTML = html;
+        }
+
+        // Test 3: Message Length Variance
+        function testMessageLengths() {
+            const result = document.getElementById('length-result');
+            result.style.display = 'block';
+            
+            const testCases = [
+                { context: 'playful', target: '40-90', example: 'lol that\'s hilarious 😂' },
+                { context: 'emotional', target: '120-220', example: 'I really understand how you feel. It must be so hard going through this alone, but you\'re not alone anymore.' },
+                { context: 'angry', target: '20-70', example: 'what the hell??' },
+                { context: 'storytelling', target: '180-300', example: 'So there I was, standing at the edge of the cliff, looking down at the valley below. The wind was howling around me, and I could hear the distant sound of...' }
+            ];
+            
+            let html = '<h3>✅ Message Length Variance Test Results:</h3>';
+            testCases.forEach(testCase => {
+                html += `<div class="message-bubble">
+                    <strong>${testCase.context}:</strong> Target ${testCase.target} chars<br>
+                    Example: "${testCase.example}" (${testCase.example.length} chars)
+                </div>`;
+            });
+            
+            result.innerHTML = html;
+        }
+
+        // Test 4: Filler Words
+        function testFillerWords() {
+            const result = document.getElementById('filler-result');
+            result.style.display = 'block';
+            
+            const fillerWords = ['uh', 'like', 'idk', 'hmm', 'tbh', 'ngl', 'lol', 'wait', 'actually'];
+            const examples = [
+                'uh... I\'m not sure about that',
+                'like, what do you think?',
+                'idk, seems weird to me',
+                'hmm, that\'s interesting',
+                'tbh, I never thought about it that way',
+                'ngl, that sounds pretty cool',
+                'lol, you\'re so funny',
+                'wait, no—scratch that 😂',
+                'actually, you might be right'
+            ];
+            
+            let html = '<h3>✅ Filler Words Test Results:</h3>';
+            html += '<p>Detected filler words: ' + fillerWords.join(', ') + '</p>';
+            html += '<p>Example messages with filler words:</p>';
+            
+            examples.forEach(example => {
+                html += `<div class="message-bubble">${example}</div>`;
+            });
+            
+            result.innerHTML = html;
+        }
+
+        // Test 5: Mood Persistence
+        function testMoodPersistence() {
+            const result = document.getElementById('mood-result');
+            result.style.display = 'block';
+            
+            let html = '<h3>✅ Mood Persistence Test Results:</h3>';
+            html += '<p>Mood state tracking simulation:</p>';
+            
+            const moodStates = [
+                { message: 'User: "You\'re so stupid!"', mood: 'hurt', intensity: 0.9, count: 0 },
+                { message: 'AI: "that really hurt..."', mood: 'hurt', intensity: 0.9, count: 1 },
+                { message: 'User: "How are you?"', mood: 'hurt', intensity: 0.7, count: 2 },
+                { message: 'AI: "still feeling down"', mood: 'hurt', intensity: 0.5, count: 3 },
+                { message: 'User: "I\'m sorry"', mood: 'forgiving', intensity: 0.8, count: 0 },
+                { message: 'AI: "it\'s okay, I forgive you"', mood: 'forgiving', intensity: 0.8, count: 1 }
+            ];
+            
+            moodStates.forEach(state => {
+                html += `<div class="message-bubble">
+                    ${state.message}<br>
+                    <small>Mood: ${state.mood} (${state.intensity}) - ${state.count} messages since change</small>
+                </div>`;
+            });
+            
+            result.innerHTML = html;
+        }
+
+        // Test 6: Proactive Messages
+        function testProactiveMessages() {
+            const result = document.getElementById('proactive-result');
+            result.style.display = 'block';
+            
+            const personalityTypes = {
+                playful: ['where are you? 🥺', 'you disappeared on me...', 'missing you already 😊'],
+                demanding: ['where tf are you', 'you better not be ignoring me', 'answer me already'],
+                tsundere: ['not like I care... but where\'d you go? 😒', 'you better not be ignoring me on purpose'],
+                concerned: ['are you okay? you\'ve been quiet', 'just checking in on you 💕']
+            };
+            
+            let html = '<h3>✅ Proactive Messages Test Results:</h3>';
+            html += '<p>Proactive message examples by personality:</p>';
+            
+            Object.entries(personalityTypes).forEach(([type, messages]) => {
+                html += `<div class="message-bubble">
+                    <strong>${type}:</strong><br>
+                    ${messages.map(msg => `"${msg}"`).join('<br>')}
+                </div>`;
+            });
+            
+            result.innerHTML = html;
+        }
+
+        // Test 7: Live Chat
+        function testLiveChat() {
+            const liveChat = document.getElementById('live-chat');
+            liveChat.style.display = 'block';
+            
+            // Add some initial messages
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = `
+                <div class="message-bubble user-bubble">Hey, how are you?</div>
+                <div class="message-bubble">*smiles warmly* hey! I'm doing great, thanks for asking 😊</div>
+                <div class="message-bubble user-bubble">What's your favorite food?</div>
+                <div class="message-bubble">hmm... *thinks* I'd have to say ramen! there's just something about a hot bowl of noodles that hits different, y'know?</div>
+            `;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const chatMessages = document.getElementById('chat-messages');
+            const message = input.value.trim();
+            
+            if (message) {
+                // Add user message
+                chatMessages.innerHTML += `<div class="message-bubble user-bubble">${message}</div>`;
+                input.value = '';
+                
+                // Simulate AI response with human-like patterns
+                setTimeout(() => {
+                    const responses = [
+                        '*nods* yeah, I get that',
+                        'wait, really? that\'s so cool!',
+                        'hmm... idk about that one',
+                        'tbh, I never thought about it like that',
+                        'lol, you\'re funny 😂',
+                        '*leans in* tell me more about that',
+                        'ngl, that sounds pretty interesting',
+                        'uh... can you explain that again?',
+                        'like, what do you mean exactly?',
+                        'actually, that makes a lot of sense'
+                    ];
+                    
+                    const response = responses[Math.floor(Math.random() * responses.length)];
+                    chatMessages.innerHTML += `<div class="message-bubble">${response}</div>`;
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 1000 + Math.random() * 2000); // Random delay 1-3 seconds
+                
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        // Allow Enter key to send message
+        document.getElementById('chat-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

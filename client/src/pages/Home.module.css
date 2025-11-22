@@ -1,0 +1,41 @@
+.touchButton {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+@media (hover: none) {
+  .touchButton:active {
+    transform: scale(0.98);
+  }
+}
+
+.ctaTouch {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+@media (hover: none) {
+  .ctaTouch:active {
+    transform: translateY(1px) scale(0.99);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  }
+}
+
+.dotTouch {
+  position: relative;
+}
+
+/* Increase tap target without changing visual size */
+.dotTouch::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+}
+
+/* Reduce motion respect */
+@media (prefers-reduced-motion: reduce) {
+  .touchButton:active,
+  .ctaTouch:active {
+    transform: none;
+  }
+} 

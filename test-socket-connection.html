@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Test</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: monospace;
+            background: #000;
+            color: #0f0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        input, button {
+            background: #333;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 4px;
+        }
+        button {
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0f0;
+            color: #000;
+        }
+        .log {
+            background: #111;
+            border: 1px solid #333;
+            padding: 10px;
+            margin: 10px 0;
+            height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .message {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Socket.IO Dark Room Test</h1>
+
+        <div>
+            <input type="text" id="roomId" placeholder="Room ID" value="test-room">
+            <input type="text" id="alias" placeholder="Your Alias" value="TestUser">
+            <button onclick="joinRoom()">Join Room</button>
+            <button onclick="leaveRoom()">Leave Room</button>
+        </div>
+
+        <div>
+            <input type="text" id="messageInput" placeholder="Type a message..." style="width: 400px;">
+            <button onclick="sendMessage()">Send Message</button>
+        </div>
+
+        <div>
+            <button onclick="getRoomStatus()">Get Room Status</button>
+            <button onclick="broadcastTest()">Broadcast Test Message</button>
+        </div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        const serverUrl = 'http://localhost:8002';
+        let socket = null;
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(messageDiv);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function connectSocket() {
+            if (socket) {
+                socket.disconnect();
+            }
+
+            socket = io(serverUrl, {
+                transports: ['websocket', 'polling'],
+                timeout: 8000
+            });
+
+            socket.on('connect', () => {
+                log('✅ Connected to server');
+            });
+
+            socket.on('disconnect', () => {
+                log('❌ Disconnected from server');
+            });
+
+            socket.on('room-joined', (data) => {
+                if (data.success) {
+                    log(`✅ Successfully joined room: ${data.roomId} (${data.userCount} users)`);
+                } else {
+                    log(`❌ Failed to join room: ${data.roomId} - ${data.error}`);
+                }
+            });
+
+            socket.on('receive-message', (data) => {
+                log(`📨 Message received: ${data.alias}: ${data.message}`);
+            });
+
+            socket.on('user-count-update', (data) => {
+                log(`👥 User count updated: ${data.count} users in room ${data.roomId}`);
+            });
+
+            socket.on('room-history', (messages) => {
+                log(`📚 Received ${messages.length} messages from room history`);
+                messages.forEach(msg => {
+                    log(`  ${msg.alias}: ${msg.message}`);
+                });
+            });
+        }
+
+        function joinRoom() {
+            if (!socket) connectSocket();
+
+            const roomId = document.getElementById('roomId').value;
+            const alias = document.getElementById('alias').value;
+
+            if (roomId && alias) {
+                log(`🔗 Joining room: ${roomId} as ${alias}`);
+                socket.emit('join-room', { groupId: roomId, alias: alias });
+            }
+        }
+
+        function leaveRoom() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                log('🔌 Disconnected from server');
+            }
+        }
+
+        function sendMessage() {
+            if (!socket) {
+                log('❌ Not connected to server');
+                return;
+            }
+
+            const roomId = document.getElementById('roomId').value;
+            const message = document.getElementById('messageInput').value;
+
+            if (roomId && message) {
+                log(`📤 Sending message: ${message}`);
+                socket.emit('send-message', {
+                    groupId: roomId,
+                    alias: document.getElementById('alias').value,
+                    message: message,
+                    time: new Date().toISOString()
+                });
+                document.getElementById('messageInput').value = '';
+            }
+        }
+
+        async function getRoomStatus() {
+            const roomId = document.getElementById('roomId').value;
+
+            try {
+                const response = await fetch(`${serverUrl}/api/v1/darkroom/debug/room-status/${roomId}`);
+                const data = await response.json();
+                log(`📊 Room status: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log(`❌ Error getting room status: ${error.message}`);
+            }
+        }
+
+        async function broadcastTest() {
+            const roomId = document.getElementById('roomId').value;
+
+            try {
+                const response = await fetch(`${serverUrl}/api/v1/darkroom/debug/broadcast-test/${roomId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        alias: 'System',
+                        message: `Test message from ${new Date().toLocaleTimeString()}`
+                    })
+                });
+                const data = await response.json();
+                log(`🧪 Test broadcast result: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log(`❌ Error broadcasting test: ${error.message}`);
+            }
+        }
+
+        // Auto-connect on page load
+        connectSocket();
+
+        // Enter key to send message
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

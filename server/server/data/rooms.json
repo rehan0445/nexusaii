@@ -1,0 +1,33 @@
+[
+  {
+    "id": "room-1759382744558",
+    "name": "ddddd",
+    "description": "dddd",
+    "bio": "dddd",
+    "rules": [
+      "dddddddd"
+    ],
+    "category": "General",
+    "memberCount": 1,
+    "isPrivate": false,
+    "isOfficial": false,
+    "roomType": "palace",
+    "createdAt": "2025-10-02T05:25:44.558Z",
+    "lastActivity": "2025-10-02T05:25:44.558Z",
+    "moderators": [
+      "mock-user-id"
+    ],
+    "tags": [
+      "general"
+    ],
+    "icon": "💬",
+    "profilePicture": null,
+    "createdBy": "mock-user-id",
+    "maxCoAdmins": 3,
+    "defaultBanDuration": "1day",
+    "allowMemberRequests": true,
+    "allowAdminInvites": true,
+    "autoTransferOnInactivity": true,
+    "inactivityDays": 10
+  }
+]

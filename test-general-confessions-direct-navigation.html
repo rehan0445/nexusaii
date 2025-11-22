@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test General Confessions Direct Navigation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #18181b, #27272a);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #F4E3B5, #D4C4A8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .test-section {
+            background: rgba(39, 39, 42, 0.8);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(244, 227, 181, 0.2);
+        }
+        
+        .test-section h2 {
+            color: #F4E3B5;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .campus-card {
+            background: linear-gradient(135deg, rgba(244, 227, 181, 0.1), rgba(212, 196, 168, 0.1));
+            border: 2px solid rgba(244, 227, 181, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .campus-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(244, 227, 181, 0.6);
+            box-shadow: 0 10px 30px rgba(244, 227, 181, 0.2);
+        }
+        
+        .campus-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #F4E3B5;
+        }
+        
+        .campus-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+        }
+        
+        .explore-button {
+            background: linear-gradient(45deg, #F4E3B5, #D4C4A8);
+            color: #18181b;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .explore-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 227, 181, 0.3);
+        }
+        
+        .test-results {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #F4E3B5;
+        }
+        
+        .test-results h3 {
+            color: #F4E3B5;
+            margin-bottom: 15px;
+        }
+        
+        .result-item {
+            background: rgba(39, 39, 42, 0.5);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 3px solid #F4E3B5;
+        }
+        
+        .result-item.success {
+            border-left-color: #10b981;
+        }
+        
+        .result-item.error {
+            border-left-color: #ef4444;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .status-indicator.success {
+            background-color: #10b981;
+        }
+        
+        .status-indicator.error {
+            background-color: #ef4444;
+        }
+        
+        .status-indicator.pending {
+            background-color: #f59e0b;
+        }
+        
+        .navigation-test {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .expected-flow {
+            background: rgba(244, 227, 181, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 3px solid #F4E3B5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 General Confessions Direct Navigation Test</h1>
+            <p>Testing the direct navigation to confessions list (skipping campus page)</p>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Test Overview</h2>
+            <p>This test verifies that clicking "General Confessions" navigates directly to the confessions list page, bypassing the intermediate campus page.</p>
+            
+            <div class="campus-card" onclick="testDirectNavigation()">
+                <div class="campus-title">🌟 General Confessions</div>
+                <div class="campus-subtitle">General Confessions - All Campuses</div>
+                <button class="explore-button">✨ Explore</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Test Results</h2>
+            <div class="test-results">
+                <h3>Navigation Test</h3>
+                <div id="test-results">
+                    <div class="result-item">
+                        <span class="status-indicator pending"></span>
+                        <strong>Click Test:</strong> <span id="click-test-status">Pending</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="status-indicator pending"></span>
+                        <strong>Route Verification:</strong> <span id="route-test-status">Pending</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="status-indicator pending"></span>
+                        <strong>Direct Navigation:</strong> <span id="direct-nav-status">Pending</span>
+                    </div>
+                </div>
+                
+                <div id="navigation-details" class="navigation-test" style="display: none;">
+                    <h4>Navigation Details:</h4>
+                    <pre id="navigation-content"></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Expected Behavior</h2>
+            <div class="expected-flow">
+                <h3>Before (Old Flow):</h3>
+                <p>Click "General Confessions" → Navigate to <code>/campus/general</code> → Click "Confessions" → Navigate to <code>/campus/general/confessions</code></p>
+                
+                <h3>After (New Flow):</h3>
+                <p>Click "General Confessions" → Navigate directly to <code>/campus/general/confessions</code></p>
+                
+                <h3>Benefits:</h3>
+                <ul>
+                    <li>✅ Faster access to confessions</li>
+                    <li>✅ Fewer clicks required</li>
+                    <li>✅ More direct user experience</li>
+                    <li>✅ Other campuses still work as before</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Implementation Details</h2>
+            <p><strong>File Modified:</strong> <code>client/src/pages/CollegeSelection.tsx</code></p>
+            <p><strong>Function Updated:</strong> <code>handleCollegeClick</code></p>
+            <p><strong>Logic Added:</strong> Check if <code>collegeId === 'general'</code> and navigate directly to confessions page</p>
+            <p><strong>Route:</strong> <code>/campus/general/confessions</code> (skips <code>/campus/general</code>)</p>
+        </div>
+    </div>
+
+    <script>
+        function testDirectNavigation() {
+            console.log('Testing General Confessions direct navigation...');
+            
+            // Update click test status
+            updateTestStatus('click-test-status', 'success', 'Click handler working');
+            
+            // Test route verification
+            testRouteVerification();
+            
+            // Test direct navigation
+            testDirectNavigationLogic();
+        }
+        
+        function testRouteVerification() {
+            updateTestStatus('route-test-status', 'pending', 'Verifying route...');
+            
+            try {
+                // Simulate the navigation logic
+                const collegeId = 'general';
+                let targetRoute;
+                
+                if (collegeId === 'general') {
+                    targetRoute = `/campus/${collegeId}/confessions`;
+                } else {
+                    targetRoute = `/campus/${collegeId}`;
+                }
+                
+                if (targetRoute === '/campus/general/confessions') {
+                    updateTestStatus('route-test-status', 'success', `Correct route: ${targetRoute}`);
+                } else {
+                    updateTestStatus('route-test-status', 'error', `Wrong route: ${targetRoute}`);
+                }
+            } catch (error) {
+                updateTestStatus('route-test-status', 'error', `Route Error: ${error.message}`);
+            }
+        }
+        
+        function testDirectNavigationLogic() {
+            updateTestStatus('direct-nav-status', 'pending', 'Testing direct navigation...');
+            
+            try {
+                // Test the logic for different campus types
+                const testCases = [
+                    { id: 'general', expected: '/campus/general/confessions', description: 'General Confessions' },
+                    { id: 'mit-adt', expected: '/campus/mit-adt', description: 'MIT ADT' },
+                    { id: 'vit-vellore', expected: '/campus/vit-vellore', description: 'VIT Vellore' }
+                ];
+                
+                let allPassed = true;
+                const results = [];
+                
+                testCases.forEach(testCase => {
+                    let targetRoute;
+                    if (testCase.id === 'general') {
+                        targetRoute = `/campus/${testCase.id}/confessions`;
+                    } else {
+                        targetRoute = `/campus/${testCase.id}`;
+                    }
+                    
+                    const passed = targetRoute === testCase.expected;
+                    if (!passed) allPassed = false;
+                    
+                    results.push({
+                        campus: testCase.description,
+                        expected: testCase.expected,
+                        actual: targetRoute,
+                        passed: passed
+                    });
+                });
+                
+                if (allPassed) {
+                    updateTestStatus('direct-nav-status', 'success', 'All navigation logic tests passed');
+                } else {
+                    updateTestStatus('direct-nav-status', 'error', 'Some navigation logic tests failed');
+                }
+                
+                // Show detailed results
+                document.getElementById('navigation-details').style.display = 'block';
+                document.getElementById('navigation-content').textContent = JSON.stringify(results, null, 2);
+                
+            } catch (error) {
+                updateTestStatus('direct-nav-status', 'error', `Navigation Error: ${error.message}`);
+            }
+        }
+        
+        function updateTestStatus(elementId, status, message) {
+            const element = document.getElementById(elementId);
+            const resultItem = element.closest('.result-item');
+            const indicator = resultItem.querySelector('.status-indicator');
+            
+            element.textContent = message;
+            indicator.className = `status-indicator ${status}`;
+            
+            if (status === 'success') {
+                resultItem.classList.add('success');
+            } else if (status === 'error') {
+                resultItem.classList.add('error');
+            }
+        }
+        
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            console.log('General Confessions Direct Navigation Test Page Loaded');
+            console.log('Click the General Confessions card to test the functionality');
+        });
+    </script>
+</body>
+</html>

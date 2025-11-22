@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Session & Test - Nexus</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            padding: 3rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+        h1 { font-size: 2rem; margin-bottom: 1rem; color: #eab308; }
+        .subtitle { color: #a1a1aa; margin-bottom: 2rem; line-height: 1.6; }
+        .status-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .status-item:last-child { border-bottom: none; }
+        .status-label { color: #a1a1aa; }
+        .status-value { font-weight: 600; }
+        .status-value.success { color: #22c55e; }
+        .status-value.error { color: #ef4444; }
+        .status-value.warning { color: #eab308; }
+        button {
+            background: #eab308;
+            color: black;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin: 0.5rem;
+            transition: all 0.2s;
+            min-width: 200px;
+        }
+        button:hover { background: #fbbf24; transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
+        button.secondary {
+            background: transparent;
+            border: 2px solid #eab308;
+            color: #eab308;
+        }
+        button.secondary:hover { background: rgba(234, 179, 8, 0.1); }
+        .message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            display: none;
+        }
+        .message.success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0, 0, 0, 0.3);
+            border-top-color: black;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading { opacity: 0.5; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Complete Reset Tool</h1>
+        <p class="subtitle">
+            This will clear ALL authentication data (localStorage, cookies, session) 
+            and redirect you to a fresh app state to test the onboarding flow.
+        </p>
+
+        <div class="status-box">
+            <div class="status-item">
+                <span class="status-label">Onboarding Flag:</span>
+                <span id="onboarding" class="status-value">Checking...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Backend Session:</span>
+                <span id="session" class="status-value">Checking...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Auth Token:</span>
+                <span id="token" class="status-value">Checking...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Firebase State:</span>
+                <span id="firebase" class="status-value">Mocked (null)</span>
+            </div>
+        </div>
+
+        <button id="clearBtn" onclick="clearEverything()">
+            🚀 Clear Everything & Test
+        </button>
+        <br>
+        <button class="secondary" onclick="checkStatus()">
+            🔄 Refresh Status
+        </button>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        async function checkStatus() {
+            // Check localStorage
+            const hasOnboarding = localStorage.getItem('hasSeenOnboarding');
+            document.getElementById('onboarding').textContent = hasOnboarding || 'Not set';
+            document.getElementById('onboarding').className = hasOnboarding ? 'status-value warning' : 'status-value success';
+
+            const hasToken = localStorage.getItem('authToken');
+            document.getElementById('token').textContent = hasToken ? 'Set' : 'Not set';
+            document.getElementById('token').className = hasToken ? 'status-value warning' : 'status-value success';
+
+            // Check backend session
+            try {
+                const res = await fetch('/api/auth/profile', { credentials: 'include' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data?.data?.user) {
+                        document.getElementById('session').textContent = `Active (${data.data.user.email})`;
+                        document.getElementById('session').className = 'status-value error';
+                        return;
+                    }
+                }
+                document.getElementById('session').textContent = 'No active session';
+                document.getElementById('session').className = 'status-value success';
+            } catch (e) {
+                document.getElementById('session').textContent = 'No active session';
+                document.getElementById('session').className = 'status-value success';
+            }
+        }
+
+        async function clearEverything() {
+            const btn = document.getElementById('clearBtn');
+            const message = document.getElementById('message');
+            
+            btn.innerHTML = '<span class="spinner"></span> Clearing...';
+            btn.classList.add('loading');
+            
+            try {
+                // 1. Call backend logout
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                }).catch(() => {});
+
+                // 2. Clear all localStorage
+                localStorage.clear();
+
+                // 3. Clear all cookies
+                document.cookie.split(";").forEach(c => {
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                });
+
+                // 4. Show success
+                message.textContent = '✅ Everything cleared! Redirecting to app...';
+                message.className = 'message success';
+                message.style.display = 'block';
+
+                // 5. Wait a moment then redirect
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                window.location.href = '/';
+                
+            } catch (error) {
+                btn.innerHTML = '🚀 Clear Everything & Test';
+                btn.classList.remove('loading');
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Check status on load
+        checkStatus();
+    </script>
+</body>
+</html>
+

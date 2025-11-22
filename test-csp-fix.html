@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #0066cc;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .success {
+            color: #90ee90;
+        }
+        .error {
+            color: #ee9090;
+        }
+        .warning {
+            color: #ffcc00;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 CSP Fix Test</h1>
+    <p>This page tests the Content Security Policy fix for the 10.87.73.163:8000 API connection.</p>
+    
+    <div class="test-section">
+        <h2>🎯 Test Scenarios</h2>
+        <button onclick="testApiConnection()">Test API Connection to 10.87.73.163:8000</button>
+        <button onclick="testWebSocketConnection()">Test WebSocket Connection</button>
+        <button onclick="testAllConnections()">Test All Connections</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>📊 Test Results</h3>
+        <div class="log" id="testLog"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔍 What This Tests</h3>
+        <ul>
+            <li><strong>API Connection:</strong> Tests if the browser can connect to http://10.87.73.163:8000/api/v1/chat/models</li>
+            <li><strong>WebSocket Connection:</strong> Tests if WebSocket connections to ws://10.87.73.163:8000 work</li>
+            <li><strong>CSP Compliance:</strong> Verifies that the CSP allows these connections</li>
+            <li><strong>Error Handling:</strong> Shows specific error messages if connections fail</li>
+        </ul>
+        
+        <h3>✅ Expected Results</h3>
+        <ul>
+            <li>API connection should succeed (or show a proper server response)</li>
+            <li>WebSocket connection should establish successfully</li>
+            <li>No CSP violation errors in the console</li>
+            <li>Clear success/error messages in the log</li>
+        </ul>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : '';
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+        }
+
+        async function testApiConnection() {
+            log('🧪 Testing API connection to 10.87.73.163:8000...', 'info');
+            
+            try {
+                const response = await fetch('http://10.87.73.163:8000/api/v1/chat/models', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ API connection successful! Status: ${response.status}`, 'success');
+                    log(`📊 Response data: ${JSON.stringify(data).substring(0, 200)}...`, 'info');
+                } else {
+                    log(`⚠️ API connection established but server returned: ${response.status} ${response.statusText}`, 'warning');
+                }
+            } catch (error) {
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    log(`❌ CSP Violation or Network Error: ${error.message}`, 'error');
+                    log('🔍 This indicates the CSP is still blocking the connection or the server is unreachable', 'error');
+                } else {
+                    log(`❌ API connection failed: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function testWebSocketConnection() {
+            log('🧪 Testing WebSocket connection to 10.87.73.163:8000...', 'info');
+            
+            try {
+                const ws = new WebSocket('ws://10.87.73.163:8000');
+                
+                ws.onopen = function(event) {
+                    log('✅ WebSocket connection established successfully!', 'success');
+                    ws.close();
+                };
+                
+                ws.onerror = function(error) {
+                    log(`❌ WebSocket connection failed: ${error}`, 'error');
+                    log('🔍 This could be a CSP violation or server not running WebSocket on this port', 'error');
+                };
+                
+                ws.onclose = function(event) {
+                    if (event.wasClean) {
+                        log('🔌 WebSocket connection closed cleanly', 'info');
+                    } else {
+                        log(`🔌 WebSocket connection closed unexpectedly: Code ${event.code}`, 'warning');
+                    }
+                };
+                
+                // Timeout after 5 seconds
+                setTimeout(() => {
+                    if (ws.readyState === WebSocket.CONNECTING) {
+                        ws.close();
+                        log('⏰ WebSocket connection timeout', 'warning');
+                    }
+                }, 5000);
+                
+            } catch (error) {
+                log(`❌ WebSocket connection error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAllConnections() {
+            log('🚀 Starting comprehensive connection test...', 'info');
+            clearLog();
+            
+            // Test API connection
+            await testApiConnection();
+            
+            // Wait a moment, then test WebSocket
+            setTimeout(() => {
+                testWebSocketConnection();
+            }, 1000);
+            
+            // Test additional endpoints
+            setTimeout(async () => {
+                await testAdditionalEndpoints();
+            }, 2000);
+        }
+
+        async function testAdditionalEndpoints() {
+            const endpoints = [
+                'http://10.87.73.163:8000/api/v1/health',
+                'http://10.87.73.163:8000/api/v1/status',
+                'http://10.87.73.163:8002/api/hangout/check-setup'
+            ];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    log(`🧪 Testing endpoint: ${endpoint}`, 'info');
+                    const response = await fetch(endpoint, {
+                        method: 'GET',
+                        mode: 'cors'
+                    });
+                    
+                    if (response.ok) {
+                        log(`✅ ${endpoint} - Success (${response.status})`, 'success');
+                    } else {
+                        log(`⚠️ ${endpoint} - Server error (${response.status})`, 'warning');
+                    }
+                } catch (error) {
+                    log(`❌ ${endpoint} - Failed: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Log initial information
+        log('🔒 CSP Fix Test initialized', 'info');
+        log(`🌐 Current hostname: ${window.location.hostname}`, 'info');
+        log(`🔗 Current protocol: ${window.location.protocol}`, 'info');
+        log('📋 Ready to test connections to 10.87.73.163:8000', 'info');
+    </script>
+</body>
+</html>

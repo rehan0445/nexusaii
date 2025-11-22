@@ -1,0 +1,67 @@
+═══════════════════════════════════════════════════════════════
+  COMPANION VIEW COUNT SYNC - QUICK REFERENCE
+═══════════════════════════════════════════════════════════════
+
+ISSUE: Home and Trending pages showing different view counts
+
+FIX: Updated viewsManager.ts to fetch from backend API
+
+═══════════════════════════════════════════════════════════════
+  WHAT WAS CHANGED
+═══════════════════════════════════════════════════════════════
+
+File: client/src/utils/viewsManager.ts
+- Modified useCharacterViews hook
+- Now fetches real view counts from backend API
+- Same data source as Trending page
+- Graceful fallback to localStorage
+
+═══════════════════════════════════════════════════════════════
+  QUICK TEST
+═══════════════════════════════════════════════════════════════
+
+1. Start servers:
+   npm run dev --prefix server
+   npm run dev --prefix client
+
+2. Check home page view counts
+3. Check trending page view counts
+4. VERIFY: Numbers should match ✅
+
+═══════════════════════════════════════════════════════════════
+  CONSOLE LOGS TO LOOK FOR
+═══════════════════════════════════════════════════════════════
+
+✅ Success:
+  "🔄 useCharacterViews hook called - fetching real view counts"
+  "✅ Fetched view counts from backend: X characters"
+
+⚠️ Fallback:
+  "Using stored views from localStorage as fallback"
+
+❌ Error:
+  "❌ Failed to fetch views from backend"
+
+═══════════════════════════════════════════════════════════════
+  VERIFICATION
+═══════════════════════════════════════════════════════════════
+
+Before:
+  Home Page:     Random/Cached Data
+  Trending Page: Backend API Data
+  Result:        DIFFERENT ❌
+
+After:
+  Home Page:     Backend API Data
+  Trending Page: Backend API Data
+  Result:        SAME ✅
+
+═══════════════════════════════════════════════════════════════
+  STATUS: ✅ COMPLETE
+═══════════════════════════════════════════════════════════════
+
+See detailed docs:
+- VIEW_COUNT_SYNC_FIX.md (technical details)
+- TEST_VIEW_COUNT_SYNC.md (testing guide)
+- COMPANION_VIEW_COUNT_FIX_COMPLETE.md (summary)
+
