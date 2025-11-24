@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   Menu,
   Search,
+  X,
 } from 'lucide-react';
 
 // Utility function to check if content exceeds 4 lines
@@ -328,7 +329,9 @@ export function ConfessionPage({ onBack, universityId, collegeName, collegeFullN
   const [hasMore, setHasMore] = useState(true);
   const [cursor, setCursor] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'text' | 'image' | 'poll'>('all');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([
     'Love confession',
@@ -624,7 +627,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
       content: serverConfession.content || '',
       timestamp: new Date(timestampValue),
       likes: serverConfession.likes || serverConfession.score || 0,
-      replies: serverConfession.replies || serverConfession.replies_count || 0,
+      replies: serverConfession.replies || serverConfession.comment_count || 0,
       category: serverConfession.category || 'random',
       mood: serverConfession.mood || 'neutral',
       characterCount: (serverConfession.content || '').length,
@@ -1238,10 +1241,6 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
           campus: campusCode, // Always send valid code
           userName: (currentUser?.displayName) || alias?.name || null,
           userEmail: (JSON.parse(localStorage.getItem('nexus-auth')||'{}')?.user?.email) || null,
-          anonymousName: alias?.name || null,
-          avatar: alias || null,
-          uploads: data?.uploads || null,
-          searchHistory: recentSearches || []
         })
       });
       
@@ -1390,7 +1389,18 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
     if (query.trim() && !recentSearches.includes(query.trim())) {
       setRecentSearches(prev => [query.trim(), ...prev.slice(0, 4)]);
     }
+    // Close search modal if query is cleared
+    if (!query.trim()) {
+      setIsSearchOpen(false);
+    }
   };
+
+  // Focus search input when modal opens
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
 
   const handleFilter = (filters: { categories: string[]; tags: string[] }) => {
     // Update the filter type based on filter selection
@@ -2055,21 +2065,21 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
 
       {/* Modern Header */}
       {/* Header Section */}
-      <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-2xl border-b border-[#F4E3B5]/10">
+      <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-2xl border-b border-[#b76e79]/10">
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Left Side - Hamburger, Back Button and Title */}
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="p-2 rounded-xl hover:bg-[#F4E3B5]/10 text-[#F4E3B5] hover:text-[#F4E3B5]/80 transition-colors"
+                className="p-2 rounded-xl hover:bg-[#b76e79]/10 text-[#b76e79] hover:text-[#b76e79]/80 transition-colors"
                 aria-label="Toggle menu"
               >
                 <Menu className="w-5 h-5" />
               </button>
               <button
                 onClick={onBack}
-                className="text-[#F4E3B5] hover:text-[#F4E3B5]/80 transition-colors p-2 rounded-xl hover:bg-[#F4E3B5]/10"
+                className="text-[#b76e79] hover:text-[#b76e79]/80 transition-colors p-2 rounded-xl hover:bg-[#b76e79]/10"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -2077,29 +2087,14 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                 <h1 className="serif-title text-2xl font-semibold text-white">
                   {collegeName === 'General Confessions' ? 'Confessions' : `${collegeName} Confessions`}
                 </h1>
-                {activeView !== 'default' && (
-                  <p className="text-xs text-[#a1a1aa] mt-1">
-                    {activeView === 'all' && '📋 All Confessions'}
-                    {activeView === 'trending' && '🔥 Trending Now'}
-                    {activeView === 'fresh' && '✨ Fresh Drops'}
-                    {activeView === 'top' && '🏆 Top Rated'}
-                  </p>
-                )}
               </div>
             </div>
 
             {/* Right Side - Action Buttons */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowComposerPage(true)}
-                className="flex items-center justify-center w-9 h-9 bg-[#000000]/50 hover:bg-[#000000]/70 text-[#F4E3B5] hover:text-[#F4E3B5]/80 rounded-lg border border-[#F4E3B5]/20 hover:border-[#F4E3B5]/40 transition-all duration-200"
-                title="Create"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleSearch('')}
-                className="flex items-center justify-center w-9 h-9 bg-[#000000]/50 hover:bg-[#000000]/70 text-[#F4E3B5] hover:text-[#F4E3B5]/80 rounded-lg border border-[#F4E3B5]/20 hover:border-[#F4E3B5]/40 transition-all duration-200"
+                onClick={() => setIsSearchOpen(true)}
+                className="flex items-center justify-center w-9 h-9 bg-[#000000]/50 hover:bg-[#000000]/70 text-[#b76e79] hover:text-[#b76e79]/80 rounded-lg border border-[#b76e79]/20 hover:border-[#b76e79]/40 transition-all duration-200"
                 title="Search"
               >
                 <Search className="w-4 h-4" />
@@ -2109,6 +2104,79 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
         </div>
       </div>
 
+      {/* Search Modal Overlay */}
+      {isSearchOpen && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-start justify-center pt-20 px-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsSearchOpen(false);
+            }
+          }}
+        >
+          <div className="bg-black/95 backdrop-blur-xl border border-[#b76e79]/20 rounded-2xl p-6 w-full max-w-2xl shadow-2xl">
+            {/* Search Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-white">Search Confessions</h2>
+              <button
+                onClick={() => setIsSearchOpen(false)}
+                className="p-2 rounded-lg hover:bg-[#b76e79]/10 text-[#b76e79] hover:text-[#b76e79]/80 transition-colors"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative mb-6">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b76e79]/60" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="Search confessions, authors, or polls..."
+                className="w-full pl-12 pr-4 py-3 bg-black/50 border border-[#b76e79]/20 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-[#b76e79]/50 focus:ring-2 focus:ring-[#b76e79]/20 transition-all duration-300"
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setIsSearchOpen(false);
+                  }
+                }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => handleSearch('')}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400 hover:text-[#b76e79] transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Recent Searches */}
+            {recentSearches.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-zinc-400 mb-3">Recent Searches</h3>
+                <div className="space-y-2">
+                  {recentSearches.map((search, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        handleSearch(search);
+                        setIsSearchOpen(false);
+                      }}
+                      className="w-full text-left p-3 bg-black/50 hover:bg-[#b76e79]/10 border border-[#b76e79]/10 hover:border-[#b76e79]/30 rounded-lg text-white transition-colors flex items-center gap-3"
+                    >
+                      <Search className="w-4 h-4 text-[#b76e79]/60" />
+                      <span>{search}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">

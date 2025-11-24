@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Sparkles, Trophy, List } from 'lucide-react';
+import { TrendingUp, Sparkles, Trophy, List, ChevronUp, ChevronDown, MessageCircle } from 'lucide-react';
 import { apiFetch } from '../lib/utils';
 
 // Get the server URL for API calls
@@ -22,6 +22,7 @@ interface Confession {
   poll?: any;
   isExplicit?: boolean;
   engagementScore?: number;
+  userVote?: -1 | 0 | 1;
 }
 
 interface ConfessionFeedProps {
@@ -34,10 +35,58 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Get session ID for voting
+  const getSessionId = () => {
+    const SESSION_KEY = 'confession_session_id';
+    let sessionId = localStorage.getItem(SESSION_KEY);
+    if (!sessionId) {
+      sessionId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      try {
+        localStorage.setItem(SESSION_KEY, sessionId);
+      } catch {}
+    }
+    return sessionId;
+  };
+
+  // Handle voting
+  const handleVote = async (confessionId: string, direction: 1 | -1, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    
+    setConfessions(prevConfessions => prevConfessions.map(confession => {
+      if ((confession.id || confession.confession_id || confession._id) !== confessionId) {
+        return confession;
+      }
+
+      const currentVote = confession.userVote || 0;
+      const nextVote = direction === 1 
+        ? (currentVote === 1 ? 0 : 1) 
+        : (currentVote === -1 ? 0 : -1);
+      const scoreDelta = nextVote - currentVote;
+
+      return {
+        ...confession,
+        userVote: nextVote,
+        score: Math.max(0, (confession.score || 0) + scoreDelta)
+      };
+    }));
+
+    // Optimistic update - fire and forget
+    try {
+      const sessionId = getSessionId();
+      await fetch(`${getServerUrl()}/api/confessions/${confessionId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direction, sessionId })
+      });
+    } catch (err) {
+      if (import.meta.env.DEV) console.warn('Vote API failed', err);
+    }
+  };
+
   // View configuration
   const viewConfig = {
     all: {
-      title: '📋 All Confessions',
+      title: 'All Confessions',
       subtitle: '',
       icon: List,
       endpoint: '/api/confessions/all'
@@ -71,7 +120,8 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
       setError(null);
 
       try {
-        const response = await apiFetch(`${getServerUrl()}${currentConfig.endpoint}?limit=20`);
+        const sessionId = getSessionId();
+        const response = await apiFetch(`${getServerUrl()}${currentConfig.endpoint}?limit=20&sessionId=${sessionId}`);
         const result = await response.json();
 
         if (result.success && Array.isArray(result.data)) {
@@ -115,22 +165,22 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
 
   // Skeleton loader component
   const SkeletonCard = () => (
-    <div className="bg-black/40 border border-softgold-500/20 rounded-2xl p-6 animate-pulse">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-full bg-softgold-500/20" />
+    <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-5 animate-pulse">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800" />
         <div className="flex-1">
-          <div className="h-4 bg-softgold-500/20 rounded w-24 mb-2" />
-          <div className="h-3 bg-softgold-500/10 rounded w-32" />
+          <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-20 mb-1" />
+          <div className="h-2 bg-gray-100 dark:bg-gray-900 rounded w-28" />
         </div>
       </div>
-      <div className="space-y-2">
-        <div className="h-4 bg-softgold-500/20 rounded w-full" />
-        <div className="h-4 bg-softgold-500/20 rounded w-5/6" />
-        <div className="h-4 bg-softgold-500/20 rounded w-4/6" />
+      <div className="space-y-2 mb-4">
+        <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-full" />
+        <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-5/6" />
+        <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-4/6" />
       </div>
       <div className="flex items-center gap-4 mt-4">
-        <div className="h-4 bg-softgold-500/20 rounded w-16" />
-        <div className="h-4 bg-softgold-500/20 rounded w-16" />
+        <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded-full w-20" />
+        <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-16" />
       </div>
     </div>
   );
@@ -139,14 +189,9 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 rounded-lg bg-softgold-500/20 text-softgold-400">
-            <currentConfig.icon className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-white">{currentConfig.title}</h2>
-            {currentConfig.subtitle && <p className="text-sm text-zinc-400">{currentConfig.subtitle}</p>}
-          </div>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{currentConfig.title}</h2>
+          {currentConfig.subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{currentConfig.subtitle}</p>}
         </div>
 
         {/* Skeleton Loaders */}
@@ -163,22 +208,17 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 rounded-lg bg-softgold-500/20 text-softgold-400">
-            <currentConfig.icon className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-white">{currentConfig.title}</h2>
-            {currentConfig.subtitle && <p className="text-sm text-zinc-400">{currentConfig.subtitle}</p>}
-          </div>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{currentConfig.title}</h2>
+          {currentConfig.subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{currentConfig.subtitle}</p>}
         </div>
 
         {/* Error State */}
-        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 text-center">
-          <p className="text-red-400 mb-2">{error}</p>
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-lg p-6 text-center">
+          <p className="text-red-600 dark:text-red-400 mb-2">{error}</p>
           <button
             onClick={() => globalThis.location.reload()}
-            className="text-sm text-softgold-400 hover:text-softgold-300 underline"
+            className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 underline"
           >
             Retry
           </button>
@@ -191,20 +231,15 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 rounded-lg bg-softgold-500/20 text-softgold-400">
-            <currentConfig.icon className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-white">{currentConfig.title}</h2>
-            {currentConfig.subtitle && <p className="text-sm text-zinc-400">{currentConfig.subtitle}</p>}
-          </div>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{currentConfig.title}</h2>
+          {currentConfig.subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{currentConfig.subtitle}</p>}
         </div>
 
         {/* Empty State */}
-        <div className="bg-black/40 border border-softgold-500/20 rounded-2xl p-12 text-center">
-          <currentConfig.icon className="w-12 h-12 text-softgold-500/50 mx-auto mb-4" />
-          <p className="text-zinc-400">No confessions found in this view.</p>
+        <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-12 text-center">
+          <currentConfig.icon className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+          <p className="text-gray-500 dark:text-gray-400">No confessions found in this view.</p>
         </div>
       </div>
     );
@@ -213,14 +248,9 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 rounded-lg bg-softgold-500/20 text-softgold-400">
-          <currentConfig.icon className="w-5 h-5" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold text-white">{currentConfig.title}</h2>
-          <p className="text-sm text-zinc-400">{currentConfig.subtitle}</p>
-        </div>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{currentConfig.title}</h2>
+        {currentConfig.subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{currentConfig.subtitle}</p>}
       </div>
 
       {/* Confessions List */}
@@ -255,49 +285,52 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
           const hasValidId = !!validId;
           const cardKey = validId || `confession-${confessions.indexOf(confession)}`;
 
+          const userVote = confession.userVote || 0;
+          const confessionId = validId || '';
+
           return (
           <div
             key={cardKey}
             onClick={handleClick}
-            className={`bg-black/40 border rounded-2xl p-6 transition-all duration-200 ${
+            className={`bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-5 transition-all duration-200 ${
               !hasValidId
-                ? 'border-red-500/60 bg-red-900/10 cursor-not-allowed opacity-60'
-                : 'border-softgold-500/20 cursor-pointer hover:bg-black/60 hover:border-softgold-500/40 hover:shadow-lg hover:shadow-softgold-500/10'
+                ? 'border-red-500/60 bg-red-50 dark:bg-red-950/10 cursor-not-allowed opacity-60'
+                : 'cursor-pointer hover:border-gray-300 dark:hover:border-gray-700'
             } ${
-              confession.isExplicit ? 'border-red-500/40 bg-red-900/5' : ''
+              confession.isExplicit ? 'border-red-500/40 bg-red-50/50 dark:bg-red-950/5' : ''
             }`}
           >
             {/* Missing ID Warning */}
             {!hasValidId && (
-              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/40 rounded-lg">
-                <p className="text-red-400 text-xs font-medium">
+              <div className="mb-3 p-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-md">
+                <p className="text-red-600 dark:text-red-400 text-xs font-medium">
                   ⚠️ Warning: This confession is missing an ID and cannot be opened.
                 </p>
               </div>
             )}
 
-            {/* Author Info */}
-            <div className="flex items-center gap-3 mb-4">
+            {/* Meta/Header - Username, timestamp */}
+            <div className="flex items-center gap-2 mb-3">
               {confession.alias?.imageUrl ? (
                 <img
                   src={confession.alias.imageUrl}
                   alt="Author avatar"
-                  className="w-10 h-10 rounded-full object-cover border-2 border-softgold-500/20"
+                  className="w-8 h-8 rounded-full object-cover"
                 />
               ) : (
                 <div
-                  className={`w-10 h-10 rounded-full bg-gradient-to-br ${
+                  className={`w-8 h-8 rounded-full bg-gradient-to-br ${
                     confession.alias?.color || 'from-gray-500 to-gray-600'
-                  } flex items-center justify-center text-white text-lg font-bold border-2 border-softgold-500/20`}
+                  } flex items-center justify-center text-white text-sm font-bold`}
                 >
                   {confession.alias?.emoji || '👤'}
                 </div>
               )}
-              <div className="flex-1">
-                <div className="text-white font-medium">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-gray-500 dark:text-gray-400 font-medium truncate">
                   {confession.alias?.name || 'Anonymous'}
                 </div>
-                <div className="text-xs text-zinc-400">
+                <div className="text-xs text-gray-400 dark:text-gray-500">
                   {new Date(confession.createdAt).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -308,27 +341,74 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
               </div>
             </div>
 
-            {/* Content - Truncated for feed view */}
-            <div className="text-white mb-4 whitespace-pre-wrap break-words line-clamp-4">
+            {/* Body Content - Highly readable */}
+            <div className="text-base text-gray-900 dark:text-gray-100 leading-relaxed mb-4 whitespace-pre-wrap break-words line-clamp-4">
               {confession.content}
             </div>
 
-            {/* Engagement Stats */}
-            <div className="flex items-center gap-4 text-sm text-zinc-400">
-              <div className="flex items-center gap-1">
-                <span className="text-softgold-400">▲</span>
-                <span>{confession.score || 0}</span>
+            {/* Action Bar - Reddit Style */}
+            <div className="flex items-center justify-start gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+              {/* Voting Pill */}
+              <div 
+                className="flex items-center gap-1 bg-gray-100 dark:bg-gray-900 rounded-full px-2 py-1"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Upvote Button */}
+                <button
+                  onClick={(e) => handleVote(confessionId, 1, e)}
+                  className={`p-1 rounded-full transition-all duration-200 ${
+                    userVote === 1
+                      ? 'text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30'
+                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                  }`}
+                  title="Upvote"
+                >
+                  <ChevronUp 
+                    className="w-4 h-4" 
+                    strokeWidth={userVote === 1 ? 2.5 : 2}
+                  />
+                </button>
+                
+                {/* Vote Count */}
+                <span className={`text-sm font-medium px-1 min-w-[2rem] text-center ${
+                  userVote === 1 
+                    ? 'text-orange-500 dark:text-orange-400' 
+                    : userVote === -1
+                    ? 'text-blue-500 dark:text-blue-400'
+                    : 'text-gray-700 dark:text-gray-300'
+                }`}>
+                  {confession.score || 0}
+                </span>
+                
+                {/* Downvote Button */}
+                <button
+                  onClick={(e) => handleVote(confessionId, -1, e)}
+                  className={`p-1 rounded-full transition-all duration-200 ${
+                    userVote === -1
+                      ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30'
+                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                  }`}
+                  title="Downvote"
+                >
+                  <ChevronDown 
+                    className="w-4 h-4" 
+                    strokeWidth={userVote === -1 ? 2.5 : 2}
+                  />
+                </button>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="text-softgold-400">💬</span>
+
+              {/* Comment Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClick();
+                }}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-md text-sm text-gray-500 dark:text-gray-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
+                title="Comments"
+              >
+                <MessageCircle className="w-4 h-4" strokeWidth={2} />
                 <span>{confession.replies || 0}</span>
-              </div>
-              {confession.engagementScore && (
-                <div className="flex items-center gap-1 ml-auto">
-                  <span className="text-softgold-400">🔥</span>
-                  <span>{Math.round(confession.engagementScore)}</span>
-                </div>
-              )}
+              </button>
             </div>
           </div>
           );

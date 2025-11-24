@@ -14,6 +14,181 @@ import {
   getAllConfessions
 } from "../controllers/engagementController.js";
 
+// ============ ERROR HANDLING UTILITY ============
+
+/**
+ * Maps Supabase/PostgreSQL error codes to HTTP status codes and user-friendly messages
+ * @param {Error} error - The error object from Supabase
+ * @returns {Object} - { statusCode, userMessage, logMessage, errorCode }
+ */
+const handleSupabaseError = (error) => {
+  // Default error response
+  let statusCode = 500;
+  let userMessage = "An unexpected error occurred. Please try again.";
+  let logMessage = error.message || "Unknown error";
+  let errorCode = "UNKNOWN_ERROR";
+
+  // Check if it's a Supabase error
+  if (error.code) {
+    // PostgreSQL error codes
+    switch (error.code) {
+      // Unique constraint violation
+      case "23505":
+        statusCode = 409;
+        userMessage = "This item already exists. Please try again.";
+        errorCode = "DUPLICATE_ENTRY";
+        logMessage = `Duplicate entry violation: ${error.message}`;
+        break;
+
+      // Foreign key constraint violation
+      case "23503":
+        statusCode = 400;
+        userMessage = "Invalid reference. The related item does not exist.";
+        errorCode = "FOREIGN_KEY_VIOLATION";
+        logMessage = `Foreign key violation: ${error.message}`;
+        break;
+
+      // Not null constraint violation
+      case "23502":
+        statusCode = 400;
+        userMessage = "Required field is missing. Please check your input.";
+        errorCode = "NOT_NULL_VIOLATION";
+        logMessage = `Not null violation: ${error.message}`;
+        break;
+
+      // Check constraint violation
+      case "23514":
+        statusCode = 400;
+        userMessage = "Invalid data provided. Please check your input.";
+        errorCode = "CHECK_CONSTRAINT_VIOLATION";
+        logMessage = `Check constraint violation: ${error.message}`;
+        break;
+
+      // Invalid input syntax
+      case "22P02":
+      case "42804":
+        statusCode = 400;
+        userMessage = "Invalid data format. Please check your input.";
+        errorCode = "INVALID_INPUT";
+        logMessage = `Invalid input syntax: ${error.message}`;
+        break;
+
+      // Connection errors
+      case "08000":
+      case "08003":
+      case "08006":
+        statusCode = 503;
+        userMessage = "Database connection failed. Please try again in a moment.";
+        errorCode = "DATABASE_CONNECTION_ERROR";
+        logMessage = `Database connection error: ${error.message}`;
+        break;
+
+      // Query timeout
+      case "57014":
+        statusCode = 504;
+        userMessage = "Request timed out. Please try again.";
+        errorCode = "QUERY_TIMEOUT";
+        logMessage = `Query timeout: ${error.message}`;
+        break;
+
+      default:
+        logMessage = `PostgreSQL error [${error.code}]: ${error.message}`;
+        errorCode = `PG_ERROR_${error.code}`;
+    }
+  } else if (error.message) {
+    // Supabase-specific error messages
+    const errorMsg = error.message.toLowerCase();
+
+    if (errorMsg.includes("jwt") || errorMsg.includes("auth") || errorMsg.includes("unauthorized")) {
+      statusCode = 401;
+      userMessage = "Authentication required. Please log in.";
+      errorCode = "UNAUTHORIZED";
+      logMessage = `Authentication error: ${error.message}`;
+    } else if (errorMsg.includes("permission") || errorMsg.includes("policy") || errorMsg.includes("row level security")) {
+      statusCode = 403;
+      userMessage = "You don't have permission to perform this action.";
+      errorCode = "FORBIDDEN";
+      logMessage = `Permission denied (RLS): ${error.message}`;
+    } else if (errorMsg.includes("network") || errorMsg.includes("connection") || errorMsg.includes("econnrefused")) {
+      statusCode = 503;
+      userMessage = "Unable to connect to database. Please try again later.";
+      errorCode = "NETWORK_ERROR";
+      logMessage = `Network error: ${error.message}`;
+    } else if (errorMsg.includes("timeout")) {
+      statusCode = 504;
+      userMessage = "Request timed out. Please try again.";
+      errorCode = "TIMEOUT";
+      logMessage = `Timeout error: ${error.message}`;
+    } else if (errorMsg.includes("not found") || errorMsg.includes("does not exist")) {
+      statusCode = 404;
+      userMessage = "The requested resource was not found.";
+      errorCode = "NOT_FOUND";
+      logMessage = `Resource not found: ${error.message}`;
+    }
+  }
+
+  return {
+    statusCode,
+    userMessage,
+    logMessage,
+    errorCode,
+    originalError: error
+  };
+};
+
+/**
+ * Wraps async route handlers with comprehensive error handling
+ * @param {Function} handler - The async route handler function
+ * @returns {Function} - Wrapped handler with error handling
+ */
+const withErrorHandling = (handler) => {
+  return async (req, res, next) => {
+    try {
+      await handler(req, res, next);
+    } catch (error) {
+      // Handle Supabase errors
+      if (error.code || (error.message && error.message.includes("Supabase"))) {
+        const errorInfo = handleSupabaseError(error);
+        
+        console.error(`❌ [${errorInfo.errorCode}] ${errorInfo.logMessage}`, {
+          url: req.url,
+          method: req.method,
+          error: errorInfo.originalError,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+
+        return res.status(errorInfo.statusCode).json({
+          success: false,
+          error_code: errorInfo.errorCode,
+          message: errorInfo.userMessage,
+          ...(process.env.NODE_ENV === 'development' && {
+            developer_message: errorInfo.logMessage,
+            error_details: error.details || error.hint
+          })
+        });
+      }
+
+      // Handle other errors
+      console.error("❌ [UNHANDLED_ERROR] Unexpected error:", {
+        url: req.url,
+        method: req.method,
+        error: error.message,
+        stack: error.stack
+      });
+
+      return res.status(500).json({
+        success: false,
+        error_code: "INTERNAL_SERVER_ERROR",
+        message: "An unexpected error occurred. Please try again.",
+        ...(process.env.NODE_ENV === 'development' && {
+          developer_message: error.message,
+          stack: error.stack
+        })
+      });
+    }
+  };
+};
+
 const router = Router();
 
 // Configure multer for memory storage (for Supabase upload)
@@ -78,7 +253,7 @@ const normalizeConfession = (row) => {
   const poll = normalizePoll(row.poll);
   const reactions = row.reactions && typeof row.reactions === "object" ? row.reactions : {};
   const aliasValue = row.alias ?? row.meta?.alias ?? null;
-  const repliesValue = safeNumber(row.replies_count ?? row.replies ?? row.meta?.replies, 0);
+  const repliesValue = safeNumber(row.comment_count ?? row.replies_count ?? row.replies ?? row.meta?.replies, 0);
   const scoreValue = safeNumber(row.score ?? row.likes ?? row.meta?.likes, 0);
   return {
     id: String(row.id),
@@ -125,28 +300,38 @@ const getUserVotesForConfessions = async (confessionIds, sessionId) => {
 
   try {
     const { data, error } = await supabase
-      .from('confession_votes')
-      .select('confession_id, vote')
-      .eq('voter_session_id', sessionId)
+      .from('confession_reactions_mit_adt')
+      .select('confession_id, reaction_type')
+      .eq('session_id', sessionId)
       .in('confession_id', confessionIds);
 
     if (error) {
-      console.error('Error fetching user votes:', error);
-      return {};
+      const errorInfo = handleSupabaseError(error);
+      console.error(`❌ [${errorInfo.errorCode}] Error fetching user votes:`, {
+        sessionId: sessionId,
+        confessionCount: confessionIds.length,
+        error: errorInfo.logMessage
+      });
+      return {}; // Return empty map on error, don't fail the request
     }
 
-    // Create a map of confession_id -> vote
+    // Create a map of confession_id -> vote (-1, 0, or 1)
     const votesMap = {};
     if (Array.isArray(data)) {
-      data.forEach(row => {
-        votesMap[row.confession_id] = safeNumber(row.vote, 0);
-      });
+      for (const row of data) {
+        const vote = row.reaction_type === 'upvote' ? 1 : (row.reaction_type === 'downvote' ? -1 : 0);
+        votesMap[row.confession_id] = vote;
+      }
     }
 
     return votesMap;
   } catch (error) {
-    console.error('Failed to fetch user votes:', error);
-    return {};
+    const errorInfo = handleSupabaseError(error);
+    console.error(`❌ [${errorInfo.errorCode}] Failed to fetch user votes:`, {
+      sessionId: sessionId,
+      error: errorInfo.logMessage
+    });
+    return {}; // Return empty map on error, don't fail the request
   }
 };
 
@@ -274,19 +459,21 @@ const ensureCache = async (force = false) => {
 
 const fetchConfessionFromSupabase = async (id) => {
   console.log(`[FETCH CONFESSION] Searching for confession ID: ${id}`);
-  console.log(`[FETCH CONFESSION] Querying main 'confessions' table only`);
+  console.log(`[FETCH CONFESSION] Querying 'confessions_mit_adt' table`);
   
   try {
-    // Query only the main confessions table
+    // Query confessions_mit_adt table (all confessions are stored here)
     const { data, error } = await supabase
-      .from('confessions')
+      .from('confessions_mit_adt')
       .select("*")
       .eq("id", id)
       .maybeSingle();
 
     if (error) {
-      console.error(`[FETCH CONFESSION] ❌ Error querying confessions table:`, error.message);
-      console.error(`[FETCH CONFESSION] Error details:`, {
+      const errorInfo = handleSupabaseError(error);
+      console.error(`[FETCH CONFESSION] ❌ [${errorInfo.errorCode}] Error querying confessions_mit_adt:`, {
+        confessionId: id,
+        error: errorInfo.logMessage,
         code: error.code,
         details: error.details,
         hint: error.hint
@@ -304,7 +491,7 @@ const fetchConfessionFromSupabase = async (id) => {
     }
 
     if (data) {
-      console.log(`[FETCH CONFESSION] ✅ Found confession in 'confessions' table`);
+      console.log(`[FETCH CONFESSION] ✅ Found confession in 'confessions_mit_adt' table`);
       console.log(`[FETCH CONFESSION] Confession data keys:`, Object.keys(data));
       console.log(`[FETCH CONFESSION] Confession ID: ${data.id}, Content length: ${data.content?.length || 0}`);
       
@@ -318,7 +505,7 @@ const fetchConfessionFromSupabase = async (id) => {
         return null;
       }
     } else {
-      console.log(`[FETCH CONFESSION] Not found in 'confessions' table`);
+      console.log(`[FETCH CONFESSION] Not found in 'confessions_mit_adt' table`);
       
       // Fallback to in-memory cache
       const cached = confessions.find((c) => c.id === id);
@@ -331,8 +518,12 @@ const fetchConfessionFromSupabase = async (id) => {
       return null;
     }
   } catch (error) {
-    console.error(`[FETCH CONFESSION] ❌ Exception querying confessions table:`, error.message);
-    console.error(`[FETCH CONFESSION] Exception stack:`, error.stack);
+    const errorInfo = handleSupabaseError(error);
+    console.error(`[FETCH CONFESSION] ❌ [${errorInfo.errorCode}] Exception querying confessions_mit_adt:`, {
+      confessionId: id,
+      error: errorInfo.logMessage,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
     
     // Fallback to in-memory cache
     const cached = confessions.find((c) => c.id === id);
@@ -718,10 +909,10 @@ router.post(
   async (req, res) => {
     await ensureCache();
 
-    const { content, alias, sessionId, poll, userName, userEmail, anonymousName, avatar, uploads, searchHistory } = req.body || {};
-    // Always use main confessions table (general confessions)
-    const table = 'confessions';
-    const campusCode = 'general'; // Always general confessions
+    const { content, alias, sessionId, poll, userName, userEmail } = req.body || {};
+    // Store ALL confessions in confessions_mit_adt table
+    const table = 'confessions_mit_adt';
+    const campusCode = 'mit_adt'; // Always mit_adt
     console.log(`[CONFESSION CREATE] Using table: ${table}`);
 
     const hasText = content && typeof content === "string" && content.length > 0;
@@ -772,41 +963,85 @@ router.post(
       poll: normalizedPoll,
       isExplicit,
       userName: userName || null,
-      userEmail: userEmail || null,
-      anonymousName: anonymousName || (normalizedAlias?.name || null),
-      avatar: avatar || null,
-      uploads: uploads || null,
-      searchHistory: searchHistory || null
+      userEmail: userEmail || null
     };
 
     try {
-      const { error } = await supabase.from(table).insert({
-        id,
-        content: confession.content,
-        alias: confession.alias,
-        session_id: confession.sessionId,
-        campus: confession.campus,
-        created_at: confession.createdAt,
-        reactions: confession.reactions,
-        poll: confession.poll || null,
-        score: confession.score,
-        replies_count: confession.replies,
-        is_explicit: confession.isExplicit,
-        user_name: confession.userName,
-        user_email: confession.userEmail,
-        anonymous_name: confession.anonymousName,
-        avatar: confession.avatar,
-        uploads: confession.uploads,
-        search_history: confession.searchHistory
-      });
+      // Determine if anonymous based on whether author_id exists
+      const isAnonymous = !req.body.author_id || true; // Default to anonymous
+      
+      const { data: insertedData, error } = await supabase
+        .from(table)
+        .insert({
+          id,
+          content: confession.content,
+          alias: confession.alias,
+          session_id: confession.sessionId,
+          campus: campusCode, // Always 'mit_adt'
+          created_at: confession.createdAt,
+          reactions: confession.reactions,
+          poll: confession.poll || null,
+          score: confession.score,
+          upvotes: 0, // Initialize upvotes
+          downvotes: 0, // Initialize downvotes
+          comment_count: 0, // Initialize comment_count
+          is_explicit: confession.isExplicit,
+          is_anonymous: isAnonymous,
+          is_trending: false, // Initialize trending status
+          trending_score: 0, // Initialize trending score
+          user_name: confession.userName,
+          user_email: confession.userEmail,
+          updated_at: confession.createdAt
+        })
+        .select()
+        .single();
+
       if (error) {
-        console.error("❌ Failed to store confession in Supabase:", error.message, error);
-        throw error;
+        const errorInfo = handleSupabaseError(error);
+        console.error(`❌ [${errorInfo.errorCode}] Failed to store confession:`, {
+          confessionId: id,
+          error: errorInfo.logMessage,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        return res.status(errorInfo.statusCode).json({
+          success: false,
+          error_code: errorInfo.errorCode,
+          message: errorInfo.userMessage,
+          ...(process.env.NODE_ENV === 'development' && {
+            developer_message: errorInfo.logMessage,
+            error_details: error.details || error.hint
+          })
+        });
       }
-      console.log("✅ Confession stored in Supabase successfully:", id);
+
+      if (!insertedData) {
+        console.error("❌ [INSERT_FAILED] Confession insert returned no data:", id);
+        return res.status(500).json({
+          success: false,
+          error_code: "INSERT_FAILED",
+          message: "Failed to create confession. Please try again."
+        });
+      }
+
+      console.log("✅ Confession stored in confessions_mit_adt successfully:", id);
     } catch (error) {
-      console.error("❌ Failed to store confession in Supabase:", error.message);
-      // Don't fail the request if Supabase insert fails - still cache it
+      // Handle non-Supabase errors (network, timeout, etc.)
+      const errorInfo = handleSupabaseError(error);
+      console.error(`❌ [${errorInfo.errorCode}] Unexpected error storing confession:`, {
+        confessionId: id,
+        error: errorInfo.logMessage,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+      return res.status(errorInfo.statusCode).json({
+        success: false,
+        error_code: errorInfo.errorCode,
+        message: errorInfo.userMessage,
+        ...(process.env.NODE_ENV === 'development' && {
+          developer_message: errorInfo.logMessage
+        })
+      });
     }
 
     upsertConfession(confession);
@@ -850,7 +1085,12 @@ router.get("/", async (req, res) => {
           .order(sortBy === 'score' ? "score" : "created_at", { ascending: false });
         
         if (tableError) {
-          console.warn(`Failed to fetch from ${tableName}:`, tableError.message);
+          const errorInfo = handleSupabaseError(tableError);
+          console.warn(`⚠️ [${errorInfo.errorCode}] Failed to fetch from ${tableName}:`, {
+            table: tableName,
+            error: errorInfo.logMessage
+          });
+          // Continue to next table instead of failing entire request
           continue;
         }
         
@@ -858,7 +1098,12 @@ router.get("/", async (req, res) => {
           allConfessions.push(...tableData);
         }
       } catch (error) {
-        console.warn(`Error fetching from ${tableName}:`, error.message);
+        const errorInfo = handleSupabaseError(error);
+        console.warn(`⚠️ [${errorInfo.errorCode}] Error fetching from ${tableName}:`, {
+          table: tableName,
+          error: errorInfo.logMessage
+        });
+        // Continue to next table instead of failing entire request
       }
     }
     
@@ -900,11 +1145,30 @@ router.get("/", async (req, res) => {
     const nextCursor = items.length === limit ? String(cursor + limit) : null;
     return res.json({ success: true, data: { items, nextCursor } });
   } catch (error) {
-    console.error("Failed to load confessions from Supabase:", error.message);
-    await ensureCache(false);
-    const items = confessions.slice(cursor, cursor + limit);
-    const nextCursor = cursor + limit < confessions.length ? String(cursor + limit) : null;
-    return res.json({ success: true, data: { items, nextCursor } });
+    const errorInfo = handleSupabaseError(error);
+    console.error(`❌ [${errorInfo.errorCode}] Failed to load confessions:`, {
+      error: errorInfo.logMessage,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    
+    // Fallback to cache if available
+    try {
+      await ensureCache(false);
+      const items = confessions.slice(cursor, cursor + limit);
+      const nextCursor = cursor + limit < confessions.length ? String(cursor + limit) : null;
+      console.log(`⚠️ Using cached confessions as fallback (${items.length} items)`);
+      return res.json({ success: true, data: { items, nextCursor }, from_cache: true });
+    } catch (cacheError) {
+      // If cache also fails, return error
+      return res.status(errorInfo.statusCode).json({
+        success: false,
+        error_code: errorInfo.errorCode,
+        message: errorInfo.userMessage,
+        ...(process.env.NODE_ENV === 'development' && {
+          developer_message: errorInfo.logMessage
+        })
+      });
+    }
   }
 });
 
@@ -928,52 +1192,258 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
     return res.status(404).json({ success: false, message: "Confession not found" });
   }
 
-  // Read previous vote
+  // Read previous reaction from confession_reactions_mit_adt
+  let previousReaction = null;
   let previousVote = 0;
   try {
     const { data: existing, error: selectError } = await supabase
-      .from('confession_votes')
-      .select('vote')
+      .from('confession_reactions_mit_adt')
+      .select('reaction_type')
       .eq('confession_id', id)
-      .eq('voter_session_id', voter)
+      .eq('session_id', voter)
       .maybeSingle();
-    if (selectError) throw selectError;
-    previousVote = safeNumber(existing?.vote, 0);
-  } catch (error) {
-    console.error(`Failed to load previous vote for confession ${id}:`, error.message);
-  }
-
-  // Compute new vote and score delta
-  let newVote = previousVote;
-  if (direction === 1) {
-    newVote = previousVote === 1 ? 0 : 1;
-  } else if (direction === -1) {
-    newVote = previousVote === -1 ? 0 : -1;
-  }
-  const scoreDelta = newVote - previousVote; // ensures +-1 per user
-
-  // Upsert vote row
-  try {
-    const { error: upsertError } = await supabase
-      .from('confession_votes')
-      .upsert({ confession_id: id, voter_session_id: voter, vote: newVote, updated_at: new Date().toISOString() }, { onConflict: 'confession_id,voter_session_id' });
-    if (upsertError) throw upsertError;
-  } catch (error) {
-    console.error(`Failed to upsert vote for confession ${id}:`, error.message);
-  }
-
-  // Update confession score
-  const nextScore = Math.max(0, safeNumber(confession.score, 0) + scoreDelta);
-  confession.score = nextScore;
-  upsertConfession(confession);
-
-  try {
-    const result = await updateConfessionInDatabase(id, { score: confession.score });
-    if (!result.success) {
-      console.warn(`Failed to update confession ${id} score:`, result.error);
+    
+    // PGRST116 = not found, which is OK (user hasn't voted yet)
+    if (selectError && selectError.code !== 'PGRST116') {
+      const errorInfo = handleSupabaseError(selectError);
+      console.error(`❌ [${errorInfo.errorCode}] Failed to load previous reaction:`, {
+        confessionId: id,
+        sessionId: voter,
+        error: errorInfo.logMessage
+      });
+      // Don't fail the request, just log and continue (user can still vote)
+    } else {
+      previousReaction = existing?.reaction_type || null;
+      previousVote = previousReaction === 'upvote' ? 1 : (previousReaction === 'downvote' ? -1 : 0);
     }
   } catch (error) {
-    console.error(`Failed to update confession ${id} score:`, error.message);
+    const errorInfo = handleSupabaseError(error);
+    console.error(`❌ [${errorInfo.errorCode}] Unexpected error loading previous reaction:`, {
+      confessionId: id,
+      sessionId: voter,
+      error: errorInfo.logMessage
+    });
+    // Don't fail the request, just log and continue
+  }
+
+  // Compute new reaction
+  let newReactionType = null;
+  let newVote = 0;
+  if (direction === 1) {
+    // Upvote clicked
+    if (previousReaction === 'upvote') {
+      // Toggle off: remove upvote
+      newReactionType = null;
+      newVote = 0;
+    } else {
+      // Add upvote (remove downvote if exists)
+      newReactionType = 'upvote';
+      newVote = 1;
+    }
+  } else if (direction === -1) {
+    // Downvote clicked
+    if (previousReaction === 'downvote') {
+      // Toggle off: remove downvote
+      newReactionType = null;
+      newVote = 0;
+    } else {
+      // Add downvote (remove upvote if exists)
+      newReactionType = 'downvote';
+      newVote = -1;
+    }
+  }
+  
+  // voteDelta is calculated but not used directly as we update counts explicitly
+
+  // Upsert or delete reaction in confession_reactions_mit_adt
+  try {
+    if (newReactionType === null) {
+      // Remove reaction
+      const { error: deleteError } = await supabase
+        .from('confession_reactions_mit_adt')
+        .delete()
+        .eq('confession_id', id)
+        .eq('session_id', voter);
+      
+      if (deleteError) {
+        const errorInfo = handleSupabaseError(deleteError);
+        console.error(`❌ [${errorInfo.errorCode}] Failed to delete reaction:`, {
+          confessionId: id,
+          sessionId: voter,
+          error: errorInfo.logMessage,
+          details: deleteError.details,
+          hint: deleteError.hint,
+          code: deleteError.code
+        });
+        return res.status(errorInfo.statusCode).json({
+          success: false,
+          error_code: errorInfo.errorCode,
+          message: errorInfo.userMessage,
+          ...(process.env.NODE_ENV === 'development' && {
+            developer_message: errorInfo.logMessage,
+            error_details: deleteError.details || deleteError.hint
+          })
+        });
+      }
+      console.log(`✅ Removed reaction for confession ${id}`);
+    } else {
+      // Upsert reaction
+      const { error: upsertError } = await supabase
+        .from('confession_reactions_mit_adt')
+        .upsert({ 
+          confession_id: id, 
+          session_id: voter,
+          user_id: voter, // Use session_id as user_id for anonymous users
+          reaction_type: newReactionType,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'confession_id,session_id' });
+      
+      if (upsertError) {
+        const errorInfo = handleSupabaseError(upsertError);
+        console.error(`❌ [${errorInfo.errorCode}] Failed to upsert reaction:`, {
+          confessionId: id,
+          sessionId: voter,
+          reactionType: newReactionType,
+          error: errorInfo.logMessage,
+          details: upsertError.details,
+          hint: upsertError.hint,
+          code: upsertError.code
+        });
+        return res.status(errorInfo.statusCode).json({
+          success: false,
+          error_code: errorInfo.errorCode,
+          message: errorInfo.userMessage,
+          ...(process.env.NODE_ENV === 'development' && {
+            developer_message: errorInfo.logMessage,
+            error_details: upsertError.details || upsertError.hint
+          })
+        });
+      }
+      console.log(`✅ Upserted reaction ${newReactionType} for confession ${id}`);
+    }
+  } catch (error) {
+    const errorInfo = handleSupabaseError(error);
+    console.error(`❌ [${errorInfo.errorCode}] Unexpected error saving reaction:`, {
+      confessionId: id,
+      sessionId: voter,
+      error: errorInfo.logMessage,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    return res.status(errorInfo.statusCode).json({
+      success: false,
+      error_code: errorInfo.errorCode,
+      message: errorInfo.userMessage,
+      ...(process.env.NODE_ENV === 'development' && {
+        developer_message: errorInfo.logMessage
+      })
+    });
+  }
+
+  // Update upvotes/downvotes in confessions_mit_adt
+  try {
+    // Fetch current counts
+    const { data: currentConfession, error: fetchError } = await supabase
+      .from('confessions_mit_adt')
+      .select('upvotes, downvotes, score')
+      .eq('id', id)
+      .maybeSingle();
+    
+    if (fetchError) {
+      const errorInfo = handleSupabaseError(fetchError);
+      console.error(`❌ [${errorInfo.errorCode}] Failed to fetch confession for vote update:`, {
+        confessionId: id,
+        error: errorInfo.logMessage,
+        details: fetchError.details,
+        hint: fetchError.hint,
+        code: fetchError.code
+      });
+      return res.status(errorInfo.statusCode).json({
+        success: false,
+        error_code: errorInfo.errorCode,
+        message: errorInfo.userMessage,
+        ...(process.env.NODE_ENV === 'development' && {
+          developer_message: errorInfo.logMessage,
+          error_details: fetchError.details || fetchError.hint
+        })
+      });
+    }
+    
+    if (!currentConfession) {
+      console.error(`❌ [NOT_FOUND] Confession ${id} not found in confessions_mit_adt`);
+      return res.status(404).json({
+        success: false,
+        error_code: "NOT_FOUND",
+        message: "Confession not found. It may have been deleted."
+      });
+    }
+    
+    // Calculate new counts
+    let newUpvotes = safeNumber(currentConfession.upvotes, 0);
+    let newDownvotes = safeNumber(currentConfession.downvotes, 0);
+    
+    // Adjust counts based on vote change
+    if (previousVote === 1) newUpvotes -= 1; // Remove previous upvote
+    if (previousVote === -1) newDownvotes -= 1; // Remove previous downvote
+    if (newVote === 1) newUpvotes += 1; // Add new upvote
+    if (newVote === -1) newDownvotes += 1; // Add new downvote
+    
+    newUpvotes = Math.max(0, newUpvotes);
+    newDownvotes = Math.max(0, newDownvotes);
+    const newScore = newUpvotes - newDownvotes;
+    
+    // Update confession
+    const { error: updateError } = await supabase
+      .from('confessions_mit_adt')
+      .update({ 
+        upvotes: newUpvotes,
+        downvotes: newDownvotes,
+        score: newScore,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+    
+    if (updateError) {
+      const errorInfo = handleSupabaseError(updateError);
+      console.error(`❌ [${errorInfo.errorCode}] Failed to update vote counts:`, {
+        confessionId: id,
+        error: errorInfo.logMessage,
+        details: updateError.details,
+        hint: updateError.hint,
+        code: updateError.code
+      });
+      return res.status(errorInfo.statusCode).json({
+        success: false,
+        error_code: errorInfo.errorCode,
+        message: errorInfo.userMessage,
+        ...(process.env.NODE_ENV === 'development' && {
+          developer_message: errorInfo.logMessage,
+          error_details: updateError.details || updateError.hint
+        })
+      });
+    }
+    
+    console.log(`✅ Updated vote counts for confession ${id}: upvotes=${newUpvotes}, downvotes=${newDownvotes}, score=${newScore}`);
+    
+    // Update local cache
+    confession.score = newScore;
+    confession.upvotes = newUpvotes;
+    confession.downvotes = newDownvotes;
+    upsertConfession(confession);
+  } catch (error) {
+    const errorInfo = handleSupabaseError(error);
+    console.error(`❌ [${errorInfo.errorCode}] Unexpected error updating vote counts:`, {
+      confessionId: id,
+      error: errorInfo.logMessage,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    return res.status(errorInfo.statusCode).json({
+      success: false,
+      error_code: errorInfo.errorCode,
+      message: errorInfo.userMessage,
+      ...(process.env.NODE_ENV === 'development' && {
+        developer_message: errorInfo.logMessage
+      })
+    });
   }
 
   await writeFallback();
@@ -982,12 +1452,22 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
   io.to(`confession-${id}`).emit('vote-update', { 
     confessionId: id, 
     score: confession.score,
+    upvotes: confession.upvotes || 0,
+    downvotes: confession.downvotes || 0,
     sessionId: voter,
     userVote: newVote 
   });
   console.log(`📊 Vote update broadcasted for confession: ${id}, newVote: ${newVote}, score: ${confession.score}`);
 
-  return res.json({ success: true, data: { score: confession.score, userVote: newVote } });
+  return res.json({ 
+    success: true, 
+    data: { 
+      score: confession.score, 
+      upvotes: confession.upvotes || 0,
+      downvotes: confession.downvotes || 0,
+      userVote: newVote 
+    } 
+  });
 });
 
 router.post("/:id/react", rateLimitSimple(60, 60_000), async (req, res) => {
@@ -1292,100 +1772,124 @@ router.post(
     };
 
     try {
-      console.log(`📝 Storing comment: confessionId=${id}, parentId=${reply.parentId || 'none'}`);
+      console.log(`📝 Storing comment in confession_comments_mit_adt: confessionId=${id}, parentId=${reply.parentId || 'none'}`);
       
-      // Store reply in legacy table
-      const { error } = await supabase.from("confession_replies").insert({
-        id: reply.id,
-        confession_id: reply.confessionId,
-        content: reply.content,
-        alias: reply.alias,
-        session_id: reply.sessionId,
-        parent_id: reply.parentId,
-        campus: 'general',
-        created_at: reply.createdAt,
-        score: reply.score,
-        metadata: reply.metadata
-      });
-      if (error) {
-        console.error(`❌ Failed to insert into confession_replies:`, error);
-        throw error;
-      }
-      console.log(`✅ Stored in legacy confession_replies table`);
-
-      // Store in main comments table (general confessions)
-      if (reply.parentId) {
-        // Sub-comment
-        const { error: subError } = await supabase.from("sub_comments").insert({
-          id: reply.id,
-          comment_id: reply.parentId,
-          confession_id: reply.confessionId,
-          campus: 'general',
-          content: reply.content,
-          alias: typeof reply.alias === 'string' ? { name: reply.alias } : reply.alias,
-          session_id: reply.sessionId,
-          created_at: reply.createdAt,
-          score: reply.score,
-          metadata: reply.metadata
-        });
-        if (subError) {
-          console.error(`❌ Failed to insert sub-comment:`, subError);
-          throw subError;
-        }
-        console.log(`✅ Stored sub-comment`);
-      } else {
-        // Root comment
-        const { error: commentError } = await supabase.from("comments").insert({
+      // Store comment in confession_comments_mit_adt table
+      const aliasData = typeof reply.alias === 'string' ? { name: reply.alias } : reply.alias;
+      
+      const { data: insertedComment, error: commentError } = await supabase
+        .from("confession_comments_mit_adt")
+        .insert({
           id: reply.id,
           confession_id: reply.confessionId,
-          campus: 'general',
           content: reply.content,
-          alias: typeof reply.alias === 'string' ? { name: reply.alias } : reply.alias,
+          alias: aliasData,
           session_id: reply.sessionId,
+          parent_comment_id: reply.parentId || null,
           created_at: reply.createdAt,
+          updated_at: reply.createdAt,
           score: reply.score,
-          metadata: reply.metadata
+          metadata: reply.metadata || {}
+        })
+        .select()
+        .single();
+      
+      if (commentError) {
+        const errorInfo = handleSupabaseError(commentError);
+        console.error(`❌ [${errorInfo.errorCode}] Failed to insert comment:`, {
+          commentId: reply.id,
+          confessionId: id,
+          error: errorInfo.logMessage,
+          details: commentError.details,
+          hint: commentError.hint,
+          code: commentError.code
         });
-        if (commentError) {
-          console.error(`❌ Failed to insert root comment:`, commentError);
-          throw commentError;
-        }
-        console.log(`✅ Stored root comment`);
+        return res.status(errorInfo.statusCode).json({
+          success: false,
+          error_code: errorInfo.errorCode,
+          message: errorInfo.userMessage,
+          ...(process.env.NODE_ENV === 'development' && {
+            developer_message: errorInfo.logMessage,
+            error_details: commentError.details || commentError.hint
+          })
+        });
       }
 
-      // Update reply count - try to find confession in all tables
-      const allTables = getAllConfessionTables();
-      let currentConfession = null;
-      let foundTable = null;
-      
-      // Find the confession in any table
-      for (const table of allTables) {
-        const { data, error } = await supabase
-          .from(table)
-          .select("replies_count")
+      if (!insertedComment) {
+        console.error("❌ [INSERT_FAILED] Comment insert returned no data:", reply.id);
+        return res.status(500).json({
+          success: false,
+          error_code: "INSERT_FAILED",
+          message: "Failed to create comment. Please try again."
+        });
+      }
+
+      console.log(`✅ Stored comment in confession_comments_mit_adt`);
+
+      // Update comment_count in confessions_mit_adt (trigger will also handle this, but we do it explicitly)
+      try {
+        const { data: currentConfession, error: fetchError } = await supabase
+          .from("confessions_mit_adt")
+          .select("comment_count")
           .eq("id", id)
           .maybeSingle();
         
-        if (!error && data) {
-          currentConfession = data;
-          foundTable = table;
-          break;
-        }
-      }
-      
-      if (!currentConfession) {
-        console.warn(`⚠️ Confession ${id} not found in any table for reply count update`);
-      } else {
-        const newCount = safeNumber(currentConfession.replies_count, 0) + 1;
-        const result = await updateConfessionInDatabase(id, { replies_count: newCount });
-        if (result.success) {
-          console.log(`✅ Updated replies_count for confession ${id} in ${result.table}: ${newCount}`);
+        if (fetchError) {
+          const fetchErrorInfo = handleSupabaseError(fetchError);
+          console.warn(`⚠️ [${fetchErrorInfo.errorCode}] Failed to fetch confession for comment count update:`, {
+            confessionId: id,
+            error: fetchErrorInfo.logMessage
+          });
+          // Don't fail the request, just log the warning
+        } else if (currentConfession) {
+          const newCommentCount = safeNumber(currentConfession.comment_count, 0) + 1;
+          
+          const { error: updateError } = await supabase
+            .from("confessions_mit_adt")
+            .update({ 
+              comment_count: newCommentCount,
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", id);
+          
+          if (updateError) {
+            const updateErrorInfo = handleSupabaseError(updateError);
+            console.error(`❌ [${updateErrorInfo.errorCode}] Failed to update comment_count:`, {
+              confessionId: id,
+              error: updateErrorInfo.logMessage
+            });
+            // Don't fail the request, comment was already inserted
+          } else {
+            console.log(`✅ Updated comment_count for confession ${id}: ${newCommentCount}`);
+          }
         } else {
-          console.error(`❌ Failed to update replies_count:`, result.error);
+          console.warn(`⚠️ [NOT_FOUND] Confession ${id} not found in confessions_mit_adt for comment count update`);
+          // Don't fail the request, comment was already inserted
         }
+      } catch (countUpdateError) {
+        // Log but don't fail - comment was successfully inserted
+        const countErrorInfo = handleSupabaseError(countUpdateError);
+        console.error(`❌ [${countErrorInfo.errorCode}] Error updating comment count (non-critical):`, {
+          confessionId: id,
+          error: countErrorInfo.logMessage
+        });
       }
     } catch (error) {
-      console.error(`❌ Failed to store reply for confession ${id}:`, error.message, error);
+      const errorInfo = handleSupabaseError(error);
+      console.error(`❌ [${errorInfo.errorCode}] Unexpected error storing comment:`, {
+        commentId: reply.id,
+        confessionId: id,
+        error: errorInfo.logMessage,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+      return res.status(errorInfo.statusCode).json({
+        success: false,
+        error_code: errorInfo.errorCode,
+        message: errorInfo.userMessage,
+        ...(process.env.NODE_ENV === 'development' && {
+          developer_message: errorInfo.logMessage
+        })
+      });
     }
 
     // Update local confession cache
@@ -1416,14 +1920,55 @@ router.post(
 
 router.get("/:id/replies", async (req, res) => {
   const { id } = req.params;
-  // Always aggregate from all comment tables (general confessions)
-  const combined = await fetchCommentsFromNewTables(id);
-  if (combined) {
-    return res.json({ success: true, data: combined });
+  
+  try {
+    // Fetch comments from confession_comments_mit_adt
+    const { data: comments, error } = await supabase
+      .from('confession_comments_mit_adt')
+      .select('*')
+      .eq('confession_id', id)
+      .order('created_at', { ascending: true });
+    
+    if (error) {
+      const errorInfo = handleSupabaseError(error);
+      console.error(`❌ [${errorInfo.errorCode}] Failed to fetch comments:`, {
+        confessionId: id,
+        error: errorInfo.logMessage,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      return res.status(errorInfo.statusCode).json({
+        success: false,
+        error_code: errorInfo.errorCode,
+        message: errorInfo.userMessage,
+        ...(process.env.NODE_ENV === 'development' && {
+          developer_message: errorInfo.logMessage,
+          error_details: error.details || error.hint
+        })
+      });
+    }
+    
+    // Normalize comments
+    const normalized = Array.isArray(comments) ? comments.map((row) => normalizeCommentRecord(row, row.parent_comment_id)) : [];
+    
+    return res.json({ success: true, data: normalized });
+  } catch (error) {
+    const errorInfo = handleSupabaseError(error);
+    console.error(`❌ [${errorInfo.errorCode}] Unexpected error fetching comments:`, {
+      confessionId: id,
+      error: errorInfo.logMessage,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    return res.status(errorInfo.statusCode).json({
+      success: false,
+      error_code: errorInfo.errorCode,
+      message: errorInfo.userMessage,
+      ...(process.env.NODE_ENV === 'development' && {
+        developer_message: errorInfo.logMessage
+      })
+    });
   }
-  // Fallback to legacy replies table
-  const replies = await fetchReplyList(id, campus);
-  return res.json({ success: true, data: replies });
 });
 
 router.post("/:id/reply/:replyId/vote", rateLimitSimple(60, 60_000), async (req, res) => {
@@ -1545,10 +2090,47 @@ router.delete("/:id", rateLimitSimple(10, 60_000), async (req, res) => {
   }
 
   try {
-    const { error } = await supabase.from("confessions").delete().eq("id", id);
-    if (error) throw error;
+    const { error: deleteError } = await supabase
+      .from("confessions_mit_adt")
+      .delete()
+      .eq("id", id);
+    
+    if (deleteError) {
+      const errorInfo = handleSupabaseError(deleteError);
+      console.error(`❌ [${errorInfo.errorCode}] Failed to delete confession:`, {
+        confessionId: id,
+        error: errorInfo.logMessage,
+        details: deleteError.details,
+        hint: deleteError.hint,
+        code: deleteError.code
+      });
+      return res.status(errorInfo.statusCode).json({
+        success: false,
+        error_code: errorInfo.errorCode,
+        message: errorInfo.userMessage,
+        ...(process.env.NODE_ENV === 'development' && {
+          developer_message: errorInfo.logMessage,
+          error_details: deleteError.details || deleteError.hint
+        })
+      });
+    }
+    
+    console.log(`✅ Confession ${id} deleted successfully from confessions_mit_adt`);
   } catch (error) {
-    console.error(`Failed to delete confession ${id}:`, error.message);
+    const errorInfo = handleSupabaseError(error);
+    console.error(`❌ [${errorInfo.errorCode}] Unexpected error deleting confession:`, {
+      confessionId: id,
+      error: errorInfo.logMessage,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    return res.status(errorInfo.statusCode).json({
+      success: false,
+      error_code: errorInfo.errorCode,
+      message: errorInfo.userMessage,
+      ...(process.env.NODE_ENV === 'development' && {
+        developer_message: errorInfo.logMessage
+      })
+    });
   }
 
   removeConfession(id);
@@ -1706,12 +2288,13 @@ router.get("/:id", async (req, res) => {
   }
   
   if (!confession) {
-    console.error(`[GET /:id] ❌ Confession ${id} not found after searching all tables and cache`);
+    console.error(`[GET /:id] ❌ Confession ${id} not found after searching confessions_mit_adt and cache`);
     console.log(`[GET /:id] Completed in ${Date.now() - startTime}ms`);
     return res.status(404).json({ 
-      success: false, 
-      message: "Confession not found",
-      searchedTable: 'confessions',
+      success: false,
+      error_code: "NOT_FOUND",
+      message: "Confession not found. It may have been deleted or doesn't exist.",
+      searchedTable: 'confessions_mit_adt',
       searchedCache: true
     });
   }
@@ -1731,20 +2314,33 @@ router.get("/:id", async (req, res) => {
     try {
       console.log(`[GET /:id] Fetching user vote for sessionId: ${sessionId}`);
       const { data, error } = await supabase
-        .from('confession_votes')
-        .select('vote')
+        .from('confession_reactions_mit_adt')
+        .select('reaction_type')
         .eq('confession_id', id)
-        .eq('voter_session_id', sessionId)
+        .eq('session_id', sessionId)
         .maybeSingle();
 
-      if (!error && data) {
-        userVote = safeNumber(data.vote, 0);
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 = not found, which is OK
+        const errorInfo = handleSupabaseError(error);
+        console.warn(`⚠️ [${errorInfo.errorCode}] Error fetching user vote:`, {
+          confessionId: id,
+          sessionId: sessionId,
+          error: errorInfo.logMessage
+        });
+        // Don't fail the request, just log and continue
+      } else if (data) {
+        userVote = data.reaction_type === 'upvote' ? 1 : (data.reaction_type === 'downvote' ? -1 : 0);
         console.log(`[GET /:id] User vote: ${userVote}`);
-      } else if (error) {
-        console.warn(`[GET /:id] Error fetching user vote:`, error.message);
       }
     } catch (error) {
-      console.error('[GET /:id] Exception fetching user vote:', error);
+      const errorInfo = handleSupabaseError(error);
+      console.error(`❌ [${errorInfo.errorCode}] Exception fetching user vote:`, {
+        confessionId: id,
+        sessionId: sessionId,
+        error: errorInfo.logMessage
+      });
+      // Don't fail the request, just log and continue
     }
   }
 
