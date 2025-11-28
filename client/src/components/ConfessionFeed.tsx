@@ -128,8 +128,8 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
           console.log(`[ConfessionFeed] ✅ Received ${result.data.length} confessions for ${activeView}`);
           
           // Verify IDs are present (check all possible ID field names)
-          const confessionsWithIds = result.data.filter(c => c.id || c.confession_id || c._id);
-          const confessionsWithoutIds = result.data.filter(c => !c.id && !c.confession_id && !c._id);
+          const confessionsWithIds = result.data.filter((c: Confession) => c.id || c.confession_id || c._id);
+          const confessionsWithoutIds = result.data.filter((c: Confession) => !c.id && !c.confession_id && !c._id);
           
           if (confessionsWithoutIds.length > 0) {
             console.warn(`[ConfessionFeed] ⚠️  ${confessionsWithoutIds.length} confessions missing ID:`, confessionsWithoutIds);
@@ -165,22 +165,22 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
 
   // Skeleton loader component
   const SkeletonCard = () => (
-    <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-5 animate-pulse">
+    <div className="bg-zinc-800 border border-[#22c55e]/20 rounded-lg p-5 animate-pulse">
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800" />
+        <div className="w-8 h-8 rounded-full bg-zinc-700" />
         <div className="flex-1">
-          <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-20 mb-1" />
-          <div className="h-2 bg-gray-100 dark:bg-gray-900 rounded w-28" />
+          <div className="h-3 bg-zinc-700 rounded w-20 mb-1" />
+          <div className="h-2 bg-zinc-700 rounded w-28" />
         </div>
       </div>
       <div className="space-y-2 mb-4">
-        <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-full" />
-        <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-5/6" />
-        <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-4/6" />
+        <div className="h-4 bg-zinc-700 rounded w-full" />
+        <div className="h-4 bg-zinc-700 rounded w-5/6" />
+        <div className="h-4 bg-zinc-700 rounded w-4/6" />
       </div>
       <div className="flex items-center gap-4 mt-4">
-        <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded-full w-20" />
-        <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-16" />
+        <div className="h-6 bg-zinc-700 rounded-full w-20" />
+        <div className="h-6 bg-zinc-700 rounded w-16" />
       </div>
     </div>
   );
@@ -190,8 +190,8 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
       <div className="space-y-6">
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{currentConfig.title}</h2>
-          {currentConfig.subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{currentConfig.subtitle}</p>}
+          <h2 className="text-2xl font-bold text-white">{currentConfig.title}</h2>
+          {currentConfig.subtitle && <p className="text-sm text-zinc-400">{currentConfig.subtitle}</p>}
         </div>
 
         {/* Skeleton Loaders */}
@@ -209,16 +209,16 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
       <div className="space-y-6">
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{currentConfig.title}</h2>
-          {currentConfig.subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{currentConfig.subtitle}</p>}
+          <h2 className="text-2xl font-bold text-white">{currentConfig.title}</h2>
+          {currentConfig.subtitle && <p className="text-sm text-zinc-400">{currentConfig.subtitle}</p>}
         </div>
 
         {/* Error State */}
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-lg p-6 text-center">
-          <p className="text-red-600 dark:text-red-400 mb-2">{error}</p>
+        <div className="bg-red-950/20 border border-red-900/40 rounded-lg p-6 text-center">
+          <p className="text-red-400 mb-2">{error}</p>
           <button
             onClick={() => globalThis.location.reload()}
-            className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 underline"
+            className="text-sm text-red-400 hover:text-red-300 underline"
           >
             Retry
           </button>
@@ -232,14 +232,14 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
       <div className="space-y-6">
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{currentConfig.title}</h2>
-          {currentConfig.subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{currentConfig.subtitle}</p>}
+          <h2 className="text-2xl font-bold text-white">{currentConfig.title}</h2>
+          {currentConfig.subtitle && <p className="text-sm text-zinc-400">{currentConfig.subtitle}</p>}
         </div>
 
         {/* Empty State */}
-        <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-12 text-center">
-          <currentConfig.icon className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400">No confessions found in this view.</p>
+        <div className="bg-zinc-800 border border-[#22c55e]/20 rounded-lg p-12 text-center">
+          <currentConfig.icon className="w-12 h-12 text-zinc-500 mx-auto mb-4" />
+          <p className="text-zinc-400">No confessions found in this view.</p>
         </div>
       </div>
     );
@@ -249,8 +249,8 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
     <div className="space-y-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{currentConfig.title}</h2>
-        {currentConfig.subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{currentConfig.subtitle}</p>}
+        <h2 className="text-2xl font-bold text-white">{currentConfig.title}</h2>
+        {currentConfig.subtitle && <p className="text-sm text-zinc-400">{currentConfig.subtitle}</p>}
       </div>
 
       {/* Confessions List */}
@@ -292,18 +292,18 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
           <div
             key={cardKey}
             onClick={handleClick}
-            className={`bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-6 transition-all duration-200 ${
+            className={`bg-zinc-800 border border-[#22c55e]/20 rounded-lg p-6 transition-all duration-200 ${
               !hasValidId
-                ? 'border-red-500/60 bg-red-50 dark:bg-red-950/10 cursor-not-allowed opacity-60'
-                : 'cursor-pointer hover:border-gray-300 dark:hover:border-gray-700'
+                ? 'border-red-500/60 bg-red-950/10 cursor-not-allowed opacity-60'
+                : 'cursor-pointer hover:border-[#22c55e]/40 hover:bg-zinc-700/50'
             } ${
-              confession.isExplicit ? 'border-red-500/40 bg-red-50/50 dark:bg-red-950/5' : ''
+              confession.isExplicit ? 'border-red-500/40 bg-red-950/5' : ''
             }`}
           >
             {/* Missing ID Warning */}
             {!hasValidId && (
-              <div className="mb-3 p-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-md">
-                <p className="text-red-600 dark:text-red-400 text-xs font-medium">
+              <div className="mb-3 p-2 bg-red-950/20 border border-red-900/40 rounded-md">
+                <p className="text-red-400 text-xs font-medium">
                   ⚠️ Warning: This confession is missing an ID and cannot be opened.
                 </p>
               </div>
@@ -315,23 +315,23 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
                 <img
                   src={confession.alias.imageUrl}
                   alt="Author avatar"
-                  className="w-8 h-8 rounded-full object-cover"
+                  className="w-8 h-8 rounded-full object-cover border border-[#22c55e]/30"
                 />
               ) : (
                 <div
                   className={`w-8 h-8 rounded-full bg-gradient-to-br ${
-                    confession.alias?.color || 'from-gray-500 to-gray-600'
-                  } flex items-center justify-center text-white text-sm font-bold`}
+                    confession.alias?.color || 'from-zinc-500 to-zinc-600'
+                  } flex items-center justify-center text-white text-sm font-bold border border-[#22c55e]/30`}
                 >
                   {confession.alias?.emoji || '👤'}
                 </div>
               )}
               <div className="flex-1 min-w-0 flex items-center gap-1">
-                <div className="text-base text-gray-900 dark:text-white font-semibold truncate">
+                <div className="text-base text-white font-semibold truncate">
                   {confession.alias?.name || 'Anonymous'}
                 </div>
-                <span className="text-xs text-gray-400 dark:text-gray-500">·</span>
-                <div className="text-xs text-gray-400 dark:text-gray-500 font-normal">
+                <span className="text-xs text-zinc-500">·</span>
+                <div className="text-xs text-zinc-500 font-normal">
                   {new Date(confession.createdAt).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -343,12 +343,12 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
             </div>
 
             {/* Body Content - Highly readable */}
-            <div className="text-base text-gray-800 dark:text-gray-100 leading-relaxed mb-4 whitespace-pre-wrap break-words line-clamp-4">
+            <div className="text-base text-zinc-100 leading-relaxed mb-4 whitespace-pre-wrap break-words line-clamp-4">
               {confession.content}
             </div>
 
             {/* Action Bar - Reddit Style */}
-            <div className="flex items-center gap-4 pt-4 border-t border-[#b76e79]/20">
+            <div className="flex items-center gap-4 pt-4 border-t border-[#22c55e]/20">
               {/* Voting Pill */}
               <div 
                 className="flex items-center gap-1"
@@ -359,8 +359,8 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
                   onClick={(e) => handleVote(confessionId, 1, e)}
                   className={`p-1 rounded-full transition-all duration-200 flex items-center ${
                     userVote === 1
-                      ? 'text-orange-500 dark:text-orange-400'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                      ? 'text-[#22c55e] hover:text-[#22c55e]/80'
+                      : 'text-zinc-400 hover:text-[#22c55e]'
                   }`}
                   title="Upvote"
                 >
@@ -373,10 +373,10 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
                 {/* Vote Count */}
                 <span className={`text-sm font-medium px-1 min-w-[2rem] text-center ${
                   userVote === 1 
-                    ? 'text-orange-500 dark:text-orange-400' 
+                    ? 'text-[#22c55e]' 
                     : userVote === -1
-                    ? 'text-blue-500 dark:text-blue-400'
-                    : 'text-gray-700 dark:text-gray-300'
+                    ? 'text-red-400'
+                    : 'text-zinc-300'
                 }`}>
                   {confession.score || 0}
                 </span>
@@ -386,8 +386,8 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
                   onClick={(e) => handleVote(confessionId, -1, e)}
                   className={`p-1 rounded-full transition-all duration-200 flex items-center ${
                     userVote === -1
-                      ? 'text-blue-500 dark:text-blue-400'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                      ? 'text-red-400 hover:text-red-400/80'
+                      : 'text-zinc-400 hover:text-red-400'
                   }`}
                   title="Downvote"
                 >
@@ -404,7 +404,7 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
                   e.stopPropagation();
                   handleClick();
                 }}
-                className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                className="flex items-center gap-1 text-sm text-zinc-400 hover:text-[#22c55e] transition-colors"
                 title="Comments"
               >
                 <MessageCircle className="w-4 h-4" strokeWidth={2} />

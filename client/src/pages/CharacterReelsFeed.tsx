@@ -274,7 +274,7 @@ const CharacterReelsFeed: React.FC<CharacterReelsFeedProps> = ({
                     navigate(`/chat/${currentCharacter.slug}`);
                   }
                 }}
-                className="relative flex flex-col items-center gap-1.5 p-2.5 rounded-full bg-softgold-500 text-black hover:bg-softgold-400 transition-all shadow-lg hover:scale-110"
+                className="relative flex flex-col items-center gap-1.5 p-2.5 rounded-full bg-green-500 text-black hover:bg-green-400 transition-all shadow-lg hover:scale-110"
                 aria-label="Chat"
                 title="Chat"
               >
@@ -290,7 +290,7 @@ const CharacterReelsFeed: React.FC<CharacterReelsFeedProps> = ({
                 }}
                 className={`relative flex flex-col items-center gap-1.5 p-2.5 rounded-full backdrop-blur-md transition-all shadow-lg hover:scale-110 ${
                   selectedTags.length > 0
-                    ? 'bg-softgold-500 text-black hover:bg-softgold-400'
+                    ? 'bg-green-500 text-black hover:bg-green-400'
                     : 'bg-black/60 text-white hover:bg-black/80'
                 }`}
                 aria-label="Filter"
@@ -400,7 +400,7 @@ const CharacterReelsFeed: React.FC<CharacterReelsFeedProps> = ({
                   navigate(`/chat/${currentCharacter.slug}`);
                 }
               }}
-              className="flex items-center gap-2 px-6 py-3 rounded-full bg-softgold-500 text-black font-semibold hover:bg-softgold-400 transition-all shadow-lg flex-1 max-w-[200px] justify-center"
+              className="flex items-center gap-2 px-6 py-3 rounded-full bg-green-500 text-black font-semibold hover:bg-green-400 transition-all shadow-lg flex-1 max-w-[200px] justify-center"
               aria-label="Chat"
             >
               <MessageCircle className="w-5 h-5" />
@@ -415,7 +415,7 @@ const CharacterReelsFeed: React.FC<CharacterReelsFeedProps> = ({
               }}
               className={`flex items-center gap-2 px-4 py-3 rounded-full backdrop-blur-md text-white font-semibold transition-all shadow-lg ${
                 selectedTags.length > 0
-                  ? 'bg-softgold-500 text-black hover:bg-softgold-400'
+                  ? 'bg-green-500 text-black hover:bg-green-400'
                   : 'bg-black/50 hover:bg-black/70'
               }`}
               aria-label="Filter"
@@ -481,8 +481,8 @@ const CharacterReelsFeed: React.FC<CharacterReelsFeedProps> = ({
                           onClick={() => toggleTag(tag)}
                           className={`px-4 py-2 rounded-full text-xs font-medium transition-all border ${
                             isSelected
-                              ? 'bg-rosegold-500 text-white border-rosegold-400 shadow-lg'
-                              : 'bg-rosegold-500/20 text-rosegold-300 border-rosegold-500/40 hover:bg-rosegold-500/30 hover:border-rosegold-400'
+                              ? 'bg-green-500 text-white border-green-400 shadow-lg'
+                              : 'bg-green-500/20 text-green-300 border-green-500/40 hover:bg-green-500/30 hover:border-green-400'
                           }`}
                         >
                           {tag.charAt(0).toUpperCase() + tag.slice(1)}
@@ -505,8 +505,8 @@ const CharacterReelsFeed: React.FC<CharacterReelsFeedProps> = ({
                         onClick={() => toggleTag(tag)}
                         className={`px-4 py-2 rounded-full text-xs font-medium transition-all border ${
                           isSelected
-                            ? 'bg-rosegold-500 text-white border-rosegold-400 shadow-lg'
-                            : 'bg-rosegold-500/20 text-rosegold-300 border-rosegold-500/40 hover:bg-rosegold-500/30 hover:border-rosegold-400'
+                            ? 'bg-green-500 text-white border-green-400 shadow-lg'
+                            : 'bg-green-500/20 text-green-300 border-green-500/40 hover:bg-green-500/30 hover:border-green-400'
                         }`}
                       >
                         {tag.charAt(0).toUpperCase() + tag.slice(1)}

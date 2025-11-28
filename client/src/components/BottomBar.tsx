@@ -32,7 +32,7 @@ export const BottomBar: React.FC = () => {
         className="fixed bottom-3 left-0 right-0 z-40 px-3 sm:px-4 md:px-6"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="bg-zinc-900/95 backdrop-blur-xl rounded-3xl border border-rosegold-500/40 shadow-2xl max-w-2xl md:max-w-xl mx-auto overflow-hidden">
+        <div className="bg-zinc-900/95 backdrop-blur-xl rounded-3xl border border-green-500/40 shadow-2xl max-w-2xl md:max-w-xl mx-auto overflow-hidden">
           <div className="flex items-center justify-around gap-0.5 px-1.5 py-1.5 sm:gap-1 sm:px-2 sm:py-2 md:gap-0.5 md:px-1.5 md:py-1.5">
             {items.map((item) => {
               const active = currentRootTab === (item.id as any);
@@ -43,7 +43,7 @@ export const BottomBar: React.FC = () => {
                   onClick={() => selectRootTab(item.id as any)}
                   className={`relative flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1.5 sm:py-2.5 sm:px-2 md:py-1.5 md:px-1.5 rounded-2xl md:rounded-xl transition-all duration-300 ${
                     active 
-                      ? "bg-rosegold-500 text-white scale-105" 
+                      ? "bg-green-500 text-white scale-105" 
                       : "bg-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/30"
                   }`}
                 >

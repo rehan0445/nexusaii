@@ -20,11 +20,11 @@ const CharacterProfile: React.FC = () => {
   const { incognitoMode } = useSettings();
   
 
-  // Color scheme based on incognito mode
+  // Color scheme - Dark Room Theme
   const colorScheme = {
-    primaryButton: incognitoMode ? 'bg-orange-500 hover:bg-orange-400' : 'bg-softgold-500 hover:bg-softgold-500',
-    accentText: incognitoMode ? 'text-orange-400' : 'text-softgold-500',
-    dotColor: incognitoMode ? 'bg-orange-400' : 'bg-softgold-500',
+    primaryButton: incognitoMode ? 'bg-orange-500 hover:bg-orange-400' : 'bg-green-500 hover:bg-green-600',
+    accentText: incognitoMode ? 'text-orange-400' : 'text-green-500',
+    dotColor: incognitoMode ? 'bg-orange-400' : 'bg-green-500',
   };
 
   const character = characterId ? characters[characterId] : null;
@@ -185,7 +185,7 @@ const CharacterProfile: React.FC = () => {
               <div className="space-y-1">
                 {character.personality.quirks.map((quirk) => (
                   <div key={quirk} className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                     <p className="text-zinc-300">{quirk}</p>
                   </div>
                 ))}

@@ -491,7 +491,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             type="text"
             value={localProfileData.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
-            className="w-full py-2 sm:py-3 px-3 sm:px-4 bg-black border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-softgold-500 text-sm sm:text-base"
+            className="w-full py-2 sm:py-3 px-3 sm:px-4 bg-black border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 text-sm sm:text-base"
             placeholder="Enter your name"
           />
         </div>
@@ -509,7 +509,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 (() => {
                   if (usernameError) return 'border-red-500 focus:ring-red-500';
                   if (usernameError === '' && localProfileData.username.length > 1) return 'border-green-500 focus:ring-green-500';
-                  return 'border-zinc-600 focus:ring-softgold-500';
+                  return 'border-zinc-600 focus:ring-green-500';
                 })()
               }`}
               placeholder="@username"
@@ -541,7 +541,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           <button
             onClick={handleSave}
             disabled={loading || !!usernameError || checkingUsername}
-            className="px-3 sm:px-4 py-2 bg-gold hover:bg-yellow-500 disabled:bg-zinc-600 rounded-lg text-black font-medium transition-colors flex items-center justify-center gap-2 text-sm sm:text-base order-1 sm:order-2"
+            className="px-3 sm:px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-zinc-600 rounded-lg text-black font-medium transition-colors flex items-center justify-center gap-2 text-sm sm:text-base order-1 sm:order-2"
           >
             {loading ? (
               <>

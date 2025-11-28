@@ -23,13 +23,13 @@
   font-display: swap;
 }
 
-/* Global font application */
+/* Global font application - Dark Room Theme */
 @layer base {
   html {
-    font-family: 'Neue Sans', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Roboto Mono', monospace, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Ed Gamarod', ui-serif, Georgia, serif;
+    font-family: 'UnifrakturCook', cursive, Georgia, serif;
   }
 }
 
@@ -98,20 +98,20 @@ html, body {
   --dark-text: #f4f4f5;
   --dark-border: #3f3f46;
 
-  /* Custom theme variables with defaults */
+  /* Custom theme variables with defaults - Dark Room Theme */
   --bg-color: var(--dark-bg);
-  --surface-color: var(--dark-surface);
-  --primary-color: #b76e79;
-  --secondary-color: #a55d68;
+  --surface-color: #0c0c0c;
+  --primary-color: #22c55e; /* green-500 */
+  --secondary-color: #16a34a; /* green-600 */
   --text-color: var(--dark-text);
   --text-muted: #a1a1aa;
-  --border-color: var(--dark-border);
-  --gradient-primary: linear-gradient(135deg, #b76e79 0%, #a55d68 100%);
-  --gradient-secondary: linear-gradient(135deg, #b76e79 0%, #f397a2 100%);
-  --gradient-card: linear-gradient(135deg, rgba(183, 110, 121, 0.1) 0%, rgba(165, 93, 104, 0.1) 100%);
-  --gradient-surface: linear-gradient(180deg, rgba(39, 39, 42, 0.8) 0%, rgba(24, 24, 27, 0.9) 100%);
-  --gradient-gold-light: linear-gradient(135deg, #f397a2 0%, #b76e79 100%);
-  --gradient-gold-dark: linear-gradient(135deg, #a55d68 0%, #813b46 100%);
+  --border-color: rgba(34, 197, 94, 0.3); /* green-500/30 */
+  --gradient-primary: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  --gradient-secondary: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  --gradient-card: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%);
+  --gradient-surface: linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(0, 0, 0, 0.9) 100%);
+  --gradient-gold-light: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  --gradient-gold-dark: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
 
   /* Chat Bubble System - Companion & Vibe */
   /* CSS Variables for Theming */
@@ -159,23 +159,23 @@ html, body {
   color-scheme: light;
 }
 
-/* Global Fonts: Neue Haas (fallback to Inter) for body; EB Garamond for headings; exclude Dark Room */
-body:not(.darkroom-scope) :not(.darkroom-scope) {
-  font-family: 'Neue Haas Grotesk Text', 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+/* Global Fonts: Dark Room Theme - Roboto Mono for body, UnifrakturCook for headings */
+body {
+  font-family: 'Roboto Mono', monospace, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
 
 /* Titles/headings */
-body:not(.darkroom-scope) h1,
-body:not(.darkroom-scope) h2,
-body:not(.darkroom-scope) h3,
-body:not(.darkroom-scope) .hangout-serif-title,
-body:not(.darkroom-scope) .serif-title {
-  font-family: 'EB Garamond', Georgia, 'Times New Roman', Times, serif;
+body h1,
+body h2,
+body h3,
+body .hangout-serif-title,
+body .serif-title {
+  font-family: 'UnifrakturCook', cursive, Georgia, 'Times New Roman', Times, serif;
 }
 
-/* Companion-only scope */
+/* Companion theme - Dark Room styling */
 .companion-theme {
-  font-family: 'Neue Haas Grotesk Text', 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: 'Roboto Mono', monospace, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
 .companion-theme h1,
 .companion-theme h2,
@@ -184,18 +184,18 @@ body:not(.darkroom-scope) .serif-title {
 .companion-theme h5,
 .companion-theme h6,
 .companion-theme .serif-title {
-  font-family: 'Ed Gamarod', 'EB Garamond', Georgia, 'Times New Roman', Times, serif;
+  font-family: 'UnifrakturCook', cursive, Georgia, 'Times New Roman', Times, serif;
 }
 
-/* Campus scope: Neue Haas for body, EB Garamond for headings */
+/* Campus theme - Dark Room styling */
 .campus-theme {
-  font-family: 'Neue Haas Grotesk Text', 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: 'Roboto Mono', monospace, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
 .campus-theme h1,
 .campus-theme h2,
 .campus-theme h3,
 .campus-theme .serif-title {
-  font-family: 'EB Garamond', Georgia, 'Times New Roman', Times, serif;
+  font-family: 'UnifrakturCook', cursive, Georgia, 'Times New Roman', Times, serif;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -452,9 +452,9 @@ body:not(.darkroom-scope) .serif-title {
 }
 
 .chat-bubble.texture-energy {
-  background: linear-gradient(135deg, #f397a2, #b76e79, #a55d68);
+  background: linear-gradient(135deg, #4ade80, #22c55e, #16a34a);
   animation: energy-pulse 2s ease-in-out infinite;
-  box-shadow: 0 0 20px rgba(243, 151, 162, 0.5);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
 }
 
 .chat-bubble.texture-parchment {
@@ -677,7 +677,7 @@ body:not(.darkroom-scope) .serif-title {
 }
 
 .chat-bubble .response-indicator.emotion {
-  background: #b76e79;
+  background: #22c55e;
   animation: emotion-pulse 2s ease-in-out infinite;
 }
 
@@ -1421,10 +1421,10 @@ body:not(.darkroom-scope) .serif-title {
 
 .bubble-softgold-sent {
   position: relative;
-  border: 2px solid rgba(183,110,121,0.8);
-  box-shadow: inset 0 0 0 1px rgba(183,110,121,0.35), 0 0 18px rgba(183,110,121,0.25);
+  border: 2px solid rgba(34,197,94,0.8);
+  box-shadow: inset 0 0 0 1px rgba(34,197,94,0.35), 0 0 18px rgba(34,197,94,0.25);
 }
-.bubble-softgold-preview { background: linear-gradient(135deg, rgba(183,110,121,0.25), rgba(183,110,121,0.05)); }
+.bubble-softgold-preview { background: linear-gradient(135deg, rgba(34,197,94,0.25), rgba(34,197,94,0.05)); }
 
 /* ====== Gen Z Crazy Bubble Skins ====== */
 
@@ -1540,7 +1540,7 @@ body:not(.darkroom-scope) .serif-title {
 /* Previews */
 .bubble-aurora-preview { background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(236,72,153,0.12)); }
 .bubble-liquid-preview { background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04)); }
-.bubble-softgold-preview { background: linear-gradient(135deg, rgba(183,110,121,0.12), rgba(183,110,121,0.04)); }
+.bubble-softgold-preview { background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04)); }
 .bubble-neon-preview { background: linear-gradient(135deg, rgba(0,255,255,0.3), rgba(255,0,255,0.3)); }
 .bubble-rainbow-preview { background: linear-gradient(90deg, rgba(255,0,0,0.3), rgba(255,165,0,0.3), rgba(255,255,0,0.3), rgba(0,255,0,0.3), rgba(0,0,255,0.3), rgba(75,0,130,0.3), rgba(238,130,238,0.3)); }
 .bubble-matrix-preview { background: linear-gradient(135deg, rgba(0,255,0,0.2), rgba(0,0,0,0.8)); }
@@ -1550,7 +1550,7 @@ body:not(.darkroom-scope) .serif-title {
 .hangout-theme {
   --hangout-bg: #0A0A0A; /* matte black */
   --hangout-card: #1A1A1A; /* dark charcoal */
-  --hangout-gold: #b76e79; /* rose gold */
+  --hangout-gold: #22c55e; /* green */
   --hangout-text: #FFFFFF;
   --hangout-text-muted: #B5B5B5;
   --hangout-border: rgba(255,255,255,0.06);

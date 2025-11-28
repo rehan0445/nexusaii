@@ -58,7 +58,7 @@ export function ConfessionComposer({ onBack, onSubmit, alias }: ConfessionCompos
   const canSubmit = hasText && !isSubmitting;
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black" style={{fontFamily: 'Roboto Mono, monospace'}}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-zinc-800">
         <button
@@ -68,7 +68,7 @@ export function ConfessionComposer({ onBack, onSubmit, alias }: ConfessionCompos
           <ArrowLeft className="w-6 h-6" />
         </button>
         
-        <h1 className="text-xl font-semibold text-[#F4E3B5]">Confess Anything</h1>
+        <h1 className="text-xl font-semibold text-green-500" style={{fontFamily: 'UnifrakturCook, cursive'}}>Confess Anything</h1>
         
         <div className="w-6"></div>
       </div>
@@ -82,10 +82,10 @@ export function ConfessionComposer({ onBack, onSubmit, alias }: ConfessionCompos
               <img 
                 src={alias.imageUrl} 
                 alt="User avatar" 
-                className="w-16 h-16 rounded-full object-cover border-2 border-[#F4E3B5]" 
+                className="w-16 h-16 rounded-full object-cover border-2 border-green-500/30" 
               />
             ) : (
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center text-white text-2xl font-bold border-2 border-[#F4E3B5]">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center text-white text-2xl font-bold border-2 border-green-500/30">
                 {alias.emoji}
               </div>
             )}
@@ -101,8 +101,8 @@ export function ConfessionComposer({ onBack, onSubmit, alias }: ConfessionCompos
 
       {/* Community Guidelines */}
       <div className="p-6">
-        <div className="bg-[#F4E3B5]/10 border border-[#F4E3B5]/30 rounded-2xl p-4">
-          <p className="text-[#F4E3B5] font-medium text-center">
+        <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4">
+          <p className="text-green-500 font-medium text-center" style={{fontFamily: 'Roboto Mono, monospace'}}>
             Read Community Guidelines before posting!
           </p>
         </div>
@@ -111,12 +111,12 @@ export function ConfessionComposer({ onBack, onSubmit, alias }: ConfessionCompos
       {/* Main Content Area */}
       <div className="flex-1 px-6">
         {/* Text Area */}
-        <div className="relative border border-[#F4E3B5]/30 rounded-2xl p-4 focus-within:border-[#F4E3B5]/60 transition-all duration-300">
+        <div className="relative border border-green-500/30 rounded-2xl p-4 focus-within:border-green-500/60 transition-all duration-300">
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Share your thoughts... (optional if you add a photo or poll)"
-            className="w-full h-96 bg-transparent text-white text-lg placeholder-zinc-500 resize-none focus:outline-none border-none"
+            className="w-full h-96 bg-transparent text-white text-lg placeholder-zinc-500 resize-none focus:outline-none border-none" style={{fontFamily: 'Roboto Mono, monospace'}}
             maxLength={5000}
           />
           <div className="absolute bottom-4 right-4 text-zinc-500 text-sm">
@@ -132,9 +132,9 @@ export function ConfessionComposer({ onBack, onSubmit, alias }: ConfessionCompos
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 border ${
+            className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 border font-mono ${
               canSubmit
-                ? 'bg-[#F4E3B5] hover:bg-[#F1DEAB] text-black border-[#F4E3B5] hover:border-[#F1DEAB]'
+                ? 'bg-green-500 hover:bg-green-600 text-black border-green-500 hover:border-green-600'
                 : 'bg-black/60 text-zinc-400 cursor-not-allowed border-zinc-600'
             }`}
             title={!canSubmit ? 'Add text to confess' : 'Share your confession'}

@@ -217,13 +217,13 @@ function MyChats() {
           handleChatClick(chat.characterId);
         }
       }}
-      className="w-full bg-zinc-900/40 rounded-xl border border-softgold-500/40 hover:border-softgold-500/70 hover:bg-zinc-900/60 transition-colors focus:outline-none focus:ring-2 focus:ring-softgold-500/50 px-3 py-3 max-h-[15vh]"
+      className="w-full bg-zinc-900/40 rounded-xl border border-green-500/40 hover:border-green-500/70 hover:bg-zinc-900/60 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500/50 px-3 py-3 max-h-[15vh]"
     >
             <div className="flex items-center gap-3">
         <img
           src={chat.characterImage}
           alt={chat.characterName}
-                className="w-14 h-14 rounded-lg object-cover flex-shrink-0 ring-2 ring-softgold-500/60"
+                className="w-14 h-14 rounded-lg object-cover flex-shrink-0 ring-2 ring-green-500/60"
         />
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-white truncate text-base">{chat.characterName}</h3>
@@ -233,7 +233,7 @@ function MyChats() {
             e.stopPropagation();
             handleChatClick(chat.characterId);
           }}
-          className="px-3 py-1.5 text-sm rounded-lg bg-gold text-zinc-900 hover:bg-gold/90 transition-colors"
+          className="px-3 py-1.5 text-sm rounded-lg bg-green-500 text-black hover:bg-green-600 transition-colors font-mono"
         >
           Chat
         </button>
@@ -242,18 +242,18 @@ function MyChats() {
   );
 
   return (
-    <div className={mainBg}>
+    <div className={mainBg} style={{fontFamily: 'Roboto Mono, monospace'}}>
       <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm fixed left-0 right-0 top-0 z-50">
         <div className="w-full px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-center">
             <button
               onClick={() => navigate("/ai")}
-              className="absolute left-4 sm:left-6 text-gold hover:text-gold/80 transition-colors">
+              className="absolute left-4 sm:left-6 text-green-500 hover:text-green-400 transition-colors">
               <ArrowLeft className="w-6 h-6" />
             </button>
             <div className="flex items-center space-x-2">
-              <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-gold" />
-              <span className="text-xl sm:text-2xl font-bold text-gold">
+              <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-green-500" />
+              <span className="text-xl sm:text-2xl font-bold text-green-500" style={{fontFamily: 'UnifrakturCook, cursive'}}>
                 Previous Conversations
               </span>
             </div>
@@ -271,7 +271,7 @@ function MyChats() {
             {filteredChats.length > 0 && (
               <button
                 onClick={handleDeleteAllChats}
-                className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors">
+                className="px-4 py-2 bg-zinc-800 text-green-500 rounded-lg hover:bg-zinc-700 hover:text-green-400 transition-colors font-mono">
                 Clear History
               </button>
             )}

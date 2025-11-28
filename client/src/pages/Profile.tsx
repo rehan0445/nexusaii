@@ -47,12 +47,12 @@ const Profile: React.FC = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
 
-  // Color scheme based on incognito mode
+  // Color scheme - Dark Room Theme
   const colorScheme = {
-    primaryButton: incognitoMode ? 'bg-orange-500 hover:bg-orange-400' : 'bg-softgold-500 hover:bg-softgold-500',
-    accentText: incognitoMode ? 'text-orange-400' : 'text-softgold-500',
-    dotColor: incognitoMode ? 'bg-orange-400' : 'bg-softgold-500',
-    bgMain: incognitoMode ? 'bg-black' : 'bg-zinc-900',
+    primaryButton: incognitoMode ? 'bg-orange-500 hover:bg-orange-400' : 'bg-green-500 hover:bg-green-600',
+    accentText: incognitoMode ? 'text-orange-400' : 'text-green-500',
+    dotColor: incognitoMode ? 'bg-orange-400' : 'bg-green-500',
+    bgMain: 'bg-black',
   };
 
   useEffect(() => {
@@ -155,7 +155,7 @@ const Profile: React.FC = () => {
     const Row = ({ label, value, onToggle }: { label: string; value: boolean; onToggle: ()=>void }) => (
       <div className="flex items-center justify-between py-2">
         <span className="text-sm text-zinc-300">{label}</span>
-        <button onClick={onToggle} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${value ? 'bg-softgold-500' : 'bg-zinc-600'}`}>
+        <button onClick={onToggle} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${value ? 'bg-green-500' : 'bg-zinc-600'}`}>
           <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${value ? 'translate-x-6' : 'translate-x-1'}`} />
         </button>
       </div>
@@ -183,7 +183,7 @@ const Profile: React.FC = () => {
     return (
       <div className={`min-h-screen ${colorScheme.bgMain} flex items-center justify-center`}>
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-softgold-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-zinc-400">Loading profile...</p>
         </div>
       </div>
@@ -430,8 +430,8 @@ const Profile: React.FC = () => {
                 <div className="pt-4 space-y-4">
                   <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 bg-softgold-500/10 rounded-lg">
-                        <Mail className="w-5 h-5 text-softgold-500" />
+                      <div className="p-2 bg-green-500/10 rounded-lg">
+                        <Mail className="w-5 h-5 text-green-500" />
                       </div>
                       <div className="flex-1">
                         <h4 className="text-white font-semibold mb-1">Contact Us</h4>
@@ -442,7 +442,7 @@ const Profile: React.FC = () => {
                           href="https://mail.google.com/mail/?view=cm&fs=1&to=nexusschats@gmail.com&su=Help%20Request%20-%20Nexus%20Support"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-softgold-500 hover:bg-softgold-600 text-black rounded-lg font-medium transition-colors"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-black rounded-lg font-medium transition-colors"
                         >
                           <Mail className="w-4 h-4" />
                           nexusschats@gmail.com

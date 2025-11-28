@@ -375,7 +375,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                     authorAlias = {
                       name: reply.alias,
                       emoji: '👤',
-                      color: 'from-blue-500 to-indigo-500'
+                      color: 'from-green-500 to-green-600'
                     };
                   } else if (reply.alias && typeof reply.alias === 'object') {
                     authorAlias = {
@@ -387,7 +387,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                     authorAlias = {
                       name: 'Anonymous',
                       emoji: '👤',
-                      color: 'from-blue-500 to-indigo-500'
+                      color: 'from-green-500 to-green-600'
                     };
                   }
 
@@ -1317,7 +1317,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
     const indentLevel = Math.min(comment.depth, 3); // Max 3 levels of visual indentation
 
     return (
-      <div key={comment.id} className={`${comment.depth > 0 ? 'ml-3 sm:ml-4 lg:ml-8' : ''} ${comment.depth > 0 ? 'border-l-2 border-[#b76e79]/20 pl-3 sm:pl-4' : ''}`}>
+      <div key={comment.id} className={`${comment.depth > 0 ? 'ml-3 sm:ml-4 lg:ml-8' : ''} ${comment.depth > 0 ? 'border-l-2 border-[#22c55e]/20 pl-3 sm:pl-4' : ''}`}>
         <div className="group py-3 sm:py-4">
           {/* Comment Header */}
           <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
@@ -1326,10 +1326,10 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                 <img 
                   src={comment.authorAlias.imageUrl} 
                   alt="Author avatar" 
-                  className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover border border-[#b76e79]/20" 
+                  className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover border border-[#22c55e]/20" 
                 />
               ) : (
-                <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br ${comment.authorAlias.color} flex items-center justify-center text-white text-xs sm:text-sm font-bold border border-[#b76e79]/20`}>
+                <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br ${comment.authorAlias.color} flex items-center justify-center text-white text-xs sm:text-sm font-bold border border-[#22c55e]/20`}>
                   {comment.authorAlias.emoji}
                 </div>
               )}
@@ -1340,20 +1340,20 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                 <div className="flex items-center gap-2">
                   <span className="text-white font-medium text-xs sm:text-sm">{String(comment.authorAlias?.name || 'Anonymous')}</span>
                   {comment.authorAlias.name === alias.name && (
-                    <div className="px-2 py-0.5 bg-[#b76e79]/20 text-[#b76e79] text-xs rounded-full font-medium">
+                    <div className="px-2 py-0.5 bg-[#22c55e]/20 text-[#22c55e] text-xs rounded-full font-medium">
                       You
                     </div>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
                   {comment.replyingTo && (
-                    <span className="text-[#b76e79] text-xs">
+                    <span className="text-[#22c55e] text-xs">
                       replying to @{comment.replyingTo}
                     </span>
                   )}
                   <span className="text-zinc-500 text-xs font-medium">{formatTimeAgo(comment.timestamp)}</span>
                   {sortOption === 'best' && (
-                    <span className="text-[#b76e79] text-xs">
+                    <span className="text-[#22c55e] text-xs">
                       • {calculateEngagementScore(comment)} pts
                     </span>
                   )}
@@ -1361,14 +1361,14 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
               </div>
               
               {/* Comment Content */}
-              <div className="bg-[#27272a]/30 backdrop-blur-sm rounded-xl sm:rounded-2xl rounded-tl-lg p-2.5 sm:p-3 border border-[#b76e79]/10">
+              <div className="bg-[#27272a]/30 backdrop-blur-sm rounded-xl sm:rounded-2xl rounded-tl-lg p-2.5 sm:p-3 border border-[#22c55e]/10">
                 {editingComment === comment.id ? (
                   /* Edit Mode */
                   <div className="space-y-3">
                     <textarea
                       value={editTexts[comment.id] || ''}
                       onChange={(e) => setEditTexts(prev => ({ ...prev, [comment.id]: e.target.value }))}
-                      className="w-full bg-black/50 border border-[#b76e79]/20 rounded-xl px-3 py-2 text-white placeholder-zinc-400 focus:border-[#b76e79]/50 focus:outline-none focus:ring-2 focus:ring-[#b76e79]/20 resize-none min-h-[4rem] text-xs sm:text-sm"
+                      className="w-full bg-black/50 border border-[#22c55e]/20 rounded-xl px-3 py-2 text-white placeholder-zinc-400 focus:border-[#22c55e]/50 focus:outline-none focus:ring-2 focus:ring-[#22c55e]/20 resize-none min-h-[4rem] text-xs sm:text-sm"
                       placeholder="Edit your comment..."
                       autoFocus
                       onKeyDown={(e) => {
@@ -1398,7 +1398,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                           disabled={!editTexts[comment.id]?.trim() || editTexts[comment.id] === comment.content}
                           className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-300 text-xs ${
                             editTexts[comment.id]?.trim() && editTexts[comment.id] !== comment.content
-                              ? 'text-[#b76e79] hover:text-[#b76e79]/80 bg-[#b76e79]/20 hover:bg-[#b76e79]/30'
+                              ? 'text-[#22c55e] hover:text-[#22c55e]/80 bg-[#22c55e]/20 hover:bg-[#22c55e]/30'
                               : 'text-zinc-500 cursor-not-allowed'
                           }`}
                         >
@@ -1413,7 +1413,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                   <div>
                     <p className="text-zinc-100 text-xs sm:text-sm leading-relaxed">{comment.content}</p>
                     {comment.isEdited && (
-                      <div className="mt-2 pt-2 border-t border-[#b76e79]/10">
+                      <div className="mt-2 pt-2 border-t border-[#22c55e]/10">
                         <p className="text-zinc-500 text-xs italic">
                           Edited {comment.editedAt ? formatTimeAgo(comment.editedAt) : 'recently'}
                         </p>
@@ -1431,8 +1431,8 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                     onClick={() => handleVoteComment(comment.id, 1)}
                     className={`p-0.5 sm:p-1 rounded-md sm:rounded-lg transition-all duration-300 ${
                       comment.userVote === 1 
-                        ? 'text-blue-400 bg-blue-400/20' 
-                        : 'text-[#a1a1aa] hover:text-blue-400'
+                    ? 'text-green-400 bg-green-400/20' 
+                    : 'text-[#a1a1aa] hover:text-green-400'
                     }`}
                   >
                     <ChevronUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
@@ -1465,8 +1465,8 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                           onClick={() => handleReaction(comment.id, type)}
                           className={`flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg text-xs transition-all duration-300 ${
                             data.userReacted 
-                              ? 'text-[#b76e79] bg-[#b76e79]/20' 
-                              : 'text-[#a1a1aa] hover:text-[#b76e79] hover:bg-[#b76e79]/10'
+                              ? 'text-[#22c55e] bg-[#22c55e]/20' 
+                              : 'text-[#a1a1aa] hover:text-[#22c55e] hover:bg-[#22c55e]/10'
                           }`}
                         >
                           <span className="text-xs sm:text-sm">{emoji}</span>
@@ -1481,7 +1481,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                 {comment.sessionId === localStorage.getItem('confession_session_id') && editingComment !== comment.id && (
                   <button
                     onClick={() => handleEditComment(comment.id)}
-                    className="flex items-center gap-1 px-2 py-1 text-[#a1a1aa] hover:text-[#b76e79] rounded-lg hover:bg-[#b76e79]/10 transition-all duration-300 text-xs"
+                    className="flex items-center gap-1 px-2 py-1 text-[#a1a1aa] hover:text-[#22c55e] rounded-lg hover:bg-[#22c55e]/10 transition-all duration-300 text-xs"
                   >
                     <Edit3 className="w-3 h-3" />
                     Edit
@@ -1492,7 +1492,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                 {editingComment !== comment.id && (
                   <button
                     onClick={() => handleReply(comment.id, comment.authorAlias.name)}
-                    className="flex items-center gap-1 px-2 py-1 text-[#a1a1aa] hover:text-[#b76e79] rounded-lg hover:bg-[#b76e79]/10 transition-all duration-300 text-xs"
+                    className="flex items-center gap-1 px-2 py-1 text-[#a1a1aa] hover:text-[#22c55e] rounded-lg hover:bg-[#22c55e]/10 transition-all duration-300 text-xs"
                   >
                     <Reply className="w-3 h-3" />
                     Reply
@@ -1503,7 +1503,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                 {hasReplies && (
                   <button
                     onClick={() => toggleReplies(comment.id)}
-                    className="flex items-center gap-1 px-2 py-1 text-[#b76e79] hover:text-[#b76e79] rounded-lg hover:bg-[#b76e79]/10 transition-all duration-300 text-xs"
+                    className="flex items-center gap-1 px-2 py-1 text-[#22c55e] hover:text-[#22c55e] rounded-lg hover:bg-[#22c55e]/10 transition-all duration-300 text-xs"
                   >
                     <MessageCircle className="w-3 h-3" />
                     {isExpanded ? 'Hide' : 'Show'} {comment.replies?.length} replies
@@ -1518,11 +1518,11 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
         {showReplyInput[comment.id] && (
           <div className={`mt-3 ${comment.depth > 0 ? 'ml-6 sm:ml-8' : 'ml-8 sm:ml-11'}`}>
             <div className="flex gap-2">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
                 👤
               </div>
               <div className="flex-1">
-                <div className="flex items-end gap-2 bg-[#27272a]/30 backdrop-blur-sm rounded-xl border border-[#b76e79]/10 p-1">
+                <div className="flex items-end gap-2 bg-[#27272a]/30 backdrop-blur-sm rounded-xl border border-[#22c55e]/10 p-1">
                   <textarea
                     value={replyTexts[comment.id] || ''}
                     onChange={(e) => setReplyTexts(prev => ({ ...prev, [comment.id]: e.target.value }))}
@@ -1546,7 +1546,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                     disabled={!replyTexts[comment.id]?.trim()}
                     className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 ${
                       replyTexts[comment.id]?.trim()
-                        ? 'bg-gradient-to-r from-[#b76e79] to-[#b76e79] hover:from-[#b76e79] hover:to-[#b76e79] text-black '
+                        ? 'bg-gradient-to-r from-[#22c55e] to-[#22c55e] hover:from-[#22c55e] hover:to-[#22c55e] text-black '
                         : 'bg-black/70 text-[#a1a1aa] cursor-not-allowed'
                     }`}
                   >
@@ -1575,7 +1575,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 bg-gradient-to-r from-[#b76e79] to-[#b76e79] rounded-full mb-4 mx-auto"></div>
+          <div className="w-12 h-12 bg-gradient-to-r from-[#22c55e] to-[#22c55e] rounded-full mb-4 mx-auto"></div>
           <p className="text-[#a1a1aa] font-medium">Loading confession...</p>
         </div>
       </div>
@@ -1593,7 +1593,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
           <p className="text-[#a1a1aa] mb-6">The confession you're looking for doesn't exist or has been removed.</p>
           <button
             onClick={onBack}
-            className="px-6 py-2 bg-gradient-to-r from-[#b76e79] to-[#b76e79] text-black rounded-lg hover:from-[#b76e79]/90 hover:to-[#b76e79]/90 transition-colors font-semibold"
+            className="px-6 py-2 bg-gradient-to-r from-[#22c55e] to-[#22c55e] text-black rounded-lg hover:from-[#22c55e]/90 hover:to-[#22c55e]/90 transition-colors font-semibold"
           >
             Back to Confessions
           </button>
@@ -1606,18 +1606,18 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-2xl border-b border-[#b76e79]/10 p-3 sm:p-4">
+      <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-2xl border-b border-[#22c55e]/10 p-3 sm:p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={onBack}
-              className="flex items-center gap-1 sm:gap-2 text-[#b76e79] hover:text-[#b76e79] transition-all duration-300 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-[#b76e79]/10"
+              className="flex items-center gap-1 sm:gap-2 text-[#22c55e] hover:text-[#22c55e] transition-all duration-300 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-[#22c55e]/10"
             >
               <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="hidden sm:inline font-medium text-sm">Back</span>
             </button>
             <div>
-              <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-white via-[#b76e79] to-[#b76e79] bg-clip-text text-transparent">
+              <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-white via-[#22c55e] to-[#22c55e] bg-clip-text text-transparent">
                 Confessions
               </h1>
               <p className="text-xs text-[#a1a1aa]">{getCommentCount(confession)} comments</p>
@@ -1648,7 +1648,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
               
               {/* Time remaining indicator */}
               {canDeleteConfession(confession) && getDeletionTimeRemaining(confession) && (
-                <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-[#27272a]/90 backdrop-blur-sm text-[#b76e79] text-xs px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap border border-[#b76e79]/20">
+                <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-[#27272a]/90 backdrop-blur-sm text-[#22c55e] text-xs px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap border border-[#22c55e]/20">
                   {getDeletionTimeRemaining(confession)} left to delete
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-b-2 border-transparent border-b-zinc-800/90"></div>
                 </div>
@@ -1668,7 +1668,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
 
       <div className="flex flex-col lg:flex-row min-h-[calc(100vh-80px)]">
         {/* Confession Section - 45% */}
-        <div className="w-full lg:w-[45%] lg:sticky lg:top-20 lg:h-[calc(100vh-80px)] lg:overflow-y-auto lg:border-r border-[#b76e79]/10">
+        <div className="w-full lg:w-[45%] lg:sticky lg:top-20 lg:h-[calc(100vh-80px)] lg:overflow-y-auto lg:border-r border-[#22c55e]/10">
           <div className="p-4 sm:p-6">
             {/* Author Header */}
             <div className="flex items-center gap-3 mb-4 sm:mb-6">
@@ -1677,15 +1677,15 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                   <img 
                     src={confession.authorAlias.imageUrl} 
                     alt="Author avatar" 
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-[#b76e79]/20 " 
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-[#22c55e]/20 " 
                   />
                 ) : (
-                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br ${confession.authorAlias.color} flex items-center justify-center text-white text-lg sm:text-xl font-bold  border-2 border-[#b76e79]/20`}>
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br ${confession.authorAlias.color} flex items-center justify-center text-white text-lg sm:text-xl font-bold  border-2 border-[#22c55e]/20`}>
                     {confession.authorAlias.emoji}
                   </div>
                 )}
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-black rounded-full flex items-center justify-center border border-[#b76e79]/30">
-                  <EyeOff className="w-2 h-2 sm:w-3 sm:h-3 text-[#b76e79]" />
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-black rounded-full flex items-center justify-center border border-[#22c55e]/30">
+                  <EyeOff className="w-2 h-2 sm:w-3 sm:h-3 text-[#22c55e]" />
                 </div>
               </div>
               <div>
@@ -1697,7 +1697,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                       <span>{(confession.authorAlias as any).badge.name}</span>
                     </div>
                   )}
-                  <div className="px-2 py-0.5 bg-[#b76e79]/20 text-[#b76e79] text-xs rounded-full font-medium">
+                  <div className="px-2 py-0.5 bg-[#22c55e]/20 text-[#22c55e] text-xs rounded-full font-medium">
                     Anonymous
                   </div>
                 </div>
@@ -1720,7 +1720,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
             {/* Confession Content */}
             <div className="mb-4 sm:mb-6 relative">
               {confession.backgroundImageUrl ? (
-                <div className={`rounded-2xl sm:rounded-3xl overflow-hidden border border-[#b76e79]/10 mb-4 sm:mb-6  ${
+                <div className={`rounded-2xl sm:rounded-3xl overflow-hidden border border-[#22c55e]/10 mb-4 sm:mb-6  ${
                   confession.isExplicit && !revealedContent ? 'blur-lg' : ''
                 }`}>
                   <div className="relative h-48 sm:h-64 bg-[#27272a]">
@@ -1783,13 +1783,13 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
             {(!confession.isExplicit || revealedContent) && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
               {/* Voting */}
-              <div className="flex items-center gap-2 bg-[#27272a]/30 backdrop-blur-sm rounded-2xl p-2 border border-[#b76e79]/10">
+              <div className="flex items-center gap-2 bg-[#27272a]/30 backdrop-blur-sm rounded-2xl p-2 border border-[#22c55e]/10">
                 <button
                   onClick={() => handleVoteConfession(1)}
                   className={`p-1.5 sm:p-2 rounded-xl transition-all duration-300 ${
                     confession.userVote === 1 
-                      ? 'text-blue-400 bg-blue-400/20  shadow-blue-400/20' 
-                      : 'text-[#a1a1aa] hover:text-blue-400 hover:bg-blue-400/10'
+                      ? 'text-green-400 bg-green-400/20  shadow-green-400/20' 
+                      : 'text-[#a1a1aa] hover:text-green-400 hover:bg-green-400/10'
                   }`}
                 >
                   <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1822,8 +1822,8 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                         onClick={() => handleReaction(confession.id, type, true)}
                         className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm transition-all duration-300 ${
                           data.userReacted 
-                            ? 'text-[#b76e79] bg-[#b76e79]/20  ' 
-                            : 'text-[#a1a1aa] hover:text-[#b76e79] hover:bg-[#b76e79]/10'
+                            ? 'text-[#22c55e] bg-[#22c55e]/20  ' 
+                            : 'text-[#a1a1aa] hover:text-[#22c55e] hover:bg-[#22c55e]/10'
                         }`}
                       >
                         <span className="text-base sm:text-lg">{emoji}</span>
@@ -1842,11 +1842,11 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
         {(!confession.isExplicit || revealedContent) && (
         <div className="w-full lg:w-[55%] flex flex-col">
           {/* Comments Header */}
-          <div className="p-4 sm:p-6 border-b border-[#b76e79]/10">
+          <div className="p-4 sm:p-6 border-b border-[#22c55e]/10">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#b76e79]/20 rounded-xl sm:rounded-2xl flex items-center justify-center">
-                  <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-[#b76e79]" />
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#22c55e]/20 rounded-xl sm:rounded-2xl flex items-center justify-center">
+                  <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-[#22c55e]" />
                 </div>
                 <div>
                   <h2 className="text-white font-semibold text-base sm:text-lg">Comments</h2>
@@ -1860,8 +1860,8 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                   onClick={() => setShowSortMenu(!showSortMenu)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all duration-300 ${
                     showSortMenu
-                      ? 'bg-[#b76e79]/20 text-[#b76e79] border border-[#b76e79]/40'
-                      : 'bg-black/50 text-[#a1a1aa] hover:text-[#b76e79] hover:bg-[#b76e79]/10 border border-[#b76e79]/10'
+                      ? 'bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/40'
+                      : 'bg-black/50 text-[#a1a1aa] hover:text-[#22c55e] hover:bg-[#22c55e]/10 border border-[#22c55e]/10'
                   }`}
                   title="Sort comments"
                 >
@@ -1871,7 +1871,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
 
                 {/* Sort Dropdown */}
                 {showSortMenu && (
-                  <div className="absolute top-full right-0 mt-2 bg-[#27272a]/95 backdrop-blur-xl border border-[#b76e79]/30 rounded-xl p-2  z-50 min-w-[140px]">
+                  <div className="absolute top-full right-0 mt-2 bg-[#27272a]/95 backdrop-blur-xl border border-[#22c55e]/30 rounded-xl p-2  z-50 min-w-[140px]">
                     <div className="space-y-1">
                       {[
                         { key: 'new', label: 'Most Recent', icon: Clock },
@@ -1889,14 +1889,14 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                             }}
                             className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-all duration-200 ${
                               sortOption === option.key
-                                ? 'bg-[#b76e79]/20 text-[#b76e79] border border-[#b76e79]/30'
-                                : 'text-white hover:bg-[#b76e79]/10 hover:text-[#b76e79]'
+                                ? 'bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30'
+                                : 'text-white hover:bg-[#22c55e]/10 hover:text-[#22c55e]'
                             }`}
                           >
                             <Icon className="w-3.5 h-3.5" />
                             <span className="font-medium">{option.label}</span>
                             {sortOption === option.key && (
-                              <div className="w-1.5 h-1.5 bg-[#b76e79] rounded-full ml-auto"></div>
+                              <div className="w-1.5 h-1.5 bg-[#22c55e] rounded-full ml-auto"></div>
                             )}
                           </button>
                         );
@@ -1918,9 +1918,9 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
           </div>
 
           {/* Comment Input */}
-          <div className="p-4 sm:p-6 border-b border-[#b76e79]/10">
+          <div className="p-4 sm:p-6 border-b border-[#22c55e]/10">
             {replyingTo && (
-              <div className="mb-3 flex items-center gap-2 text-xs sm:text-sm text-[#b76e79]">
+              <div className="mb-3 flex items-center gap-2 text-xs sm:text-sm text-[#22c55e]">
                 <Reply className="w-3 h-3 sm:w-4 sm:h-4" />
                 Replying to @{replyingTo.username}
                 <button
@@ -1932,11 +1932,11 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
               </div>
             )}
             <div className="flex gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm sm:text-base">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-bold text-sm sm:text-base">
                 👤
               </div>
               <div className="flex-1">
-                <div className="flex items-end gap-2 sm:gap-3 bg-[#27272a]/30 backdrop-blur-sm rounded-xl sm:rounded-2xl border border-[#b76e79]/10 p-1 relative" ref={commentEmojiContainerRef}>
+                <div className="flex items-end gap-2 sm:gap-3 bg-[#27272a]/30 backdrop-blur-sm rounded-xl sm:rounded-2xl border border-[#22c55e]/10 p-1 relative" ref={commentEmojiContainerRef}>
                   <textarea
                     ref={commentInputRef}
                     value={newComment}
@@ -1968,7 +1968,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                         }
                         setOpenCommentEmojiPicker(prev => !prev);
                       }}
-                      className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl sm:rounded-2xl text-lg sm:text-xl text-zinc-300 hover:text-[#b76e79] hover:bg-[#b76e79]/10 transition-colors"
+                      className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl sm:rounded-2xl text-lg sm:text-xl text-zinc-300 hover:text-[#22c55e] hover:bg-[#22c55e]/10 transition-colors"
                       aria-label="Insert emoji"
                       type="button"
                     >
@@ -1976,7 +1976,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                     </button>
 
                     {openCommentEmojiPicker && (
-                      <div className={`absolute z-50 mt-2 top-full bg-black/90 border border-[#b76e79]/20 rounded-2xl p-2 shadow-xl backdrop-blur-sm max-w-[calc(100vw-24px)] w-64 sm:w-80 max-h-60 overflow-y-auto ${
+                      <div className={`absolute z-50 mt-2 top-full bg-black/90 border border-[#22c55e]/20 rounded-2xl p-2 shadow-xl backdrop-blur-sm max-w-[calc(100vw-24px)] w-64 sm:w-80 max-h-60 overflow-y-auto ${
                         commentEmojiSide === 'right' ? 'right-0' : commentEmojiSide === 'center' ? 'left-1/2 -translate-x-1/2' : 'left-0'
                       }`}>
                         <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
@@ -2005,7 +2005,7 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
                     disabled={!newComment.trim()}
                     className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 ${
                       newComment.trim()
-                        ? 'bg-gradient-to-r from-[#b76e79] to-[#b76e79] hover:from-[#b76e79] hover:to-[#b76e79] text-black '
+                        ? 'bg-gradient-to-r from-[#22c55e] to-[#22c55e] hover:from-[#22c55e] hover:to-[#22c55e] text-black '
                         : 'bg-black/70 text-[#a1a1aa] cursor-not-allowed'
                     }`}
                   >
@@ -2022,13 +2022,13 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
           {/* Comments List */}
           <div className="flex-1 overflow-y-auto">
             {comments.length > 0 ? (
-              <div className="divide-y divide-[#b76e79]/5">
+              <div className="divide-y divide-[#22c55e]/5">
                 {getSortedComments().map(comment => renderComment(comment))}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-20">
-                <div className="w-16 h-16 bg-[#b76e79]/10 rounded-3xl flex items-center justify-center mb-4">
-                  <MessageCircle className="w-8 h-8 text-[#b76e79]/60" />
+                <div className="w-16 h-16 bg-[#22c55e]/10 rounded-3xl flex items-center justify-center mb-4">
+                  <MessageCircle className="w-8 h-8 text-[#22c55e]/60" />
                 </div>
                 <p className="text-zinc-300 font-medium mb-2">No comments yet</p>
                 <p className="text-zinc-500 text-sm text-center">

@@ -148,7 +148,7 @@ const confessionBadges: Badge[] = [
     name: 'First Whisper',
     description: 'Posted your first confession',
     icon: '🌟',
-    color: 'text-yellow-400',
+    color: 'text-green-400',
     pfpColor: 'from-gray-600 to-gray-700', // Same as default
     requirement: { type: 'confessions', count: 1 }
   },
@@ -158,7 +158,7 @@ const confessionBadges: Badge[] = [
     description: 'Posted 10 confessions',
     icon: '💚',
     color: 'text-green-400',
-    pfpColor: 'from-softgold-500 to-softgold-600',
+    pfpColor: 'from-green-500 to-green-600',
     requirement: { type: 'confessions', count: 10 }
   },
   {
@@ -166,8 +166,8 @@ const confessionBadges: Badge[] = [
     name: 'Confession Machine',
     description: 'Posted 50+ confessions',
     icon: '🔵',
-    color: 'text-blue-400',
-    pfpColor: 'from-softgold-600 to-softgold-700',
+    color: 'text-green-400',
+    pfpColor: 'from-green-600 to-green-700',
     requirement: { type: 'confessions', count: 50 }
   },
   {
@@ -175,8 +175,8 @@ const confessionBadges: Badge[] = [
     name: 'Golden Confesser',
     description: 'Posted 300+ confessions',
     icon: '👑',
-    color: 'text-[#b76e79]',
-    pfpColor: 'from-[#b76e79] to-[#b76e79]',
+    color: 'text-green-500',
+    pfpColor: 'from-green-500 to-green-500',
     requirement: { type: 'confessions', count: 300 }
   },
   {
@@ -185,7 +185,7 @@ const confessionBadges: Badge[] = [
     description: 'High engagement anonymous writer',
     icon: '👻',
     color: 'text-purple-400',
-    pfpColor: 'from-softgold-700 to-softgold-800',
+    pfpColor: 'from-green-700 to-green-800',
     requirement: { type: 'engagement', minEngagement: 500 }
   }
 ];
@@ -285,14 +285,14 @@ const reactionEmojis = [
   { emoji: '🔮', name: 'crystal_ball', category: 'symbols' },
 ];
 const colors = [
-  'from-softgold-400 to-softgold-600',
-  'from-softgold-500 to-softgold-700',
-  'from-softgold-600 to-softgold-800',
-  'from-softgold-300 to-softgold-500',
-  'from-softgold-700 to-softgold-900',
-  'from-softgold-400 to-softgold-700',
-  'from-softgold-500 to-softgold-800',
-  'from-softgold-600 to-softgold-900'
+  'from-green-400 to-green-600',
+  'from-green-500 to-green-700',
+  'from-green-600 to-green-800',
+  'from-green-300 to-green-500',
+  'from-green-700 to-green-900',
+  'from-green-400 to-green-700',
+  'from-green-500 to-green-800',
+  'from-green-600 to-green-900'
 ];
 
 const famousAliasNames = [
@@ -668,7 +668,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
         authorAlias: {
       name: typeof reply.alias === 'string' ? reply.alias : reply.alias?.name || reply.alias || 'Anonymous',
       emoji: '👤',
-      color: 'from-blue-500 to-indigo-500'
+      color: 'from-green-500 to-green-600'
     },
     score: reply.score || 0,
     userVote: reply.userVote || 0
@@ -1859,7 +1859,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
     return (
       <div className="fixed inset-0 bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 z-50">
         
-        <div className="relative bg-black/80 backdrop-blur-2xl border-2 border-rosegold-500 rounded-3xl p-8 w-full max-w-md">
+        <div className="relative bg-black/80 backdrop-blur-2xl border-2 border-green-500 rounded-3xl p-8 w-full max-w-md">
           {/* Glassmorphism overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl"></div>
           
@@ -1872,10 +1872,10 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                   <img 
                     src={alias.imageUrl} 
                     alt="Alias avatar" 
-                    className="relative w-24 h-24 rounded-3xl object-cover border-2 border-[#b76e79]/30 " 
+                    className="relative w-24 h-24 rounded-3xl object-cover border-2 border-[#22c55e]/30 " 
                   />
                 ) : (
-                  <div className={`relative w-24 h-24 bg-gradient-to-br ${alias.color} rounded-3xl flex items-center justify-center text-4xl border-2 border-[#b76e79]/30 `}>
+                  <div className={`relative w-24 h-24 bg-gradient-to-br ${alias.color} rounded-3xl flex items-center justify-center text-4xl border-2 border-[#22c55e]/30 `}>
                     {alias.emoji}
                   </div>
                 )}
@@ -1886,7 +1886,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
               </h2>
               <p className="text-[#a1a1aa] text-sm leading-relaxed px-2">
                 Choose an anonymous identity for this session.<br/>
-                <span className="text-[#b76e79]/80">Complete privacy guaranteed.</span>
+                <span className="text-[#22c55e]/80">Complete privacy guaranteed.</span>
               </p>
             </div>
 
@@ -1906,13 +1906,13 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                       onChange={(e) => setAlias(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Enter your alias..."
                       maxLength={20}
-                      className="w-full bg-black/50 backdrop-blur-sm border border-[#b76e79]/20 rounded-2xl px-4 py-3 text-white placeholder-zinc-500 focus:border-[#b76e79]/50 focus:outline-none focus:ring-2 focus:ring-[#b76e79]/20 transition-all duration-300"
+                      className="w-full bg-black/50 backdrop-blur-sm border border-[#22c55e]/20 rounded-2xl px-4 py-3 text-white placeholder-zinc-500 focus:border-[#22c55e]/50 focus:outline-none focus:ring-2 focus:ring-[#22c55e]/20 transition-all duration-300"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#b76e79]/5 to-transparent rounded-2xl pointer-events-none"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#22c55e]/5 to-transparent rounded-2xl pointer-events-none"></div>
                   </div>
                   <button
                     onClick={generateNewAlias}
-                    className="w-12 h-12 bg-black/50 backdrop-blur-sm hover:bg-black/70 text-[#b76e79] hover:text-[#b76e79] rounded-2xl transition-all duration-300 border border-[#b76e79]/20 hover:border-[#b76e79]/40 flex items-center justify-center group"
+                    className="w-12 h-12 bg-black/50 backdrop-blur-sm hover:bg-black/70 text-[#22c55e] hover:text-[#22c55e] rounded-2xl transition-all duration-300 border border-[#22c55e]/20 hover:border-[#22c55e]/40 flex items-center justify-center group"
                     title="Generate random alias"
                   >
                     <span className="text-xl group-hover:scale-110 transition-transform duration-200">🎲</span>
@@ -1965,7 +1965,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                   />
                   <button
                     onClick={() => document.getElementById('alias-avatar-input')?.click()}
-                    className="flex-1 px-4 py-3 bg-black/50 backdrop-blur-sm hover:bg-black/70 text-[#b76e79] rounded-2xl border border-[#b76e79]/20 hover:border-[#b76e79]/40 transition-all duration-300 text-sm font-medium"
+                    className="flex-1 px-4 py-3 bg-black/50 backdrop-blur-sm hover:bg-black/70 text-[#22c55e] rounded-2xl border border-[#22c55e]/20 hover:border-[#22c55e]/40 transition-all duration-300 text-sm font-medium"
                   >
                     📸 Upload Photo
                   </button>
@@ -1995,7 +1995,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                 <button
                   onClick={handleAliasContinue}
                   disabled={!alias.name.trim()}
-                  className="relative bg-gradient-to-r from-[#b76e79] to-[#b76e79] hover:from-[#b76e79] hover:to-[#b76e79] text-black px-8 py-3 rounded-2xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 disabled:hover:scale-100"
+                  className="relative bg-gradient-to-r from-[#22c55e] to-[#22c55e] hover:from-[#22c55e] hover:to-[#22c55e] text-black px-8 py-3 rounded-2xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 disabled:hover:scale-100"
                 >
                   <span className="relative z-10">Enter Anonymously</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
@@ -2011,20 +2011,20 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
   if (showDisclaimer) {
     return (
       <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-6">
-        <div className="bg-black border border-[#b76e79]/30 rounded-2xl p-8 max-w-2xl w-full">
+        <div className="bg-black border border-[#22c55e]/30 rounded-2xl p-8 max-w-2xl w-full">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-[#b76e79]/30 flex items-center justify-center border border-[#b76e79]/30">
-              <Shield className="w-6 h-6 text-[#b76e79]" />
+            <div className="w-12 h-12 rounded-xl bg-[#22c55e]/30 flex items-center justify-center border border-[#22c55e]/30">
+              <Shield className="w-6 h-6 text-[#22c55e]" />
             </div>
             <h3 className="text-2xl font-bold text-white">Complete Anonymity Guaranteed</h3>
           </div>
-          <div className="bg-[#b76e79]/10 border border-[#b76e79]/20 rounded-lg p-4 mb-6">
+          <div className="bg-[#22c55e]/10 border border-[#22c55e]/20 rounded-lg p-4 mb-6">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-lg bg-red-900/30 flex items-center justify-center border border-red-500/30 flex-shrink-0 mt-0.5">
                 <span className="text-red-400 text-sm">⚠️</span>
               </div>
               <div>
-                <h4 className="text-[#b76e79] font-semibold mb-2">Important Reminder</h4>
+                <h4 className="text-[#22c55e] font-semibold mb-2">Important Reminder</h4>
                 <p className="text-zinc-300 leading-relaxed">
                   This is a safe space for sharing thoughts. Please be respectful and kind. 
                   Harassment, bullying, or harmful content is not tolerated. 
@@ -2039,7 +2039,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
           <div className="flex items-center justify-end">
             <button
               onClick={() => setShowDisclaimer(false)}
-              className="bg-rosegold-500 hover:bg-rosegold-600 text-white px-6 py-2 rounded-lg font-medium shadow-button transition-colors"
+              className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium shadow-button transition-colors"
             >
               I understand
             </button>
@@ -2065,21 +2065,21 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
 
       {/* Modern Header */}
       {/* Header Section */}
-      <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-2xl border-b border-[#b76e79]/10">
+      <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-2xl border-b border-[#22c55e]/10">
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Left Side - Hamburger, Back Button and Title */}
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="p-2 rounded-xl hover:bg-[#b76e79]/10 text-[#b76e79] hover:text-[#b76e79]/80 transition-colors"
+                className="p-2 rounded-xl hover:bg-[#22c55e]/10 text-[#22c55e] hover:text-[#22c55e]/80 transition-colors"
                 aria-label="Toggle menu"
               >
                 <Menu className="w-5 h-5" />
               </button>
               <button
                 onClick={onBack}
-                className="text-[#b76e79] hover:text-[#b76e79]/80 transition-colors p-2 rounded-xl hover:bg-[#b76e79]/10"
+                className="text-[#22c55e] hover:text-[#22c55e]/80 transition-colors p-2 rounded-xl hover:bg-[#22c55e]/10"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -2094,7 +2094,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsSearchOpen(true)}
-                className="flex items-center justify-center w-9 h-9 bg-[#000000]/50 hover:bg-[#000000]/70 text-[#b76e79] hover:text-[#b76e79]/80 rounded-lg border border-[#b76e79]/20 hover:border-[#b76e79]/40 transition-all duration-200"
+                className="flex items-center justify-center w-9 h-9 bg-[#000000]/50 hover:bg-[#000000]/70 text-[#22c55e] hover:text-[#22c55e]/80 rounded-lg border border-[#22c55e]/20 hover:border-[#22c55e]/40 transition-all duration-200"
                 title="Search"
               >
                 <Search className="w-4 h-4" />
@@ -2114,13 +2114,13 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
             }
           }}
         >
-          <div className="bg-black/95 backdrop-blur-xl border border-[#b76e79]/20 rounded-2xl p-6 w-full max-w-2xl shadow-2xl">
+          <div className="bg-black/95 backdrop-blur-xl border border-[#22c55e]/20 rounded-2xl p-6 w-full max-w-2xl shadow-2xl">
             {/* Search Header */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-white">Search Confessions</h2>
               <button
                 onClick={() => setIsSearchOpen(false)}
-                className="p-2 rounded-lg hover:bg-[#b76e79]/10 text-[#b76e79] hover:text-[#b76e79]/80 transition-colors"
+                className="p-2 rounded-lg hover:bg-[#22c55e]/10 text-[#22c55e] hover:text-[#22c55e]/80 transition-colors"
                 title="Close"
               >
                 <X className="w-5 h-5" />
@@ -2129,14 +2129,14 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
 
             {/* Search Input */}
             <div className="relative mb-6">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b76e79]/60" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#22c55e]/60" />
               <input
                 ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 placeholder="Search confessions, authors, or polls..."
-                className="w-full pl-12 pr-4 py-3 bg-black/50 border border-[#b76e79]/20 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-[#b76e79]/50 focus:ring-2 focus:ring-[#b76e79]/20 transition-all duration-300"
+                className="w-full pl-12 pr-4 py-3 bg-black/50 border border-[#22c55e]/20 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-[#22c55e]/50 focus:ring-2 focus:ring-[#22c55e]/20 transition-all duration-300"
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') {
                     setIsSearchOpen(false);
@@ -2146,7 +2146,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
               {searchQuery && (
                 <button
                   onClick={() => handleSearch('')}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400 hover:text-[#b76e79] transition-colors"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400 hover:text-[#22c55e] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -2165,9 +2165,9 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                         handleSearch(search);
                         setIsSearchOpen(false);
                       }}
-                      className="w-full text-left p-3 bg-black/50 hover:bg-[#b76e79]/10 border border-[#b76e79]/10 hover:border-[#b76e79]/30 rounded-lg text-white transition-colors flex items-center gap-3"
+                      className="w-full text-left p-3 bg-black/50 hover:bg-[#22c55e]/10 border border-[#22c55e]/10 hover:border-[#22c55e]/30 rounded-lg text-white transition-colors flex items-center gap-3"
                     >
-                      <Search className="w-4 h-4 text-[#b76e79]/60" />
+                      <Search className="w-4 h-4 text-[#22c55e]/60" />
                       <span>{search}</span>
                     </button>
                   ))}
@@ -2206,7 +2206,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
               {/* Confessions List */}
               <div className="space-y-0">
             {filteredConfessions.map((confession, index) => (
-              <div key={confession.id} className={`relative group py-6 px-2 ${confession.isExplicit ? 'border-2 border-red-500/40 rounded-3xl bg-red-900/5 backdrop-blur-sm' : ''}`}>
+              <div key={confession.id} className={`relative group py-6 px-4 border-l-2 border-green-500/30 hover:border-green-500/50 transition-colors ${confession.isExplicit ? 'border-2 border-red-500/40 rounded-3xl bg-red-900/5 backdrop-blur-sm' : ''}`}>
 
                 {/* Author Header */}
                 <div className="flex items-center justify-between mb-6">
@@ -2216,15 +2216,15 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                         <img 
                           src={confession.authorAlias?.imageUrl} 
                           alt="Author avatar" 
-                          className="w-10 h-10 rounded-full object-cover border-2 border-[#b76e79]/20 " 
+                          className="w-10 h-10 rounded-full object-cover border-2 border-[#22c55e]/20 " 
                         />
                       ) : (
-                        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${confession.authorAlias?.color || 'from-gray-500 to-gray-600'} flex items-center justify-center text-white text-lg font-bold  border-2 border-[#b76e79]/20`}>
+                        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${confession.authorAlias?.color || 'from-gray-500 to-gray-600'} flex items-center justify-center text-white text-lg font-bold  border-2 border-[#22c55e]/20`}>
                           {confession.authorAlias?.emoji || '👤'}
                         </div>
                       )}
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-black rounded-full flex items-center justify-center border border-[#b76e79]/30">
-                        <EyeOff className="w-2.5 h-2.5 text-[#b76e79]" />
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-black rounded-full flex items-center justify-center border border-[#22c55e]/30">
+                        <EyeOff className="w-2.5 h-2.5 text-[#22c55e]" />
                       </div>
                     </div>
                     <div>
@@ -2246,13 +2246,13 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                   {/* Desktop Vote sidebar */}
                 {(!confession.isExplicit || revealedContent[confession.id]) && (
                   <div className="hidden md:flex flex-col items-center self-start gap-3">
-                    <div className="bg-black/50 backdrop-blur-sm rounded-2xl p-3 border border-[#b76e79]/10 ">
+                    <div className="bg-black/50 backdrop-blur-sm rounded-2xl p-3 border border-[#22c55e]/10 ">
                       <button
                         onClick={() => toggleVote(confession.id, 1)}
                         className={`p-2.5 rounded-2xl transition-all duration-300 group ${
                           confession.userVote === 1 
-                            ? 'text-blue-400 bg-blue-400/20  shadow-blue-400/20' 
-                            : 'text-[#a1a1aa] hover:text-blue-400 hover:bg-blue-400/10'
+                            ? 'text-green-400 bg-green-400/20  shadow-green-400/20' 
+                            : 'text-[#a1a1aa] hover:text-green-400 hover:bg-green-400/10'
                         }`}
                         title="Upvote"
                       >
@@ -2290,7 +2290,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                     <div className="relative">
                       {confession.backgroundImageUrl ? (
                         <div 
-                          className={`rounded-3xl overflow-hidden border border-[#b76e79]/10 mb-6 cursor-pointer hover:border-[#b76e79]/20 transition-all duration-300 group ${
+                          className={`rounded-3xl overflow-hidden border border-[#22c55e]/10 mb-6 cursor-pointer hover:border-[#22c55e]/20 transition-all duration-300 group ${
                             confession.isExplicit && !revealedContent[confession.id] ? 'blur-lg' : ''
                           }`}
                           onClick={() => setSelectedConfessionId(confession.id)}
@@ -2328,7 +2328,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                         </div>
                       ) : (
                         <div 
-                          className={`mb-6 hover:bg-[#b76e79]/5 rounded-2xl p-4 -m-4 transition-all duration-300 ${
+                          className={`mb-6 hover:bg-[#22c55e]/5 rounded-2xl p-4 -m-4 transition-all duration-300 ${
                             confession.isExplicit && !revealedContent[confession.id] ? 'blur-lg' : ''
                           }`}
                         >
@@ -2343,7 +2343,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                               {shouldShowMore(confession.content) && (
                                 <button
                                   onClick={() => setSelectedConfessionId(confession.id)}
-                                  className="mt-3 text-[#b76e79] hover:text-white font-medium text-sm transition-colors duration-200 flex items-center gap-1"
+                                  className="mt-3 text-[#22c55e] hover:text-white font-medium text-sm transition-colors duration-200 flex items-center gap-1"
                                 >
                                   Show more
                                   <ArrowLeft className="w-3 h-3 rotate-90" />
@@ -2388,7 +2388,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
 
                     {/* Poll Section */}
                     {confession.poll && (
-                      <div className={`mb-6 relative bg-black/50 backdrop-blur-sm rounded-3xl p-6 border border-[#b76e79]/10  z-10 ${
+                      <div className={`mb-6 relative bg-black/50 backdrop-blur-sm rounded-3xl p-6 border border-[#22c55e]/10  z-10 ${
                         confession.isExplicit && !revealedContent[confession.id] ? 'blur-lg' : ''
                       }`}>
                         {/* Glassmorphism overlay */}
@@ -2397,8 +2397,8 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                         <div className="relative z-10">
                           {/* Poll Header */}
                           <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 bg-[#b76e79]/20 rounded-2xl flex items-center justify-center">
-                              <BarChart3 className="w-5 h-5 text-[#b76e79]" />
+                            <div className="w-10 h-10 bg-[#22c55e]/20 rounded-2xl flex items-center justify-center">
+                              <BarChart3 className="w-5 h-5 text-[#22c55e]" />
                             </div>
                             <div>
                               <h4 className="text-white font-semibold text-lg">Poll</h4>
@@ -2422,16 +2422,16 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                                   onClick={() => handlePollVote(confession.id, index)}
                                   className={`w-full group relative overflow-hidden rounded-2xl border transition-all duration-300 hover:scale-[1.02] ${
                                     isSelected
-                                      ? 'border-[#b76e79]/50 bg-[#b76e79]/20 '
-                                      : 'border-[#b76e79]/20 hover:border-[#b76e79]/40 hover:bg-[#b76e79]/10'
+                                      ? 'border-[#22c55e]/50 bg-[#22c55e]/20 '
+                                      : 'border-[#22c55e]/20 hover:border-[#22c55e]/40 hover:bg-[#22c55e]/10'
                                   }`}
                                 >
                                   {/* Progress bar background */}
                                   <div 
                                     className={`absolute inset-0 transition-all duration-700 ${
                                       isSelected 
-                                        ? 'bg-gradient-to-r from-[#b76e79]/30 to-[#b76e79]/20' 
-                                        : 'bg-gradient-to-r from-[#b76e79]/10 to-transparent'
+                                        ? 'bg-gradient-to-r from-[#22c55e]/30 to-[#22c55e]/20' 
+                                        : 'bg-gradient-to-r from-[#22c55e]/10 to-transparent'
                                     }`}
                                     style={{ width: `${percentage}%` }}
                                   />
@@ -2441,15 +2441,15 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                                     <div className="flex items-center gap-3">
                                       <div className={`w-6 h-6 rounded-full border-2 transition-all duration-300 ${
                                         isSelected 
-                                          ? 'border-[#b76e79] bg-[#b76e79]' 
-                                          : 'border-zinc-400 group-hover:border-[#b76e79]'
+                                          ? 'border-[#22c55e] bg-[#22c55e]' 
+                                          : 'border-zinc-400 group-hover:border-[#22c55e]'
                                       }`}>
                                         {isSelected && (
                                           <div className="w-2 h-2 bg-white rounded-full mx-auto mt-1"></div>
                                         )}
                                       </div>
                                       <span className={`font-medium transition-colors duration-300 ${
-                                        isSelected ? 'text-[#b76e79]' : 'text-zinc-200 group-hover:text-[#b76e79]'
+                                        isSelected ? 'text-[#22c55e]' : 'text-zinc-200 group-hover:text-[#22c55e]'
                                       }`}>
                                         {option}
                                       </span>
@@ -2457,12 +2457,12 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                                     
                                     <div className="flex items-center gap-3">
                                       <span className={`text-sm font-semibold transition-colors duration-300 ${
-                                        isSelected ? 'text-[#b76e79]' : 'text-[#a1a1aa] group-hover:text-[#b76e79]'
+                                        isSelected ? 'text-[#22c55e]' : 'text-[#a1a1aa] group-hover:text-[#22c55e]'
                                       }`}>
                                         {percentage.toFixed(0)}%
                                       </span>
                                       <span className={`text-xs transition-colors duration-300 ${
-                                        isSelected ? 'text-[#b76e79]' : 'text-zinc-500 group-hover:text-[#b76e79]'
+                                        isSelected ? 'text-[#22c55e]' : 'text-zinc-500 group-hover:text-[#22c55e]'
                                       }`}>
                                         ({optionVotes})
                                       </span>
@@ -2474,7 +2474,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                           </div>
                           
                           {/* Poll Stats */}
-                          <div className="mt-4 pt-4 border-t border-[#b76e79]/10">
+                          <div className="mt-4 pt-4 border-t border-[#22c55e]/10">
                             <div className="flex items-center justify-between text-sm">
                               <span className="text-[#a1a1aa]">
                                 {Object.keys(confession.poll.votes || {}).length} total votes
@@ -2520,8 +2520,8 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                                 onClick={() => toggleReaction(confession.id, type)}
                                 className={`group flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm border transition-all duration-300 hover:scale-105 ${
                                   data.userReacted 
-                                    ? 'border-[#b76e79]/50 text-[#b76e79] bg-[#b76e79]/20 ' 
-                                    : 'border-[#b76e79]/20 text-zinc-300 hover:border-[#b76e79]/40 hover:bg-[#b76e79]/10 hover:text-[#b76e79]'
+                                    ? 'border-[#22c55e]/50 text-[#22c55e] bg-[#22c55e]/20 ' 
+                                    : 'border-[#22c55e]/20 text-zinc-300 hover:border-[#22c55e]/40 hover:bg-[#22c55e]/10 hover:text-[#22c55e]'
                                 }`}
                                 title={`React with ${emojiData?.emoji || type}`}
                               >
@@ -2541,17 +2541,17 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                 
                 {/* Modern Footer */}
                 {(!confession.isExplicit || revealedContent[confession.id]) && (
-                <div className="flex items-center justify-between pt-6 border-t border-[#b76e79]/5 relative">
+                <div className="flex items-center justify-between pt-6 border-t border-[#22c55e]/5 relative">
                   <div className="flex items-center gap-6">
                     {/* Mobile vote controls */}
                     <div className="flex md:hidden items-center gap-3">
-                      <div className="flex items-center gap-3 bg-black/50 backdrop-blur-sm rounded-2xl p-2 border border-[#b76e79]/10">
+                      <div className="flex items-center gap-3 bg-black/50 backdrop-blur-sm rounded-2xl p-2 border border-[#22c55e]/10">
                         <button 
                           onClick={() => toggleVote(confession.id, 1)} 
                           className={`p-2 rounded-xl transition-all duration-300 group ${
                             confession.userVote === 1 
-                              ? 'text-blue-400 bg-blue-400/20  shadow-blue-400/20' 
-                              : 'text-[#a1a1aa] hover:text-blue-400 hover:bg-blue-400/10'
+                              ? 'text-green-400 bg-green-400/20  shadow-green-400/20' 
+                              : 'text-[#a1a1aa] hover:text-green-400 hover:bg-green-400/10'
                           }`} 
                           title="Upvote"
                         >
@@ -2578,7 +2578,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                     {/* Reply button */}
                     <button 
                       onClick={() => setSelectedConfessionId(confession.id)}
-                      className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-zinc-300 hover:text-[#b76e79] hover:bg-[#b76e79]/10 transition-all duration-300 border border-[#b76e79]/10 hover:border-[#b76e79]/20 group hover:scale-105"
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-zinc-300 hover:text-[#22c55e] hover:bg-[#22c55e]/10 transition-all duration-300 border border-[#22c55e]/10 hover:border-[#22c55e]/20 group hover:scale-105"
                     >
                       <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                       <span className="font-medium">{getCommentCount(confession)}</span>
@@ -2590,12 +2590,12 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
 
                 {/* Modern Reply Section */}
                 {showReplies[confession.id] && (
-                  <div className="mt-6 pt-6 border-t border-[#b76e79]/10">
+                  <div className="mt-6 pt-6 border-t border-[#22c55e]/10">
                     {/* Header */}
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-[#b76e79]/20 rounded-2xl flex items-center justify-center">
-                          <MessageCircle className="w-4 h-4 text-[#b76e79]" />
+                        <div className="w-8 h-8 bg-[#22c55e]/20 rounded-2xl flex items-center justify-center">
+                          <MessageCircle className="w-4 h-4 text-[#22c55e]" />
                         </div>
                         <div>
                           <h4 className="text-white font-semibold">Anonymous Replies</h4>
@@ -2603,7 +2603,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                         </div>
                       </div>
                       {loadingReplies[confession.id] && (
-                        <div className="w-6 h-6 border-2 border-[#b76e79] border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-6 h-6 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin"></div>
                       )}
                     </div>
                     
@@ -2618,23 +2618,23 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                                 <img 
                                   src={reply.authorAlias.imageUrl} 
                                   alt="Reply author avatar" 
-                                  className="w-10 h-10 rounded-full object-cover border-2 border-[#b76e79]/20 " 
+                                  className="w-10 h-10 rounded-full object-cover border-2 border-[#22c55e]/20 " 
                                 />
                               ) : (
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#b76e79] to-[#b76e79] flex items-center justify-center text-black text-sm font-bold border-2 border-[#b76e79]/20 ">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#22c55e] to-[#22c55e] flex items-center justify-center text-black text-sm font-bold border-2 border-[#22c55e]/20 ">
                                   {reply.authorAlias?.emoji || '👤'}
                                 </div>
                               )}
                               {/* Connection line for threading */}
                               {index < (confession.repliesList?.length || 0) - 1 && (
-                                <div className="absolute top-12 left-1/2 w-0.5 h-8 bg-gradient-to-b from-[#b76e79]/20 to-transparent transform -translate-x-px"></div>
+                                <div className="absolute top-12 left-1/2 w-0.5 h-8 bg-gradient-to-b from-[#22c55e]/20 to-transparent transform -translate-x-px"></div>
                               )}
                             </div>
                             
                             {/* Reply Content */}
                             <div className="flex-1 min-w-0">
                               {/* Reply Bubble */}
-                              <div className="relative bg-[#27272a]/40 backdrop-blur-sm border border-[#b76e79]/10 rounded-3xl rounded-tl-lg p-4  group-hover:shadow-[#b76e79]/5 transition-all duration-300">
+                              <div className="relative bg-[#27272a]/40 backdrop-blur-sm border border-[#22c55e]/10 rounded-3xl rounded-tl-lg p-4  group-hover:shadow-[#22c55e]/5 transition-all duration-300">
                                 {/* Glassmorphism overlay */}
                                 <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl rounded-tl-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                 
@@ -2651,13 +2651,13 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                                 </div>
                                 
                                 {/* Reply Voting */}
-                                <div className="flex items-center gap-2 bg-[#27272a]/30 backdrop-blur-sm rounded-2xl p-1 border border-[#b76e79]/10">
+                                <div className="flex items-center gap-2 bg-[#27272a]/30 backdrop-blur-sm rounded-2xl p-1 border border-[#22c55e]/10">
                                   <button
                                     onClick={() => toggleReplyVote(confession.id, reply.id, 1)}
                                     className={`p-1.5 rounded-xl transition-all duration-300 group ${
                                       (reply.userVote ?? 0) === 1 
-                                        ? 'text-[#b76e79] bg-[#b76e79]/20 ' 
-                                        : 'text-[#a1a1aa] hover:text-[#b76e79] hover:bg-[#b76e79]/10'
+                                        ? 'text-[#22c55e] bg-[#22c55e]/20 ' 
+                                        : 'text-[#a1a1aa] hover:text-[#22c55e] hover:bg-[#22c55e]/10'
                                     }`}
                                     title="Upvote reply"
                                   >
@@ -2670,8 +2670,8 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                                     onClick={() => toggleReplyVote(confession.id, reply.id, -1)}
                                     className={`p-1.5 rounded-xl transition-all duration-300 group ${
                                       (reply.userVote ?? 0) === -1 
-                                        ? 'text-[#b76e79] bg-[#b76e79]/20 ' 
-                                        : 'text-[#a1a1aa] hover:text-[#b76e79] hover:bg-[#b76e79]/10'
+                                        ? 'text-[#22c55e] bg-[#22c55e]/20 ' 
+                                        : 'text-[#a1a1aa] hover:text-[#22c55e] hover:bg-[#22c55e]/10'
                                     }`}
                                     title="Downvote reply"
                                   >
@@ -2683,9 +2683,9 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                           </div>
                         </div>
                       )) : (
-                        <div className="text-center py-12 bg-black/40 backdrop-blur-sm rounded-3xl border border-[#b76e79]/10">
-                          <div className="w-16 h-16 bg-[#b76e79]/10 rounded-3xl mx-auto mb-4 flex items-center justify-center">
-                            <MessageCircle className="w-8 h-8 text-[#b76e79]/60" />
+                        <div className="text-center py-12 bg-black/40 backdrop-blur-sm rounded-3xl border border-[#22c55e]/10">
+                          <div className="w-16 h-16 bg-[#22c55e]/10 rounded-3xl mx-auto mb-4 flex items-center justify-center">
+                            <MessageCircle className="w-8 h-8 text-[#22c55e]/60" />
                           </div>
                           <p className="text-zinc-300 font-medium mb-2">No replies yet</p>
                           <p className="text-zinc-500 text-sm">Be the first to share your thoughts anonymously</p>
@@ -2694,7 +2694,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                     </div>
 
                     {/* Modern Reply Input */}
-                    <div className="bg-black/40 backdrop-blur-sm rounded-3xl p-4 border border-[#b76e79]/10">
+                    <div className="bg-black/40 backdrop-blur-sm rounded-3xl p-4 border border-[#22c55e]/10">
                           <div className="flex items-end gap-4" data-reply-input>
                         {/* User Avatar */}
                         <div className="flex-shrink-0">
@@ -2702,10 +2702,10 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                             <img 
                               src={alias.imageUrl} 
                               alt="Your avatar" 
-                              className="w-10 h-10 rounded-full object-cover border-2 border-[#b76e79]/20 " 
+                              className="w-10 h-10 rounded-full object-cover border-2 border-[#22c55e]/20 " 
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#b76e79] to-[#b76e79] flex items-center justify-center text-black text-sm font-bold border-2 border-[#b76e79]/20 ">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#22c55e] to-[#22c55e] flex items-center justify-center text-black text-sm font-bold border-2 border-[#22c55e]/20 ">
                               {alias.emoji}
                             </div>
                           )}
@@ -2713,7 +2713,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                         
                         {/* Input Area */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 bg-black/60 backdrop-blur-sm rounded-2xl border border-[#b76e79]/10 p-1">
+                          <div className="flex items-center gap-3 bg-black/60 backdrop-blur-sm rounded-2xl border border-[#22c55e]/10 p-1">
                             <input
                               type="text"
                               placeholder="Share your anonymous thoughts..."
@@ -2743,14 +2743,14 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                                   }
                                   setOpenReplyEmojiPickerId(prev => prev === confession.id ? null : confession.id);
                                 }}
-                                className="w-10 h-10 flex items-center justify-center rounded-xl text-xl text-zinc-300 hover:text-[#b76e79] hover:bg-[#b76e79]/10 transition-colors"
+                                className="w-10 h-10 flex items-center justify-center rounded-xl text-xl text-zinc-300 hover:text-[#22c55e] hover:bg-[#22c55e]/10 transition-colors"
                                 aria-label="Insert emoji"
                               >
                                 🙂
                               </button>
 
                               {openReplyEmojiPickerId === confession.id && (
-                                <div className={`absolute z-50 mt-2 top-full bg-black/90 border border-[#b76e79]/20 rounded-2xl p-2 shadow-xl backdrop-blur-sm max-w-[calc(100vw-24px)] ${
+                                <div className={`absolute z-50 mt-2 top-full bg-black/90 border border-[#22c55e]/20 rounded-2xl p-2 shadow-xl backdrop-blur-sm max-w-[calc(100vw-24px)] ${
                                   replyEmojiPickerSide === 'right' ? 'right-0' : replyEmojiPickerSide === 'center' ? 'left-1/2 -translate-x-1/2' : 'left-0'
                                 }`}>
                                   <div className="flex gap-2">
@@ -2788,7 +2788,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                                 }
                               }}
                               disabled={postingReply[confession.id]}
-                              className={`relative w-12 h-12 bg-gradient-to-r from-[#b76e79] to-[#b76e79] hover:from-[#b76e79] hover:to-[#b76e79] text-black rounded-2xl flex items-center justify-center transition-all duration-300   hover:scale-105 group ${
+                              className={`relative w-12 h-12 bg-gradient-to-r from-[#22c55e] to-[#22c55e] hover:from-[#22c55e] hover:to-[#22c55e] text-black rounded-2xl flex items-center justify-center transition-all duration-300   hover:scale-105 group ${
                                 postingReply[confession.id] ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''
                               }`}
                               aria-label="Send reply"
@@ -2812,7 +2812,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                 
                 {/* Separator line */}
                 {index < filteredConfessions.length - 1 && (
-                  <div className="border-b border-[#b76e79]/20 mt-8 mb-2"></div>
+                  <div className="border-b border-[#22c55e]/20 mt-8 mb-2"></div>
                 )}
               </div>
             ))}
@@ -2823,8 +2823,8 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
             <div className="flex flex-col items-center py-12">
               {/* Animated loading orb */}
               <div className="relative mb-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-[#b76e79] to-[#b76e79] rounded-full"></div>
-                <div className="absolute inset-0 w-12 h-12 border-4 border-[#b76e79]/30 border-t-[#b76e79] rounded-full animate-spin"></div>
+                <div className="w-12 h-12 bg-gradient-to-r from-[#22c55e] to-[#22c55e] rounded-full"></div>
+                <div className="absolute inset-0 w-12 h-12 border-4 border-[#22c55e]/30 border-t-[#22c55e] rounded-full animate-spin"></div>
               </div>
               <p className="text-[#a1a1aa] font-medium">Loading confessions...</p>
             </div>
@@ -2833,14 +2833,14 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
           {/* Load more trigger with subtle indicator */}
           {hasMore && !loading && (
             <div ref={loadMoreRef} className="h-8 flex items-center justify-center">
-              <div className="w-2 h-2 bg-[#b76e79]/30 rounded-full"></div>
+              <div className="w-2 h-2 bg-[#22c55e]/30 rounded-full"></div>
             </div>
           )}
           
           {/* End of feed indicator */}
           {!hasMore && !loading && filteredConfessions.length > 0 && (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-[#b76e79]/10 rounded-3xl mx-auto mb-4 flex items-center justify-center">
+              <div className="w-16 h-16 bg-[#22c55e]/10 rounded-3xl mx-auto mb-4 flex items-center justify-center">
                 <div className="text-2xl">✨</div>
               </div>
               <p className="text-[#a1a1aa] font-medium mb-2">You've reached the end</p>
@@ -2855,7 +2855,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
       {/* Floating Confess Button */}
       <button
         onClick={() => setShowComposerPage(true)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#b76e79] hover:bg-[#b76e79]/90 text-[#18181b] rounded-full shadow-lg shadow-[#b76e79]/50 transition-all duration-300 hover:scale-110 flex items-center justify-center group"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#22c55e] hover:bg-[#22c55e]/90 text-[#18181b] rounded-full shadow-lg shadow-[#22c55e]/50 transition-all duration-300 hover:scale-110 flex items-center justify-center group"
         title="Create confession"
       >
         <Plus className="w-6 h-6 text-black group-hover:rotate-90 transition-transform duration-300" />

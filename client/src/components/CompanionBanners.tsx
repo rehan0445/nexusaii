@@ -179,7 +179,7 @@ const CompanionBanners: React.FC<CompanionBannersProps> = ({
           <div className="max-w-2xl w-full md:max-w-4xl">
             {/* Trending Badge */}
             <div className="flex items-center space-x-1 sm:space-x-2 mb-2 sm:mb-3 md:mb-4">
-              <div className="flex items-center space-x-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-red-500 rounded-full">
+              <div className="flex items-center space-x-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-green-500 rounded-full">
                 <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 text-white" />
                 <span className="text-white text-xs md:text-sm font-bold">TRENDING</span>
               </div>
@@ -190,7 +190,7 @@ const CompanionBanners: React.FC<CompanionBannersProps> = ({
             <h1 className="text-xl sm:text-3xl lg:text-5xl md:text-6xl font-bold text-white mb-1 sm:mb-2 md:mb-4">
               {currentCharacter.name}
             </h1>
-            <p className="text-softgold-500 text-sm sm:text-lg lg:text-xl md:text-2xl font-medium mb-2 sm:mb-3">
+            <p className="text-green-500 text-sm sm:text-lg lg:text-xl md:text-2xl font-medium mb-2 sm:mb-3">
               {currentCharacter.role}
             </p>
             
@@ -220,7 +220,7 @@ const CompanionBanners: React.FC<CompanionBannersProps> = ({
             onClick={() => goToBanner(index)}
             className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
               index === currentBanner 
-                ? 'bg-softgold-500 w-6 sm:w-8' 
+                ? 'bg-green-500 w-6 sm:w-8' 
                 : 'bg-zinc-600 hover:bg-zinc-500 w-1.5 sm:w-2'
             }`}
           />

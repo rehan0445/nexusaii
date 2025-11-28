@@ -126,17 +126,17 @@ const CHAT_BUBBLE_THEMES: ChatBubbleTheme[] = [
     id: "love",
     name: "Love",
     baseColor: "#ec4899",
-    gradient: "bg-gradient-to-br from-pink-500 to-purple-600",
+    gradient: "bg-gradient-to-br from-green-500 to-emerald-600",
     animation: "",
-    icon: <Heart className="w-4 h-4 text-pink-500" />
+    icon: <Heart className="w-4 h-4 text-green-500" />
   },
   {
     id: "moon",
     name: "Moon",
     baseColor: "#6366f1",
-    gradient: "bg-gradient-to-br from-blue-600 to-purple-700",
+    gradient: "bg-gradient-to-br from-green-600 to-emerald-700",
     animation: "",
-    icon: <Moon className="w-4 h-4 text-blue-400" />
+    icon: <Moon className="w-4 h-4 text-green-400" />
   },
   {
     id: "forest",
@@ -158,7 +158,7 @@ const CHAT_BUBBLE_THEMES: ChatBubbleTheme[] = [
     id: "cyber",
     name: "Cyber",
     baseColor: "#00ffff",
-    gradient: "bg-gradient-to-br from-cyan-500 via-blue-600 to-purple-700",
+    gradient: "bg-gradient-to-br from-green-500 via-emerald-600 to-green-700",
     animation: "",
     icon: <div className="w-4 h-4 rounded bg-gradient-to-br from-cyan-500 to-purple-700" />
   },
@@ -166,9 +166,9 @@ const CHAT_BUBBLE_THEMES: ChatBubbleTheme[] = [
     id: "neon",
     name: "Neon",
     baseColor: "#ff00ff",
-    gradient: "bg-gradient-to-br from-fuchsia-500 via-pink-500 to-rose-600",
+    gradient: "bg-gradient-to-br from-green-500 via-emerald-500 to-green-600",
     animation: "",
-    icon: <div className="w-4 h-4 rounded bg-gradient-to-br from-fuchsia-500 to-rose-600" />
+    icon: <div className="w-4 h-4 rounded bg-gradient-to-br from-green-500 to-green-600" />
   },
   {
     id: "quantum",
@@ -1951,7 +1951,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
           <p className="text-zinc-400 mb-6">The character you're looking for doesn't exist.</p>
           <button
             onClick={() => navigate("/ai")}
-            className="px-6 py-2 bg-softgold-500 text-zinc-900 rounded-lg hover:bg-softgold-500 transition-colors"
+            className="px-6 py-2 bg-green-500 text-zinc-900 rounded-lg hover:bg-green-600 transition-colors"
           >
             Back to AI Chat
           </button>
@@ -1968,7 +1968,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
   const colorScheme = {
     background: isIncognito ? '#000000' : '#000000',
     surface: isIncognito ? '#000000' : '#000000',
-    accent: isIncognito ? '#d4af37' : '#d4af37',
+    accent: isIncognito ? '#22c55e' : '#22c55e',
     text: '#FFFFFF',
     textMuted: isIncognito ? '#999999' : '#a1a1aa',
     textSubtle: isIncognito ? '#CCCCCC' : '#d4d4d8',
@@ -2119,7 +2119,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                         handleStartNewChat();
                         setShowMenu(false);
                       }}
-                      className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-blue-300 hover:bg-blue-500/10 hover:text-blue-200 transition-colors"
+                      className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-green-300 hover:bg-green-500/10 hover:text-green-200 transition-colors"
                     >
                       <RefreshCcw className="w-4 h-4" />
                       <span>Start New Chat</span>
@@ -2181,7 +2181,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
           {showIntro && (
             <div className="flex items-center justify-center min-h-[60vh]">
               <div className="text-center w-full px-8 py-8">
-                <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-4 border-softgold-500/50">
+                <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-4 border-green-500/50">
                   <img
                     src={character.image}
                     alt={character.name}
@@ -2190,7 +2190,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                 </div>
                 
                 <h1 className="text-3xl font-bold text-white mb-2">{character.name}</h1>
-                <p className="text-softgold-500 text-lg mb-4">{character.role}</p>
+                <p className="text-green-500 text-lg mb-4">{character.role}</p>
                 
                 <div className="bg-black/50 rounded-2xl p-6 mb-6 backdrop-blur-sm">
                   <h3 className="text-white font-medium mb-3">Character Introduction</h3>
@@ -2220,7 +2220,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                     onClick={() => setShowThemeSelector(true)}
                     className="w-full py-3 px-6 bg-zinc-700/50 hover:bg-zinc-600/50 border border-zinc-600 rounded-lg text-white font-medium transition-colors flex items-center justify-center space-x-2"
                   >
-                    <Palette className="w-5 h-5 text-softgold-500" />
+                    <Palette className="w-5 h-5 text-green-500" />
                     <span>Theme</span>
                   </button>
                 </div>
@@ -2585,7 +2585,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                       onClick={() => setSelectedMood(mood.id)}
                       className={`w-full flex items-center space-x-3 p-4 rounded-lg border-2 transition-colors ${
                         selectedMood === mood.id
-                          ? 'border-softgold-500 bg-softgold-500/20'
+                          ? 'border-green-500 bg-green-500/20'
                           : 'border-zinc-600 bg-zinc-700/50 hover:bg-zinc-600/50'
                       }`}
                     >
@@ -2595,7 +2595,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                         <p className="text-sm text-zinc-400">{mood.description}</p>
                       </div>
                       {selectedMood === mood.id && (
-                        <div className="w-2 h-2 bg-softgold-500 rounded-full" />
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
                       )}
                     </button>
                   ))}
@@ -2639,7 +2639,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                   <button
                     onClick={() => setIsFullScreen(!isFullScreen)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      isFullScreen ? 'bg-softgold-500' : 'bg-zinc-600'
+                      isFullScreen ? 'bg-green-500' : 'bg-zinc-600'
                     }`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -2690,7 +2690,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                       onClick={() => setCustomBackground(null)}
                       className={`px-4 py-2 rounded-lg border-2 transition-colors ${
                         !customBackground 
-                          ? 'border-softgold-500 bg-softgold-500/20 text-softgold-500' 
+                          ? 'border-green-500 bg-green-500/20 text-green-500' 
                           : 'border-zinc-600 bg-zinc-700/50 text-zinc-300 hover:bg-zinc-600/50'
                       }`}
                     >
@@ -2717,7 +2717,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                             onClick={() => setCustomBackground(theme.backgroundUrl)}
                             className={`aspect-video rounded-lg border-2 overflow-hidden transition-colors ${
                               customBackground === theme.backgroundUrl
-                                ? 'border-softgold-500'
+                                ? 'border-green-500'
                                 : 'border-zinc-600 hover:border-zinc-500'
                             }`}
                           >
@@ -2751,7 +2751,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                         onClick={() => setSelectedBubbleTheme(theme.id)}
                         className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors ${
                           selectedBubbleTheme === theme.id
-                            ? 'border-softgold-500 bg-softgold-500/20'
+                            ? 'border-green-500 bg-green-500/20'
                             : 'border-zinc-600 bg-zinc-700/50 hover:bg-zinc-600/50'
                         }`}
                       >
@@ -2771,7 +2771,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                     <select
                       value={fontFamily}
                       onChange={(e) => setFontFamily(e.target.value)}
-                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-softgold-500"
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
                       <option value="Inter">Inter</option>
                       <option value="Arial">Arial</option>
@@ -2876,7 +2876,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                     value={customInstructions.nickname}
                     onChange={(e) => setCustomInstructions(prev => ({ ...prev, nickname: e.target.value }))}
                     placeholder="Enter your preferred nickname..."
-                    className="w-full px-4 py-3 bg-zinc-700/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-softgold-500"
+                    className="w-full px-4 py-3 bg-zinc-700/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                   <p className="text-sm text-zinc-400 mt-1">
                     Leave empty to use your default name
@@ -2892,7 +2892,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                     value={customInstructions.aboutUser}
                     onChange={(e) => setCustomInstructions(prev => ({ ...prev, aboutUser: e.target.value }))}
                     placeholder="Share details about your interests, background, preferences..."
-                    className="w-full px-4 py-3 bg-zinc-700/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-softgold-500"
+                    className="w-full px-4 py-3 bg-zinc-700/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
                     rows={4}
                   />
                   <p className="text-sm text-zinc-400 mt-1">
@@ -2910,7 +2910,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                     <button
                       onClick={() => setCustomInstructions(prev => ({ ...prev, persistentMemory: !prev.persistentMemory }))}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        customInstructions.persistentMemory ? 'bg-softgold-500' : 'bg-zinc-600'
+                        customInstructions.persistentMemory ? 'bg-green-500' : 'bg-zinc-600'
                       }`}
                     >
                       <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -2925,7 +2925,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                         value={customInstructions.memoryDetails}
                         onChange={(e) => setCustomInstructions(prev => ({ ...prev, memoryDetails: e.target.value }))}
                         placeholder="What should the character remember about you and your conversations?"
-                        className="w-full px-4 py-3 bg-zinc-700/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-softgold-500"
+                        className="w-full px-4 py-3 bg-zinc-700/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
                         rows={3}
                       />
                       <div className="flex justify-between items-center">
@@ -2955,7 +2955,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                         value={newAvoidTopic}
                         onChange={(e) => setNewAvoidTopic(e.target.value)}
                         placeholder="Add a topic to avoid..."
-                        className="flex-1 px-4 py-2 bg-zinc-700/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-softgold-500"
+                        className="flex-1 px-4 py-2 bg-zinc-700/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
@@ -2968,7 +2968,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                         disabled={!newAvoidTopic.trim()}
                         className={`px-4 py-2 rounded-lg transition-colors ${
                           newAvoidTopic.trim()
-                            ? 'bg-softgold-500 hover:bg-softgold-500 text-white'
+                            ? 'bg-green-500 hover:bg-green-500 text-white'
                             : 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
                         }`}
                       >
@@ -3014,11 +3014,11 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                       <span><strong>Session Memory:</strong> Remembers during current chat</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-softgold-500 rounded-full"></div>
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <span><strong>Short-term:</strong> Remembers for a few days</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                       <span><strong>Persistent:</strong> Long-term memory (user controlled)</span>
                     </div>
                   </div>
@@ -3028,7 +3028,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                 <div className="flex space-x-3 pt-4 border-t border-zinc-700">
                   <button
                     onClick={saveCustomInstructions}
-                    className="flex-1 flex items-center justify-center space-x-2 py-3 bg-softgold-500 hover:bg-softgold-500 text-white rounded-lg transition-colors"
+                    className="flex-1 flex items-center justify-center space-x-2 py-3 bg-green-500 hover:bg-green-500 text-white rounded-lg transition-colors"
                   >
                     <Save className="w-4 h-4" />
                     <span>Save Instructions</span>
@@ -3074,7 +3074,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                   <select
                     value={reportReason}
                     onChange={(e) => setReportReason(e.target.value)}
-                    className="w-full px-4 py-3 bg-zinc-700/50 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-softgold-500"
+                    className="w-full px-4 py-3 bg-zinc-700/50 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Select a reason...</option>
                     {REPORT_REASONS.map((reason) => (
@@ -3094,18 +3094,18 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                     value={reportDetails}
                     onChange={(e) => setReportDetails(e.target.value)}
                     placeholder="Please provide any additional context that might help us understand the issue..."
-                    className="w-full px-4 py-3 bg-zinc-700/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-softgold-500"
+                    className="w-full px-4 py-3 bg-zinc-700/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
                     rows={4}
                   />
                 </div>
 
                 {/* Report Info */}
-                <div className="bg-softgold-500/10 border border-softgold-500/20 rounded-lg p-3">
+                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
                   <div className="flex items-start space-x-2">
-                    <Flag className="w-4 h-4 text-softgold-500 mt-0.5 flex-shrink-0" />
-                    <div className="text-sm text-softgold-200">
+                    <Flag className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-green-200">
                       <p className="font-medium mb-1">Report Information:</p>
-                      <ul className="space-y-1 text-softgold-200/80">
+                      <ul className="space-y-1 text-green-200/80">
                         <li>• Reports are reviewed by our moderation team</li>
                         <li>• False reports may result in account restrictions</li>
                         <li>• You'll receive updates on serious violations</li>
@@ -3170,7 +3170,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                         }}
                         className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors ${
                           selectedBubbleTheme === theme.id
-                            ? 'border-softgold-500 bg-softgold-500/20'
+                            ? 'border-green-500 bg-green-500/20'
                             : 'border-zinc-600 bg-zinc-700/50 hover:bg-zinc-600/50'
                         }`}
                       >
@@ -3191,7 +3191,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                       onClick={() => setCustomBackground(null)}
                       className={`px-4 py-2 rounded-lg border-2 transition-colors ${
                         !customBackground
-                          ? 'border-softgold-500 bg-softgold-500/20'
+                          ? 'border-green-500 bg-green-500/20'
                           : 'border-zinc-600 bg-zinc-700/50 hover:bg-zinc-600/50'
                       }`}
                     >
@@ -3219,7 +3219,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
                             }}
                             className={`aspect-video rounded-lg border-2 overflow-hidden transition-colors ${
                               customBackground === theme.backgroundUrl
-                                ? 'border-softgold-500'
+                                ? 'border-green-500'
                                 : 'border-zinc-600 hover:border-zinc-500'
                             }`}
                           >

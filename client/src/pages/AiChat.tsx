@@ -96,7 +96,7 @@ const genreCategories = [
       "nico-robin",
     ],
     bgColor: "from-pink-900/30 to-purple-900/30",
-    icon: <Heart className="w-5 h-5 text-pink-400" />,
+    icon: <Heart className="w-5 h-5 text-green-400" />,
     tagline: "Anime Female Characters",
   },
   {
@@ -144,8 +144,8 @@ const genreCategories = [
       "mugen",
       "usopp",
     ],
-    bgColor: "from-blue-900/30 to-indigo-900/30",
-    icon: <Zap className="w-5 h-5 text-blue-400" />,
+    bgColor: "from-green-900/30 to-emerald-900/30",
+    icon: <Zap className="w-5 h-5 text-green-400" />,
     tagline: "Hot Anime Males",
   },
   {
@@ -238,8 +238,8 @@ const genreCategories = [
       "aqua",
       "megumin",
     ],
-    bgColor: "from-rose-900/30 to-pink-900/30",
-    icon: <Heart className="w-5 h-5 text-rose-400" />,
+    bgColor: "from-green-900/30 to-emerald-900/30",
+    icon: <Heart className="w-5 h-5 text-green-400" />,
     tagline: "Love & Relationships",
   },
   {
@@ -288,8 +288,8 @@ const genreCategories = [
       "cell",
       "cell-jr",
     ],
-    bgColor: "from-yellow-900/30 to-softgold-900/30",
-    icon: <Smile className="w-5 h-5 text-yellow-400" />,
+    bgColor: "from-green-900/30 to-emerald-900/30",
+    icon: <Smile className="w-5 h-5 text-green-400" />,
     tagline: "Fun & Entertainment",
   },
   {
@@ -476,14 +476,14 @@ function AiChat() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Incognito mode styling variables
-  const accentText = incognitoMode ? "text-orange-500" : "text-gold";
-  const accentBg = incognitoMode ? "bg-orange-500/10" : "bg-gold/10";
-  const accentBorder = incognitoMode ? "border-orange-500/20" : "border-gold/20";
+  const accentText = incognitoMode ? "text-orange-500" : "text-green-500";
+  const accentBg = incognitoMode ? "bg-orange-500/10" : "bg-green-500/10";
+  const accentBorder = incognitoMode ? "border-orange-500/20" : "border-green-500/20";
   const accentGradient = incognitoMode
     ? "from-orange-500/0 via-orange-500/10 to-orange-500/0"
     : "from-gold/0 via-gold/10 to-gold/0";
-  const mainBg = incognitoMode ? "bg-black" : "bg-zinc-900";
-  const sideMenuBg = incognitoMode ? "bg-black/80" : "bg-zinc-900/50";
+  const mainBg = "bg-black";
+  const sideMenuBg = "bg-black/80";
   const borderColor = incognitoMode ? "border-black" : "border-zinc-800";
 
   // Mobile-only UI states
@@ -1667,11 +1667,11 @@ function AiChat() {
                   handleMenuClick("Home");
                   setIsDesktopSidebarOpen(false);
                 }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors font-mono ${
                   activeMenuItems.find(item => item.label === "Home")?.active
                     ? incognitoMode
                       ? `${accentBg.replace('/10', '')} text-white`
-                      : "bg-gold text-zinc-900"
+                      : "bg-green-500 text-black"
                     : `text-zinc-400 hover:bg-zinc-700/50 hover:text-white`
                 }`}
               >
@@ -1691,11 +1691,11 @@ function AiChat() {
                   handleMenuClick("My Chats");
                   setIsDesktopSidebarOpen(false);
                 }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors font-mono ${
                   activeMenuItems.find(item => item.label === "My Chats")?.active
                     ? incognitoMode
                       ? `${accentBg.replace('/10', '')} text-white`
-                      : "bg-gold text-zinc-900"
+                      : "bg-green-500 text-black"
                     : `text-zinc-400 hover:bg-zinc-700/50 hover:text-white`
                 }`}
               >
@@ -1715,11 +1715,11 @@ function AiChat() {
                   handleMenuClick("Trending");
                   setIsDesktopSidebarOpen(false);
                 }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors font-mono ${
                   activeMenuItems.find(item => item.label === "Trending")?.active
                     ? incognitoMode
                       ? `${accentBg.replace('/10', '')} text-white`
-                      : "bg-gold text-zinc-900"
+                      : "bg-green-500 text-black"
                     : `text-zinc-400 hover:bg-zinc-700/50 hover:text-white`
                 }`}
               >
@@ -1739,11 +1739,11 @@ function AiChat() {
                   handleMenuClick("Shorts");
                   setIsDesktopSidebarOpen(false);
                 }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors font-mono ${
                   activeMenuItems.find(item => item.label === "Shorts")?.active
                     ? incognitoMode
                       ? `${accentBg.replace('/10', '')} text-white`
-                      : "bg-gold text-zinc-900"
+                      : "bg-green-500 text-black"
                     : `text-zinc-400 hover:bg-zinc-700/50 hover:text-white`
                 }`}
               >
@@ -1797,7 +1797,7 @@ function AiChat() {
               <div className="relative flex-1 max-w-2xl">
                 <div className="relative group">
                   {/* Gradient border wrapper - shows on hover/focus */}
-                  <div className="absolute inset-0 rounded-[10px] bg-gradient-to-r from-[#E6C36A] to-[#B99329] opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300 ease-in-out" />
+                  <div className="absolute inset-0 rounded-[10px] bg-gradient-to-r from-green-500 to-green-600 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300 ease-in-out" />
                   
                   {/* Inner background - always visible */}
                   <div className="absolute inset-[1px] rounded-[9px] bg-[rgba(20,20,20,0.9)]" />
@@ -1812,7 +1812,7 @@ function AiChat() {
                       onFocus={() => setSearchInputFocused(true)}
                       onKeyDown={handleSearchKeyDown}
                       placeholder="Search AI characters or scenarios..."
-                      className="w-full pl-10 pr-12 py-[0.7rem] rounded-[10px] bg-transparent border-0 text-[#f8f8f8] placeholder-[rgba(255,255,255,0.4)] focus:outline-none transition-all duration-300 ease-in-out hover:shadow-[0_0_8px_rgba(230,195,106,0.3)] focus:shadow-[0_0_10px_rgba(230,195,106,0.45)] relative z-10"
+                      className="w-full pl-10 pr-12 py-[0.7rem] rounded-[10px] bg-transparent border-0 text-[#f8f8f8] placeholder-[rgba(255,255,255,0.4)] focus:outline-none transition-all duration-300 ease-in-out hover:shadow-[0_0_8px_rgba(34,197,94,0.3)] focus:shadow-[0_0_10px_rgba(34,197,94,0.45)] relative z-10"
                     />
                     {searchQuery && (
                       <button
@@ -1893,7 +1893,7 @@ function AiChat() {
                         {Object.keys(filteredCharacters).length > 3 && (
                           <div
                             onClick={() => handleSearchSubmit(searchQuery)}
-                            className="text-center py-2 text-sm text-gold hover:text-gold/80 cursor-pointer transition-colors">
+                            className="text-center py-2 text-sm text-green-500 hover:text-green-500/80 cursor-pointer transition-colors">
                             View all {Object.keys(filteredCharacters).length} results
                           </div>
                         )}
@@ -1908,14 +1908,14 @@ function AiChat() {
                 <div className="flex items-center gap-4" ref={filterContainerRef}>
                   <div className="relative group">
                     {/* Gradient border wrapper - shows on hover/active */}
-                    <div className={`absolute inset-0 rounded-[10px] bg-gradient-to-r from-[#E6C36A] to-[#B99329] transition-opacity duration-300 ease-in-out ${
+                    <div className={`absolute inset-0 rounded-[10px] bg-gradient-to-r from-green-500 to-green-600 transition-opacity duration-300 ease-in-out ${
                       filtersExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     }`} />
                     
                     {/* Inner background - changes on active */}
                     <div className={`absolute inset-[1px] rounded-[9px] transition-all duration-300 ease-in-out ${
                       filtersExpanded 
-                        ? 'bg-[rgba(230,195,106,0.1)]' 
+                        ? 'bg-[rgba(34,197,94,0.1)]' 
                         : 'bg-transparent'
                     }`} />
                     
@@ -1924,7 +1924,7 @@ function AiChat() {
                       aria-expanded={filtersExpanded}
                       aria-haspopup="true"
                       aria-controls="filter-panel"
-                      className="relative flex items-center space-x-2 px-3 py-2 rounded-[10px] bg-transparent border-0 text-zinc-200 hover:text-white transition-all duration-300 ease-in-out focus:outline-none hover:shadow-[0_0_8px_rgba(230,195,106,0.3)] focus:shadow-[0_0_10px_rgba(230,195,106,0.45)] z-10"
+                      className="relative flex items-center space-x-2 px-3 py-2 rounded-[10px] bg-transparent border-0 text-zinc-200 hover:text-white transition-all duration-300 ease-in-out focus:outline-none hover:shadow-[0_0_8px_rgba(34,197,94,0.3)] focus:shadow-[0_0_10px_rgba(34,197,94,0.45)] z-10"
                     >
                       <Filter className="w-5 h-5" />
                       <span>Filters</span>
@@ -1945,10 +1945,10 @@ function AiChat() {
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={() => setIsDrawerOpen(true)}
-                    className={`p-2 rounded-xl bg-black/70 border border-softgold-500/30 hover:bg-black/80 transition-colors`}
+                    className={`p-2 rounded-xl bg-black/70 border border-green-500/30 hover:bg-black/80 transition-colors`}
                     aria-label="Open menu"
                   >
-                    <Menu className="w-5 h-5 text-softgold-500" />
+                    <Menu className="w-5 h-5 text-green-500" />
                   </button>
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
@@ -1962,7 +1962,7 @@ function AiChat() {
                         }}
                       />
                     </div>
-                    <span className="text-4xl font-bold bg-gradient-to-r from-softgold-400 via-softgold-500 to-softgold-600 bg-clip-text text-transparent" style={{ fontFamily: 'Rouge Script, cursive' }}>
+                    <span className="text-4xl font-bold bg-gradient-to-r from-green-400 via-green-500 to-green-600 bg-clip-text text-transparent" style={{ fontFamily: 'Rouge Script, cursive' }}>
                       {showFavorites ? "My Favorites" : "Nexus"}
                     </span>
                   </div>
@@ -1976,18 +1976,18 @@ function AiChat() {
                         setTimeout(() => searchInputRef.current?.focus(), 0);
                       }
                     }}
-                    className={`p-2 rounded-xl bg-black/70 border border-softgold-500/30 hover:bg-black/80 transition-colors`}
+                    className={`p-2 rounded-xl bg-black/70 border border-green-500/30 hover:bg-black/80 transition-colors`}
                     aria-label="Open search"
                   >
-                    <Search className="w-5 h-5 text-softgold-500" />
+                    <Search className="w-5 h-5 text-green-500" />
                   </button>
                   {!showFavorites && (
                     <button
                       onClick={() => setMobileFilterOpen(true)}
-                      className={`p-2 rounded-xl bg-black/70 border border-softgold-500/30 hover:bg-black/80 transition-colors`}
+                      className={`p-2 rounded-xl bg-black/70 border border-green-500/30 hover:bg-black/80 transition-colors`}
                       aria-label="Open filters"
                     >
-                      <Filter className="w-5 h-5 text-softgold-500" />
+                      <Filter className="w-5 h-5 text-green-500" />
                     </button>
                   )}
                 </div>
@@ -2080,7 +2080,7 @@ function AiChat() {
                             {Object.keys(filteredCharacters).length > 3 && (
                               <div
                                 onClick={() => handleSearchSubmit(searchQuery)}
-                                className="text-center py-2 text-sm text-gold hover:text-gold/80 cursor-pointer transition-colors">
+                                className="text-center py-2 text-sm text-green-500 hover:text-green-500/80 cursor-pointer transition-colors">
                                 View all {Object.keys(filteredCharacters).length} results
                               </div>
                             )}
@@ -2138,7 +2138,7 @@ function AiChat() {
                       item.active
                         ? incognitoMode
                           ? `${accentBg.replace('/10', '')} text-white`
-                          : 'bg-gold text-zinc-900'
+                          : 'bg-green-500 text-zinc-900'
                         : 'text-zinc-300 hover:bg-zinc-700/50'
                     }`}
                   >
@@ -2171,12 +2171,12 @@ function AiChat() {
                   {selectedTags.map((tag) => (
                     <span
                       key={tag}
-                      className="flex items-center space-x-2 bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full text-sm"
+                      className="flex items-center space-x-2 bg-green-500/20 text-green-500 border border-green-500/30 px-3 py-1 rounded-full text-sm"
                     >
                       <span>{tag}</span>
                       <button
                         onClick={() => toggleTag(tag)}
-                        className="hover:text-gold/80 transition-colors"
+                        className="hover:text-green-500/80 transition-colors"
                         aria-label={`Remove ${tag} filter`}
                       >
                         <X className="w-3 h-3" />
@@ -2205,7 +2205,7 @@ function AiChat() {
                   </p>
                   <button
                     onClick={() => setSelectedTags([])}
-                    className="bg-gold text-zinc-900 px-6 py-3 rounded-lg font-medium hover:bg-gold/90 transition-colors">
+                    className="bg-green-500 text-zinc-900 px-6 py-3 rounded-lg font-medium hover:bg-green-500/90 transition-colors">
                     Clear Filters
                   </button>
                 </div>
@@ -2243,7 +2243,7 @@ function AiChat() {
                               onClick={(e) => toggleFavorite(e, slug)}
                               className={`p-2 rounded-full backdrop-blur-sm transition-all ${
                                 favorites.includes(slug)
-                                  ? "bg-gold/90 text-zinc-900"
+                                  ? "bg-green-500/90 text-zinc-900"
                                   : "bg-black/40 text-white hover:bg-black/60"
                               }`}>
                               <Star
@@ -2260,7 +2260,7 @@ function AiChat() {
                             <h3 className="text-white text-lg font-bold mb-1 truncate">
                               {character.name}
                             </h3>
-                            <p className="text-gold text-sm mb-1 truncate">{character.role}</p>
+                            <p className="text-green-500 text-sm mb-1 truncate">{character.role}</p>
                             <p className="text-zinc-400 text-xs mb-2 truncate">by {character.creator || 'ginger3000'}</p>
                             
                             <div className="flex items-center justify-between text-xs text-zinc-300 mb-2">
@@ -2307,7 +2307,7 @@ function AiChat() {
                   </p>
                   <button
                     onClick={() => setShowFavorites(false)}
-                    className="bg-gold text-zinc-900 px-6 py-3 rounded-lg font-medium hover:bg-gold/90 transition-colors">
+                    className="bg-green-500 text-zinc-900 px-6 py-3 rounded-lg font-medium hover:bg-green-500/90 transition-colors">
                     Explore Characters
                   </button>
                 </div>
@@ -2327,7 +2327,7 @@ function AiChat() {
                         onClick={() => { incrementView(slug).catch(() => {}); navigate(`/chat/${slug}`); }}
                         className="group relative bg-gradient-to-br from-gold/20 to-amber/20 rounded-xl overflow-hidden shadow-lg cursor-pointer hover:opacity-90 transition-all duration-300">
                         {/* Favorite Badge */}
-                        <div className="absolute top-3 left-3 z-10 bg-gold text-zinc-900 text-xs font-bold px-2 py-1 rounded-full flex items-center">
+                        <div className="absolute top-3 left-3 z-10 bg-green-500 text-zinc-900 text-xs font-bold px-2 py-1 rounded-full flex items-center">
                           <Star className="w-3 h-3 mr-1" fill="currentColor" />
                           FAVORITE
                         </div>
@@ -2355,7 +2355,7 @@ function AiChat() {
                           <h3 className="text-white text-xl font-bold mb-1">
                             {character.name}
                           </h3>
-                          <p className="text-gold text-sm mb-3">
+                          <p className="text-green-500 text-sm mb-3">
                             {character.role}
                           </p>
 
@@ -2853,7 +2853,7 @@ function AiChat() {
               <div className="mb-12">
                 <div className="mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-green-700 flex items-center justify-center">
                       <BookOpen className="w-4 h-4 text-white" />
                     </div>
                     <h2 className="text-2xl font-bold text-white">Study Buddies</h2>
@@ -2983,7 +2983,7 @@ function AiChat() {
             {/* Search Overlay Header */}
             <div className="flex items-center justify-between p-6 border-b border-zinc-700">
               <div className="flex items-center space-x-4">
-                <Search className="w-6 h-6 text-gold" />
+                <Search className="w-6 h-6 text-green-500" />
                 <div>
                   <h2 className="text-xl font-bold text-white">Search Results</h2>
                   <p className="text-zinc-400 text-sm">
@@ -3025,7 +3025,7 @@ function AiChat() {
                         <div className="character-card__actions">
                           <div className="character-card__content">
                             <h3 className="character-card__title">{character.name}</h3>
-                            <p className="text-gold text-xs mb-1">{character.role}</p>
+                            <p className="text-green-500 text-xs mb-1">{character.role}</p>
                             <div className="character-card__stats">
                               <span>{views[slug]?.toLocaleString() || 0} views</span>
                               <span>{pluralizeLikes(characterLikes[slug]?.likeCount || 0)}</span>
@@ -3054,7 +3054,7 @@ function AiChat() {
                     className={`px-6 py-3 rounded-lg transition-all font-medium ${
                       incognitoMode 
                         ? "bg-orange-500 hover:bg-orange-500/90 text-white" 
-                        : "bg-gold hover:bg-gold/90 text-zinc-900"
+                        : "bg-green-500 hover:bg-green-500/90 text-zinc-900"
                     }`}>
                     Clear Search
                   </button>
@@ -3096,7 +3096,7 @@ function AiChat() {
                       <div
                         key={slug}
                       onClick={() => { incrementView(slug).catch(() => {}); navigate(`/chat/${slug}`); }}
-                      className="group bg-gradient-to-br from-red-900/30 to-softgold-900/30 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer shadow-lg">
+                      className="group bg-gradient-to-br from-red-900/30 to-green-900/30 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer shadow-lg">
                       <div className="relative aspect-[2/3]">
                           <img
                             src={character.image}
@@ -3122,7 +3122,7 @@ function AiChat() {
                         {/* Character Info */}
                         <div className="absolute bottom-0 left-0 right-0 p-4">
                           <h3 className="text-white text-lg font-bold mb-1">{character.name}</h3>
-                          <p className="text-softgold-500 text-sm">{character.role}</p>
+                          <p className="text-green-500 text-sm">{character.role}</p>
                         </div>
                       </div>
                       <div className="p-4">
@@ -3208,7 +3208,7 @@ function AiChat() {
                     {selectedTags.includes(tag) && (
                       <button
                         onClick={() => toggleTag(tag)}
-                        className={`${accentText} hover:${incognitoMode ? "text-orange-400" : "text-gold"} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-800 focus:ring-gold rounded p-1`}
+                        className={`${accentText} hover:${incognitoMode ? "text-orange-400" : "text-green-500"} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-800 focus:ring-gold rounded p-1`}
                         aria-label={`Remove ${tag} filter`}>
                         <Minus className="w-4 h-4" />
                       </button>
@@ -3265,7 +3265,7 @@ function AiChat() {
                     {selectedTags.includes(tag) && (
                       <button
                         onClick={() => toggleTag(tag)}
-                        className={`${accentText} hover:${incognitoMode ? "text-orange-400" : "text-gold"} rounded`}
+                        className={`${accentText} hover:${incognitoMode ? "text-orange-400" : "text-green-500"} rounded`}
                         aria-label={`Remove ${tag} filter`}>
                         <Minus className="w-4 h-4" />
                       </button>

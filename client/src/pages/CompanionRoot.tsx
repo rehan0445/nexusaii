@@ -11,7 +11,7 @@ const CompanionRoot: React.FC = () => {
   }, [restoreScrollTop, rememberScrollTop]);
 
   return (
-    <div className="companion-theme min-h-[100dvh] bg-[#18181b]">
+    <div className="companion-theme min-h-[100dvh] bg-black">
       {/* Use AiChat's built-in header to avoid double bars */}
       <AiChat />
     </div>
