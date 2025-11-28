@@ -18,7 +18,7 @@ const TermsAndConditions: React.FC = () => {
             <ArrowLeft className="w-6 h-6" />
           </button>
           <img src={nexusLogo} alt="Nexus" className="h-8 w-auto" />
-          <h1 className="text-xl font-bold text-softgold-500">Terms & Conditions</h1>
+          <h1 className="text-xl font-bold text-green-500">Terms & Conditions</h1>
         </div>
       </div>
 
@@ -26,7 +26,7 @@ const TermsAndConditions: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-zinc-800/50 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-zinc-700 shadow-2xl">
           <div className="prose prose-invert max-w-none">
-            <h1 className="text-3xl font-bold text-softgold-500 mb-4">Terms and Conditions of Use</h1>
+            <h1 className="text-3xl font-bold text-green-500 mb-4">Terms and Conditions of Use</h1>
             <p className="text-zinc-400 mb-6">
               <strong>Effective Date:</strong> October 11, 2025
             </p>
@@ -156,7 +156,7 @@ const TermsAndConditions: React.FC = () => {
             <h2 className="text-2xl font-bold text-white mb-3">22. Contact Information</h2>
             <p className="text-zinc-300 mb-6">
               For questions, concerns, or legal notices, contact us at:<br />
-              <a href="mailto:nexusschats@gmail.com" className="text-softgold-500 hover:text-softgold-300 underline">
+              <a href="mailto:nexusschats@gmail.com" className="text-green-500 hover:text-green-400 underline">
                 nexusschats@gmail.com
               </a>
             </p>

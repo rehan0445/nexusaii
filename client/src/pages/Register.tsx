@@ -257,7 +257,7 @@ const Register: React.FC = () => {
               <p className="text-zinc-300">
                 We've sent a verification link to:
               </p>
-              <p className="text-softgold-500 font-semibold text-lg break-all">
+              <p className="text-green-500 font-semibold text-lg break-all">
                 {registeredEmail}
               </p>
               <p className="text-zinc-400 text-sm">
@@ -274,7 +274,7 @@ const Register: React.FC = () => {
                 setShowEmailModal(false);
                 navigate("/login");
               }}
-              className="w-full bg-softgold-500 hover:bg-softgold-600 text-black font-bold py-3 px-4 rounded-lg transition-all duration-300"
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300"
             >
               Got it, Go to Login
             </button>
@@ -284,7 +284,7 @@ const Register: React.FC = () => {
 
       <div className="min-h-screen bg-zinc-900 flex items-center justify-center p-4">
         {/* Background Pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-softgold-500/10 via-zinc-900 to-purple-500/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-zinc-900 to-purple-500/10" />
       
       <div className="relative z-10 w-full max-w-md">
         {/* Header with Logo */}
@@ -313,7 +313,7 @@ const Register: React.FC = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-softgold-500 focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Enter your full name"
                     required
                   />
@@ -333,7 +333,7 @@ const Register: React.FC = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-softgold-500 focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="your.email@gmail.com"
                     required
                   />
@@ -351,7 +351,7 @@ const Register: React.FC = () => {
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-softgold-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Create a password"
                     required
                   />
@@ -378,7 +378,7 @@ const Register: React.FC = () => {
                     type="text"
                     value={referralCode}
                     onChange={handleReferralCodeChange}
-                    className="w-full pl-10 pr-10 py-3 bg-zinc-900/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-softgold-500 focus:border-transparent transition-all font-mono text-sm uppercase"
+                    className="w-full pl-10 pr-10 py-3 bg-zinc-900/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all font-mono text-sm uppercase"
                     placeholder="Enter referral code (e.g., ABC12345)"
                     maxLength={20}
                   />
@@ -411,7 +411,7 @@ const Register: React.FC = () => {
                   onClick={() => setAgreeToTerms(!agreeToTerms)}
                   className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                     agreeToTerms
-                      ? 'bg-softgold-500 border-softgold-500'
+                      ? 'bg-green-500 border-green-500'
                       : 'border-zinc-600 hover:border-zinc-500'
                   }`}
                 >
@@ -421,14 +421,14 @@ const Register: React.FC = () => {
                   I agree to the{" "}
                   <button 
                     onClick={() => navigate("/terms")}
-                    className="text-softgold-500 hover:text-softgold-300 underline"
+                    className="text-green-500 hover:text-green-400 underline"
                   >
                     Terms & Conditions
                   </button>{" "}
                   and{" "}
                   <button 
                     onClick={() => navigate("/privacy")}
-                    className="text-softgold-500 hover:text-softgold-300 underline"
+                    className="text-green-500 hover:text-green-400 underline"
                   >
                     Privacy Policy
                   </button>
@@ -439,7 +439,7 @@ const Register: React.FC = () => {
               <button
                 onClick={handleGmailRegister}
                 disabled={isLoading || !agreeToTerms}
-                className="w-full bg-softgold-500 hover:bg-softgold-500 text-black font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-zinc-700 disabled:text-zinc-400 disabled:scale-100 disabled:cursor-not-allowed"
+                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-zinc-700 disabled:text-zinc-400 disabled:scale-100 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Creating Account...' : 'Create Account'}
               </button>
@@ -452,7 +452,7 @@ const Register: React.FC = () => {
             Already have an account?{" "}
             <button
               onClick={() => navigate("/login")}
-              className="text-softgold-500 hover:text-softgold-300 font-medium transition-colors"
+              className="text-green-500 hover:text-green-400 font-medium transition-colors"
             >
               Sign in
             </button>

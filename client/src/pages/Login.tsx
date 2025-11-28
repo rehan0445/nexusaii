@@ -71,7 +71,7 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-zinc-900 flex items-center justify-center p-4">
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-softgold-500/10 via-zinc-900 to-purple-500/10" />
+      <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-zinc-900 to-purple-500/10" />
 
       <div className="relative z-10 w-full max-w-md">
         {/* Header with Logo */}
@@ -99,7 +99,7 @@ const Login = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-softgold-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                 placeholder="your.email@gmail.com"
                 required
               />
@@ -116,7 +116,7 @@ const Login = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-softgold-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                   placeholder="Enter your password"
                   required
                 />
@@ -133,7 +133,7 @@ const Login = () => {
             <button
               onClick={handleGmailLogin}
               disabled={isLoading}
-              className="w-full bg-softgold-500 hover:bg-softgold-500 text-black font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-zinc-700 disabled:text-zinc-400 disabled:scale-100 disabled:cursor-not-allowed"
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-zinc-700 disabled:text-zinc-400 disabled:scale-100 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
@@ -147,7 +147,7 @@ const Login = () => {
             Don't have an account?{" "}
             <button
               onClick={() => navigate("/register")}
-              className="text-softgold-500 hover:text-softgold-300 font-medium transition-colors"
+              className="text-green-500 hover:text-green-400 font-medium transition-colors"
             >
               Sign up
             </button>
