@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-11-28T06:37:56.603Z",
+  "generatedAt": "2025-11-28T06:57:22.183Z",
   "confessions": [
     {
       "id": "test-confession-1764003464.957835",
@@ -226,39 +226,6 @@
       "replies": 1,
       "isExplicit": false,
       "userVote": 0
-    },
-    {
-      "id": "705929c2-966f-49fa-b920-6e53404142eb",
-      "content": "this Parth_kale is fake ass nigga. \n\ntrying start Smear campaig against good people.starl",
-      "alias": {
-        "name": "nigga_in_pune",
-        "badge": {
-          "id": "first_whisper",
-          "icon": "🌟",
-          "name": "First Whisper",
-          "color": "text-yellow-400",
-          "pfpColor": "from-gray-600 to-gray-700",
-          "description": "Posted your first confession",
-          "requirement": {
-            "type": "confessions",
-            "count": 1
-          }
-        },
-        "color": "from-gray-600 to-gray-700",
-        "emoji": "🐯",
-        "stats": {
-          "totalEngagement": 0,
-          "totalConfessions": 2
-        },
-        "imageUrl": null
-      },
-      "sessionId": "1760256437475-bqcwts1y6k7",
-      "campus": "mit_adt",
-      "createdAt": "2025-10-12T08:43:19.872",
-      "score": 3,
-      "reactions": {},
-      "replies": 0,
-      "isExplicit": false
     }
   ],
   "replies": {}

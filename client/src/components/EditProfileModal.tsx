@@ -128,17 +128,58 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
   };
 
-  const handleImageUpload = (field: 'profileImage' | 'bannerImage', e: React.ChangeEvent<HTMLInputElement>) => {
+  // Convert image to JPG format using Canvas API
+  const convertImageToJpg = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Create canvas
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          
+          // Draw image on canvas
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Could not get canvas context'));
+            return;
+          }
+          
+          // Fill white background for transparency
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Draw image
+          ctx.drawImage(img, 0, 0);
+          
+          // Convert to JPG data URL
+          const jpgDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+          resolve(jpgDataUrl);
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (field: 'profileImage' | 'bannerImage', e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
+      try {
+        // Convert to JPG format
+        const jpgDataUrl = await convertImageToJpg(file);
         setLocalProfileData(prev => ({
           ...prev,
-          [field]: reader.result as string,
+          [field]: jpgDataUrl,
         }));
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error converting image to JPG:', error);
+        alert('Failed to process image. Please try again.');
+      }
     }
   };
 
@@ -205,94 +246,163 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       let profileImageUrl = localProfileData.profileImage;
       let bannerImageUrl = localProfileData.bannerImage;
 
-      // Upload profile image if it's a data URL
+      // Upload profile image if it's a data URL (already converted to JPG)
       if (localProfileData.profileImage?.startsWith('data:')) {
-        const res = await fetch(localProfileData.profileImage);
-        const blob = await res.blob();
-        const fileExt = blob.type.split('/')[1];
-        const fileName = `${user.id}/profile_${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('nexus-profile-images')
-          .upload(fileName, blob, {
-            cacheControl: '3600',
-            upsert: true
-          });
+        try {
+          console.log('📤 Starting profile image upload to Supabase...');
+          const res = await fetch(localProfileData.profileImage);
+          const blob = await res.blob();
+          console.log('✅ Image converted to blob, size:', blob.size, 'bytes');
+          
+          // Force JPG format - images are already converted to JPG in handleImageUpload
+          const fileName = `profile_${user.id}_${Date.now()}.jpg`;
+          console.log('📁 Uploading to:', fileName);
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('nexus-profile-images')
+            .upload(fileName, blob, {
+              contentType: 'image/jpeg',
+              cacheControl: '3600',
+              upsert: true
+            });
 
-        if (uploadError) {
-          console.error('Profile image upload error:', uploadError);
-          throw new Error(`Failed to upload profile image: ${uploadError.message}`);
-        } else {
+          if (uploadError) {
+            console.error('❌ Profile image upload error:', uploadError);
+            throw new Error(`Failed to upload profile image: ${uploadError.message}`);
+          }
+
+          if (!uploadData) {
+            console.error('❌ Profile image upload returned no data');
+            throw new Error('Upload returned no data');
+          }
+
+          console.log('✅ Profile image uploaded successfully:', uploadData.path);
+          
+          // Get public URL
           const { data: { publicUrl } } = supabase.storage
             .from('nexus-profile-images')
             .getPublicUrl(fileName);
+          
+          console.log('✅ Profile image public URL:', publicUrl);
           profileImageUrl = publicUrl;
+        } catch (uploadErr: any) {
+          console.error('❌ Profile image upload failed:', uploadErr);
+          throw new Error(`Failed to upload profile image: ${uploadErr.message || 'Unknown error'}`);
         }
       }
 
-      // Upload banner image if it's a data URL
+      // Upload banner image if it's a data URL (already converted to JPG)
       if (localProfileData.bannerImage?.startsWith('data:')) {
-        const res = await fetch(localProfileData.bannerImage);
-        const blob = await res.blob();
-        const fileExt = blob.type.split('/')[1];
-        const fileName = `${user.id}/banner_${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('nexus-profile-images')
-          .upload(fileName, blob, {
-            cacheControl: '3600',
-            upsert: true
-          });
+        try {
+          console.log('📤 Starting banner image upload to Supabase...');
+          const res = await fetch(localProfileData.bannerImage);
+          const blob = await res.blob();
+          console.log('✅ Image converted to blob, size:', blob.size, 'bytes');
+          
+          // Force JPG format - images are already converted to JPG in handleImageUpload
+          const fileName = `banner_${user.id}_${Date.now()}.jpg`;
+          console.log('📁 Uploading to:', fileName);
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('nexus-profile-images')
+            .upload(fileName, blob, {
+              contentType: 'image/jpeg',
+              cacheControl: '3600',
+              upsert: true
+            });
 
-        if (uploadError) {
-          console.error('Banner image upload error:', uploadError);
-          throw new Error(`Failed to upload banner image: ${uploadError.message}`);
-        } else {
+          if (uploadError) {
+            console.error('❌ Banner image upload error:', uploadError);
+            throw new Error(`Failed to upload banner image: ${uploadError.message}`);
+          }
+
+          if (!uploadData) {
+            console.error('❌ Banner image upload returned no data');
+            throw new Error('Upload returned no data');
+          }
+
+          console.log('✅ Banner image uploaded successfully:', uploadData.path);
+          
+          // Get public URL
           const { data: { publicUrl } } = supabase.storage
             .from('nexus-profile-images')
             .getPublicUrl(fileName);
+          
+          console.log('✅ Banner image public URL:', publicUrl);
           bannerImageUrl = publicUrl;
+        } catch (uploadErr: any) {
+          console.error('❌ Banner image upload failed:', uploadErr);
+          throw new Error(`Failed to upload banner image: ${uploadErr.message || 'Unknown error'}`);
         }
       }
 
-      // Prepare profile data (cleanUsername already calculated above)
-      const profilePayload = {
-        user_id: user.id,
+      // Update profile via backend API endpoint (which updates userProfileData table)
+      const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
+      console.log('📤 Updating profile via backend API...');
+      
+      const requestPayload = {
+        uid: user.id,
+        name: localProfileData.name,
         username: cleanUsername,
-        display_name: localProfileData.name,
+        bio: localProfileData.bio,
+        location: localProfileData.location,
         email: localProfileData.email,
-        profile_image_url: profileImageUrl,
-        banner_image_url: bannerImageUrl,
-        updated_at: new Date().toISOString()
+        profileImage: profileImageUrl,
+        bannerImage: bannerImageUrl,
+        interests: localProfileData.interests || []
       };
+      
+      console.log('📤 Request payload:', { ...requestPayload, profileImage: profileImageUrl?.substring(0, 50) + '...', bannerImage: bannerImageUrl?.substring(0, 50) + '...' });
+      
+      const updateResponse = await fetch(`${serverUrl}/api/v1/chat/update-profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestPayload)
+      });
 
-      // Upsert profile data
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .upsert(profilePayload, {
-          onConflict: 'user_id',
-          ignoreDuplicates: false
-        });
+      const responseText = await updateResponse.text();
+      console.log('📥 Response status:', updateResponse.status, 'Response:', responseText);
 
-      if (profileError) {
-        console.error('Profile save error:', profileError);
-
-        // Handle specific database errors
-        if (profileError.message?.includes('Username') && profileError.message?.includes('already taken')) {
+      if (!updateResponse.ok) {
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (e) {
+          errorData = { message: responseText || 'Failed to update profile' };
+        }
+        console.error('❌ Profile update error:', errorData);
+        
+        // Handle specific error codes
+        if (updateResponse.status === 409) {
           throw new Error('Username is already taken. Please choose a different username.');
         }
-
-        throw new Error(profileError.message || 'Failed to save profile');
+        
+        throw new Error(errorData.message || `Failed to update profile (${updateResponse.status})`);
       }
+
+      let updateResult;
+      try {
+        updateResult = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error('Invalid response from server');
+      }
+      
+      console.log('✅ Profile updated successfully:', updateResult);
 
       // Update parent state
       setProfileData(prev => ({
         ...prev,
         name: localProfileData.name,
         username: localProfileData.username,
+        bio: localProfileData.bio,
+        location: localProfileData.location,
         email: localProfileData.email,
         profileImage: profileImageUrl,
-        bannerImage: bannerImageUrl
+        bannerImage: bannerImageUrl,
+        interests: localProfileData.interests || []
       }));
 
       alert('Profile updated successfully!');

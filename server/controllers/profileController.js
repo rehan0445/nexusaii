@@ -207,6 +207,37 @@ export const updateUserProfileJson = async (req, res) => {
       return res.status(400).json({ success: false, message: "uid is required" });
     }
 
+    // Username uniqueness check: another user with same username
+    if (username) {
+      const { data: existing, error: existError } = await supabase
+        .from("userProfileData")
+        .select("id, username")
+        .eq("username", username)
+        .neq("id", uid)
+        .maybeSingle();
+
+      if (existError) {
+        console.error("❌ Username check error:", existError);
+        return res.status(500).json({ success: false, message: "Username check failed", error: existError.message });
+      }
+      if (existing) {
+        return res.status(409).json({ success: false, message: "Username already taken" });
+      }
+    }
+
+    // Prepare payload - handle interests as array or string
+    let processedInterests = interests;
+    if (interests !== undefined) {
+      if (typeof interests === 'string') {
+        try {
+          processedInterests = JSON.parse(interests);
+        } catch (e) {
+          // If it's not valid JSON, treat as array
+          processedInterests = Array.isArray(interests) ? interests : [interests];
+        }
+      }
+    }
+
     const payload = {
       ...(name !== undefined && { name }),
       ...(username !== undefined && { username }),
@@ -216,8 +247,10 @@ export const updateUserProfileJson = async (req, res) => {
       ...(phno !== undefined && { phno }),
       ...(profileImage !== undefined && { profileImage }),
       ...(bannerImage !== undefined && { bannerImage }),
-      ...(interests !== undefined && { interests }),
+      ...(processedInterests !== undefined && { interests: processedInterests }),
     };
+
+    console.log("📝 Updating profile for uid:", uid, "Payload:", { ...payload, interests: processedInterests });
 
     const { data, error } = await supabase
       .from("userProfileData")
@@ -227,12 +260,19 @@ export const updateUserProfileJson = async (req, res) => {
       .single();
 
     if (error) {
+      console.error("❌ Supabase update error:", error);
       return res.status(500).json({ success: false, message: "Failed to update profile", error: error.message });
     }
 
+    if (!data) {
+      console.error("❌ No data returned from update");
+      return res.status(404).json({ success: false, message: "Profile not found" });
+    }
+
+    console.log("✅ Profile updated successfully:", data.id);
     return res.status(200).json({ success: true, message: "Profile updated", data });
   } catch (error) {
-    console.error("❌ Error in updateUserProfileJson:", error.message);
+    console.error("❌ Error in updateUserProfileJson:", error);
     return res.status(500).json({ success: false, message: "Unexpected error", error: error.message });
   }
 };
@@ -270,39 +310,57 @@ export const updateUserProfile = async (req, res) => {
     let profileImageUrl;
     let bannerImageUrl;
 
-    // Upload new images if provided
+    // Upload new images if provided - always save as .jpg
     if (profileImgFile) {
-      const fileName = `profile_${uid}_${uuidv4()}.${profileImgFile.originalname.split('.').pop()}`;
       const ext = (profileImgFile.originalname.split('.').pop() || '').toLowerCase();
       const allowed = ['jpg','jpeg','png','gif','webp'];
-      if (!allowed.includes(ext)) return res.status(400).json({ success: false, message: 'Invalid file type' });
+      if (!allowed.includes(ext)) return res.status(400).json({ success: false, message: 'Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.' });
       const av = await scanBuffer(profileImgFile.buffer, profileImgFile.originalname, profileImgFile.mimetype);
       if (!av.clean) return res.status(400).json({ success: false, message: 'File failed antivirus scan' });
+      
+      // Always save as .jpg extension
+      const fileName = `profile_${uid}_${Date.now()}.jpg`;
       const { error: uploadErr } = await supabase.storage
         .from("nexus-profile-images")
-        .upload(fileName, profileImgFile.buffer, { contentType: profileImgFile.mimetype, upsert: true });
+        .upload(fileName, profileImgFile.buffer, { 
+          contentType: 'image/jpeg', 
+          upsert: true 
+        });
       if (uploadErr) {
         return res.status(500).json({ success: false, message: "Profile image upload failed", error: uploadErr.message });
       }
-      const { data: signed } = await supabase.storage.from("nexus-profile-images").createSignedUrl(fileName, 60 * 10);
-      profileImageUrl = signed?.signedUrl;
+      
+      // Get public URL (using public bucket)
+      const { data: publicUrlData } = supabase.storage
+        .from("nexus-profile-images")
+        .getPublicUrl(fileName);
+      profileImageUrl = publicUrlData?.publicUrl;
     }
 
     if (bannerImgFile) {
-      const fileName = `banner_${uid}_${uuidv4()}.${bannerImgFile.originalname.split('.').pop()}`;
       const ext = (bannerImgFile.originalname.split('.').pop() || '').toLowerCase();
       const allowed = ['jpg','jpeg','png','gif','webp'];
-      if (!allowed.includes(ext)) return res.status(400).json({ success: false, message: 'Invalid file type' });
+      if (!allowed.includes(ext)) return res.status(400).json({ success: false, message: 'Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.' });
       const av = await scanBuffer(bannerImgFile.buffer, bannerImgFile.originalname, bannerImgFile.mimetype);
       if (!av.clean) return res.status(400).json({ success: false, message: 'File failed antivirus scan' });
+      
+      // Always save as .jpg extension
+      const fileName = `banner_${uid}_${Date.now()}.jpg`;
       const { error: uploadErr } = await supabase.storage
         .from("nexus-profile-images")
-        .upload(fileName, bannerImgFile.buffer, { contentType: bannerImgFile.mimetype, upsert: true });
+        .upload(fileName, bannerImgFile.buffer, { 
+          contentType: 'image/jpeg', 
+          upsert: true 
+        });
       if (uploadErr) {
         return res.status(500).json({ success: false, message: "Banner image upload failed", error: uploadErr.message });
       }
-      const { data: signed } = await supabase.storage.from("nexus-profile-images").createSignedUrl(fileName, 60 * 10);
-      bannerImageUrl = signed?.signedUrl;
+      
+      // Get public URL (using public bucket)
+      const { data: publicUrlData } = supabase.storage
+        .from("nexus-profile-images")
+        .getPublicUrl(fileName);
+      bannerImageUrl = publicUrlData?.publicUrl;
     }
 
     const updatePayload = {
