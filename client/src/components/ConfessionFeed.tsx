@@ -254,7 +254,7 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
       </div>
 
       {/* Confessions List */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         {confessions.map((confession) => {
           // Normalize ID - check multiple possible field names
           const validId = confession.id || confession.confession_id || confession._id || null;
@@ -292,7 +292,7 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
           <div
             key={cardKey}
             onClick={handleClick}
-            className={`bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-5 transition-all duration-200 ${
+            className={`bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-6 transition-all duration-200 ${
               !hasValidId
                 ? 'border-red-500/60 bg-red-50 dark:bg-red-950/10 cursor-not-allowed opacity-60'
                 : 'cursor-pointer hover:border-gray-300 dark:hover:border-gray-700'
@@ -310,7 +310,7 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
             )}
 
             {/* Meta/Header - Username, timestamp */}
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-3 mb-4">
               {confession.alias?.imageUrl ? (
                 <img
                   src={confession.alias.imageUrl}
@@ -326,11 +326,12 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
                   {confession.alias?.emoji || '👤'}
                 </div>
               )}
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-gray-500 dark:text-gray-400 font-medium truncate">
+              <div className="flex-1 min-w-0 flex items-center gap-1">
+                <div className="text-base text-gray-900 dark:text-white font-semibold truncate">
                   {confession.alias?.name || 'Anonymous'}
                 </div>
-                <div className="text-xs text-gray-400 dark:text-gray-500">
+                <span className="text-xs text-gray-400 dark:text-gray-500">·</span>
+                <div className="text-xs text-gray-400 dark:text-gray-500 font-normal">
                   {new Date(confession.createdAt).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -342,24 +343,24 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
             </div>
 
             {/* Body Content - Highly readable */}
-            <div className="text-base text-gray-900 dark:text-gray-100 leading-relaxed mb-4 whitespace-pre-wrap break-words line-clamp-4">
+            <div className="text-base text-gray-800 dark:text-gray-100 leading-relaxed mb-4 whitespace-pre-wrap break-words line-clamp-4">
               {confession.content}
             </div>
 
             {/* Action Bar - Reddit Style */}
-            <div className="flex items-center justify-start gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center gap-4 pt-4 border-t border-[#b76e79]/20">
               {/* Voting Pill */}
               <div 
-                className="flex items-center gap-1 bg-gray-100 dark:bg-gray-900 rounded-full px-2 py-1"
+                className="flex items-center gap-1"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Upvote Button */}
                 <button
                   onClick={(e) => handleVote(confessionId, 1, e)}
-                  className={`p-1 rounded-full transition-all duration-200 ${
+                  className={`p-1 rounded-full transition-all duration-200 flex items-center ${
                     userVote === 1
-                      ? 'text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30'
-                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                      ? 'text-orange-500 dark:text-orange-400'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                   title="Upvote"
                 >
@@ -383,10 +384,10 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
                 {/* Downvote Button */}
                 <button
                   onClick={(e) => handleVote(confessionId, -1, e)}
-                  className={`p-1 rounded-full transition-all duration-200 ${
+                  className={`p-1 rounded-full transition-all duration-200 flex items-center ${
                     userVote === -1
-                      ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30'
-                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                      ? 'text-blue-500 dark:text-blue-400'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                   title="Downvote"
                 >
@@ -403,7 +404,7 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
                   e.stopPropagation();
                   handleClick();
                 }}
-                className="flex items-center gap-1.5 px-2 py-1 rounded-md text-sm text-gray-500 dark:text-gray-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
+                className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                 title="Comments"
               >
                 <MessageCircle className="w-4 h-4" strokeWidth={2} />
