@@ -11,6 +11,7 @@ import { GroupChatProvider } from "./contexts/GroupChatContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AuthCallback from "./pages/AuthCallback";
+import ReferralRedirect from "./pages/ReferralRedirect";
 import WelcomeScreen from "./pages/WelcomeScreen";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -143,6 +144,7 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/ref/:code" element={<ReferralRedirect />} />
                   <Route path="/terms" element={<TermsAndConditions />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/user-info" element={<UserInfoForm />} />

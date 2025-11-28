@@ -4,6 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useSettings } from "../contexts/SettingsContext";
 import EditProfileModal from "../components/EditProfileModal";
 import MobileSettingsPanel from "../components/MobileSettingsPanel";
+import ReferralSection from "../components/ReferralSection";
 import settingsService from "../services/settingsService";
 import { User as UserIcon, LogOut, HelpCircle, Mail, Camera, Edit3, Settings, Copy } from "lucide-react";
 
@@ -281,6 +282,11 @@ const Profile: React.FC = () => {
               <Edit3 className="w-5 h-5" />
               <span>Edit Profile</span>
             </button>
+          </div>
+
+          {/* Referral Section */}
+          <div className="mb-6">
+            <ReferralSection />
           </div>
 
           {/* Profile Information Sections */}

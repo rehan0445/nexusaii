@@ -17,6 +17,8 @@ import progressRouter from "./routes/progress.js";
 import viewsRouter from "./routes/views.js";
 import authRouter from "./routes/authRoutes.js";
 import adminRouter from "./routes/admin.js";
+import referralsRouter from "./routes/referrals.js";
+import adminReferralsRouter from "./routes/adminReferrals.js";
 import mfaRouter from "./routes/mfa.js";
 import confessionsRouter from "./routes/confessions.js";
 // import hangoutRouter from "./routes/hangout.js"; // DISABLED - Coming Soon
@@ -1738,6 +1740,8 @@ app.get("/api/v1/darkroom/categories", (req, res) => {
 // API routes
 app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/v1/referrals", referralsRouter);
+app.use("/api/admin/referrals", adminReferralsRouter);
 app.use("/api/mfa", mfaRouter);
 app.use("/api/v1/chat/models", modelRouter);
 app.use("/api/v1/chat/ai", chatAiRouter);

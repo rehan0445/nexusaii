@@ -8,7 +8,14 @@ const IntroHangout: React.FC = () => {
   
   const handleGetStarted = () => {
     localStorage.setItem('hasSeenOnboarding', 'true');
-    navigate('/register');
+    
+    // Preserve referral code if present
+    const referralCode = localStorage.getItem('pending_referral_code');
+    if (referralCode) {
+      navigate(`/register?ref=${referralCode}`);
+    } else {
+      navigate('/register');
+    }
   };
 
   return (

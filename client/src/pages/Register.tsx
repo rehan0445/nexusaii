@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { Mail, Eye, EyeOff, User, Check, X, CheckCircle } from "lucide-react";
+import { Mail, Eye, EyeOff, User, Check, X, CheckCircle, Gift, XCircle } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import nexusLogo from "../assets/nexus-logo.png";
 
@@ -9,7 +9,7 @@ const Register: React.FC = () => {
   const { userLoggedin } = useAuth();
   const navigate = useNavigate();
 
-  const appBaseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+  const appBaseUrl = import.meta.env.VITE_APP_URL || globalThis.location.origin;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -21,8 +21,27 @@ const Register: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const [referralCode, setReferralCode] = useState<string>("");
+  const [referralCodeFromUrl, setReferralCodeFromUrl] = useState(false);
 
   useEffect(() => {
+    // Check for referral code in URL
+    const params = new URLSearchParams(globalThis.location.search);
+    const refCode = params.get('ref');
+    if (refCode) {
+      setReferralCode(refCode.toUpperCase().trim());
+      setReferralCodeFromUrl(true);
+      localStorage.setItem('pending_referral_code', refCode);
+      console.log('📝 Referral code detected from URL:', refCode);
+    } else {
+      // Check localStorage for pending code
+      const storedCode = localStorage.getItem('pending_referral_code');
+      if (storedCode) {
+        setReferralCode(storedCode.toUpperCase().trim());
+        setReferralCodeFromUrl(true);
+      }
+    }
+    
     // Check if user has seen onboarding intro pages
     const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
     
@@ -41,6 +60,23 @@ const Register: React.FC = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleReferralCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
+    setReferralCode(value);
+    setReferralCodeFromUrl(false);
+    if (value) {
+      localStorage.setItem('pending_referral_code', value);
+    } else {
+      localStorage.removeItem('pending_referral_code');
+    }
+  };
+
+  const clearReferralCode = () => {
+    setReferralCode("");
+    setReferralCodeFromUrl(false);
+    localStorage.removeItem('pending_referral_code');
   };
 
   const handleGmailRegister = async () => {
@@ -91,6 +127,35 @@ const Register: React.FC = () => {
       if (data.user) {
         console.log('✅ Registration successful:', data.user.email);
         console.log('📍 User ID:', data.user.id);
+        
+        // Handle referral code if present
+        const codeToUse = referralCode.trim() || localStorage.getItem('pending_referral_code');
+        if (codeToUse && codeToUse.length >= 6) {
+          try {
+            const serverUrl = import.meta.env.VITE_SERVER_URL || globalThis.location.origin;
+            const deviceFingerprint = localStorage.getItem('device_fingerprint') || 
+              `fp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+            localStorage.setItem('device_fingerprint', deviceFingerprint);
+            
+            await fetch(`${serverUrl}/api/v1/referrals/use`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                code: codeToUse.toUpperCase().trim(),
+                referee_id: data.user.id,
+                device_fingerprint: deviceFingerprint,
+                utm: {},
+                click_history: [],
+              }),
+            });
+            console.log('✅ Referral code processed');
+            localStorage.removeItem('pending_referral_code');
+          } catch (error) {
+            console.error('❌ Error processing referral code:', error);
+            // Don't block registration if referral fails
+          }
+        }
         
         // With email verification disabled, session is created immediately
         if (data.session) {
@@ -262,6 +327,44 @@ const Register: React.FC = () => {
                   </button>
                 </div>
                 <p className="mt-1 text-xs text-zinc-400">Minimum 7 characters.</p>
+              </div>
+
+              {/* Referral Code Field (Optional) */}
+              <div>
+                <label htmlFor="referralCode" className="block text-zinc-300 text-sm font-medium mb-2">
+                  Referral Code <span className="text-zinc-500 text-xs font-normal">(Optional)</span>
+                </label>
+                <div className="relative">
+                  <Gift className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                  <input
+                    id="referralCode"
+                    type="text"
+                    value={referralCode}
+                    onChange={handleReferralCodeChange}
+                    className="w-full pl-10 pr-10 py-3 bg-zinc-900/50 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-softgold-500 focus:border-transparent transition-all font-mono text-sm uppercase"
+                    placeholder="Enter referral code (e.g., ABC12345)"
+                    maxLength={20}
+                  />
+                  {referralCode && (
+                    <button
+                      type="button"
+                      onClick={clearReferralCode}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-zinc-400 hover:text-zinc-300 transition-colors"
+                      aria-label="Clear referral code"
+                    >
+                      <XCircle className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+                {referralCodeFromUrl && referralCode && (
+                  <p className="mt-1 text-xs text-green-400 flex items-center gap-1">
+                    <Gift className="w-3 h-3" />
+                    Referral code detected from link
+                  </p>
+                )}
+                {referralCode && referralCode.length < 6 && (
+                  <p className="mt-1 text-xs text-yellow-400">Referral code should be at least 6 characters</p>
+                )}
               </div>
 
               {/* Terms Agreement */}
