@@ -114,6 +114,7 @@ export const createUserProfile = async (req, res) => {
       .from("user_stats")
       .insert([
         {
+          user_id: uid,
           posts: 0,
           following: 0,
           followers: 0,

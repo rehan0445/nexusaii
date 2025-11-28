@@ -26,6 +26,13 @@ BEGIN
   -- Cast UUID to TEXT for userProfileData table
   user_id_text := NEW.id::text;
   
+  -- Validate required fields
+  IF user_id_text IS NULL OR NEW.email IS NULL THEN
+    -- Log error but don't fail - allow user creation to succeed
+    RAISE WARNING 'Missing required fields for user profile creation: user_id=%, email=%', user_id_text, NEW.email;
+    RETURN NEW;
+  END IF;
+  
   -- Generate a random suffix for username uniqueness
   random_suffix := LPAD(FLOOR(RANDOM() * 10000)::TEXT, 4, '0');
   
@@ -45,54 +52,72 @@ BEGIN
     generated_username := SPLIT_PART(NEW.email, '@', 1) || '_' || random_suffix;
   END LOOP;
   
-  -- Create user_stats first
-  INSERT INTO public.user_stats (user_id, posts, following, followers, numofchar)
-  VALUES (user_id_text, 0, 0, 0, 0)
-  ON CONFLICT (user_id) DO NOTHING;
-  
-  -- Get the stats_id
-  SELECT id INTO stats_record_id 
-  FROM public.user_stats 
-  WHERE user_id = user_id_text;
+  -- Create user_stats first, or get existing if it already exists
+  BEGIN
+    INSERT INTO public.user_stats (user_id, posts, following, followers, numofchar)
+    VALUES (user_id_text, 0, 0, 0, 0)
+    ON CONFLICT (user_id) DO NOTHING;
+    
+    -- Get the stats_id (will get existing one if conflict occurred, or new one if inserted)
+    SELECT id INTO stats_record_id 
+    FROM public.user_stats 
+    WHERE user_id = user_id_text;
+    
+    -- Safety check: ensure we have a stats_id
+    IF stats_record_id IS NULL THEN
+      RAISE WARNING 'Failed to create or retrieve user_stats record for user_id: %', user_id_text;
+      RETURN NEW; -- Allow user creation to succeed even if profile creation fails
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    -- Log the error but don't fail the user registration
+    RAISE WARNING 'Error creating user_stats for user_id %: %', user_id_text, SQLERRM;
+    RETURN NEW;
+  END;
   
   -- Create basic user profile
-  INSERT INTO public."userProfileData" (
-    id,
-    name,
-    username,
-    email,
-    bio,
-    location,
-    phno,
-    "profileImage",
-    "bannerImage",
-    "creationDate",
-    streak,
-    interests,
-    stats_id,
-    date_of_birth,
-    gender
-  )
-  VALUES (
-    user_id_text,
-    COALESCE(NEW.raw_user_meta_data->>'name', NEW.raw_user_meta_data->>'full_name', SPLIT_PART(NEW.email, '@', 1)),
-    generated_username,
-    NEW.email,
-    '',
-    '',
-    NEW.phone,
-    'https://i.pinimg.com/736x/d9/7b/bb/d97bbb08017ac2309307f0822e63d082.jpg',
-    'https://via.placeholder.com/800x200',
-    NOW(),
-    '0',
-    '[]'::jsonb,
-    stats_record_id,
-    NULL,
-    NULL
-  )
-  ON CONFLICT (id) DO UPDATE SET
-    email = EXCLUDED.email,
-    name = COALESCE("userProfileData".name, EXCLUDED.name);
+  BEGIN
+    INSERT INTO public."userProfileData" (
+      id,
+      name,
+      username,
+      email,
+      bio,
+      location,
+      phno,
+      "profileImage",
+      "bannerImage",
+      "creationDate",
+      streak,
+      interests,
+      stats_id,
+      date_of_birth,
+      gender
+    )
+    VALUES (
+      user_id_text,
+      COALESCE(NEW.raw_user_meta_data->>'name', NEW.raw_user_meta_data->>'full_name', SPLIT_PART(NEW.email, '@', 1)),
+      generated_username,
+      NEW.email,
+      '',
+      '',
+      NEW.phone,
+      'https://i.pinimg.com/736x/d9/7b/bb/d97bbb08017ac2309307f0822e63d082.jpg',
+      'https://via.placeholder.com/800x200',
+      NOW(),
+      '0',
+      '[]'::jsonb,
+      stats_record_id,
+      NULL,
+      NULL
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      email = EXCLUDED.email,
+      name = COALESCE("userProfileData".name, EXCLUDED.name);
+  EXCEPTION WHEN OTHERS THEN
+    -- Log the error but don't fail the user registration
+    RAISE WARNING 'Error creating user profile for user_id %: %', user_id_text, SQLERRM;
+    -- Still return NEW to allow user creation to succeed
+  END;
   
   RETURN NEW;
 END;

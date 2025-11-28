@@ -24,16 +24,12 @@ const Login = () => {
   };
 
   useEffect(() => {
-    // Check if user has seen onboarding intro pages
-    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
-    
+    // Only redirect if user is already logged in
+    // Don't redirect to onboarding from login page - that's WelcomeScreen's job
     if (userLoggedin) {
+      console.log('✅ User already logged in, redirecting to companion');
       localStorage.setItem('hasSeenOnboarding', 'true');
-      navigate("/companion");
-    } else if (!hasSeenOnboarding) {
-      // First time user - redirect to onboarding intro
-      console.log('🔄 Redirecting to onboarding intro...');
-      navigate("/onboarding/intro", { replace: true });
+      navigate("/companion", { replace: true });
     }
   }, [userLoggedin, navigate]);
 

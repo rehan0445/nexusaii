@@ -101,21 +101,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const initialize = async () => {
       await checkSession();
       
-      // If no session after check, redirect to login for protected routes
-      if (mounted) {
-        const currentPath = window.location.pathname;
-        const publicPaths = ['/login', '/signup', '/reset-password', '/forgot-password'];
-        const isPublicPath = publicPaths.includes(currentPath);
-        
-        // Get session status after checkSession completes
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session && !isPublicPath) {
-          console.log('⚠️ No session found, redirecting to login');
-          window.location.href = '/login';
-          return;
+        // If no session after check, redirect to login for protected routes
+        if (mounted) {
+          const currentPath = window.location.pathname;
+          const publicPaths = [
+            '/login', 
+            '/register', 
+            '/signup', 
+            '/reset-password', 
+            '/forgot-password',
+            '/terms',
+            '/privacy',
+            '/auth/callback'
+          ];
+          // Check if path is a public path or starts with /onboarding
+          const isPublicPath = publicPaths.includes(currentPath) || currentPath.startsWith('/onboarding');
+          
+          // Get session status after checkSession completes
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (!session && !isPublicPath) {
+            console.log('⚠️ No session found, redirecting to login');
+            window.location.href = '/login';
+            return;
+          }
         }
-      }
     };
     
     initialize();
@@ -183,8 +193,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUserLoggedin(false);
         
         const currentPath = window.location.pathname;
-        const publicPaths = ['/login', '/signup', '/reset-password', '/forgot-password'];
-        if (!publicPaths.includes(currentPath)) {
+        const publicPaths = [
+          '/login', 
+          '/register', 
+          '/signup', 
+          '/reset-password', 
+          '/forgot-password',
+          '/terms',
+          '/privacy',
+          '/auth/callback'
+        ];
+        const isPublicPath = publicPaths.includes(currentPath) || currentPath.startsWith('/onboarding');
+        if (!isPublicPath) {
           console.log('⚠️ User signed out, redirecting to login');
           window.location.href = '/login';
         }

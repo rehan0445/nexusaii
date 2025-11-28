@@ -42,16 +42,12 @@ const Register: React.FC = () => {
       }
     }
     
-    // Check if user has seen onboarding intro pages
-    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
-    
+    // Only redirect if user is already logged in
+    // Don't redirect to onboarding from register page - that's WelcomeScreen's job
     if (userLoggedin) {
+      console.log('✅ User already logged in, redirecting to companion');
       localStorage.setItem('hasSeenOnboarding', 'true');
-      navigate("/companion");
-    } else if (!hasSeenOnboarding) {
-      // First time user - redirect to onboarding intro
-      console.log('🔄 Redirecting to onboarding intro...');
-      navigate("/onboarding/intro", { replace: true });
+      navigate("/companion", { replace: true });
     }
   }, [userLoggedin, navigate]);
 
@@ -120,7 +116,28 @@ const Register: React.FC = () => {
 
       if (error) {
         console.error('❌ Registration error:', error);
-        alert(error.message || "Registration failed");
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        console.error('Error code:', error.status);
+        console.error('Error message:', error.message);
+        
+        // Provide more specific error messages based on error type
+        let errorMessage = "Registration failed. Please try again.";
+        
+        if (error.status === 500 || error.message?.includes('database') || error.message?.includes('Database')) {
+          errorMessage = "We're experiencing technical difficulties. Please try again in a moment or contact support if the problem persists.";
+        } else if (error.message?.includes('already registered') || error.message?.includes('already exists') || error.message?.includes('User already registered')) {
+          errorMessage = "An account with this email already exists. Please sign in instead.";
+        } else if (error.message?.includes('email') && error.message?.includes('invalid')) {
+          errorMessage = "Please enter a valid email address.";
+        } else if (error.message?.includes('password') || error.message?.includes('Password')) {
+          errorMessage = error.message || "Password requirements not met. Please check and try again.";
+        } else if (error.message) {
+          // Use the actual error message if it's user-friendly
+          errorMessage = error.message;
+        }
+        
+        alert(errorMessage);
+        setIsLoading(false);
         return;
       }
 
@@ -179,7 +196,27 @@ const Register: React.FC = () => {
       }
     } catch (error: any) {
       console.error("❌ Email registration error:", error);
-      alert(error.message || "Registration failed");
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      console.error("Error type:", error?.constructor?.name);
+      console.error("Error stack:", error?.stack);
+      
+      // Provide more specific error messages based on error type
+      let errorMessage = "Registration failed. Please try again.";
+      
+      if (error?.status === 500 || error?.message?.includes('database') || error?.message?.includes('Database')) {
+        errorMessage = "We're experiencing technical difficulties. Please try again in a moment or contact support if the problem persists.";
+      } else if (error?.message?.includes('already registered') || error?.message?.includes('already exists') || error?.message?.includes('User already registered')) {
+        errorMessage = "An account with this email already exists. Please sign in instead.";
+      } else if (error?.message?.includes('email') && error?.message?.includes('invalid')) {
+        errorMessage = "Please enter a valid email address.";
+      } else if (error?.message?.includes('password') || error?.message?.includes('Password')) {
+        errorMessage = error.message || "Password requirements not met. Please check and try again.";
+      } else if (error?.message) {
+        // Use the actual error message if it's user-friendly
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
