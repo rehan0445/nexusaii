@@ -192,7 +192,7 @@ export const getRankedCharacters = async (limit?: number): Promise<RankedCharact
     if (response.data.success) {
       const leaderboard = response.data.data.leaderboard.map((item: any) => ({
         id: item.character_id,
-        views: item.total_views,
+        views: item.display_views || (item.total_views || 0) + (item.fake_views || 0), // Use display_views if available, fallback to calculation
         rank: item.rank
       }));
       console.log('✅ Leaderboard fetched successfully:', leaderboard.length, 'characters');

@@ -1392,9 +1392,15 @@ function AiChat() {
       .slice(0, 4)
       .map((item) => item.slug);
 
-    // For You - Random selection of characters with diverse tags
+    // For You - Random selection of characters with more than 4000 views
     const forYouCharacters = randomizedCharacters
-      .filter(([slug, _]) => !trendingSlugs.includes(slug))
+      .filter(([slug, _]) => {
+        // Exclude trending characters
+        if (trendingSlugs.includes(slug)) return false;
+        // Only include characters with more than 4000 views
+        const characterViews = views[slug] || 0;
+        return characterViews > 4000;
+      })
       .slice(0, 10);
 
     // Helper function to ensure we have enough characters in each category
@@ -2416,7 +2422,7 @@ function AiChat() {
                               <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                                 <div className="flex items-center space-x-2 text-white/90">
                                   <Eye className="w-4 h-4" />
-                                  <span className="text-sm">{(views[slug] || 0).toLocaleString()} views</span>
+                                  <span className="text-sm">{(views || 0).toLocaleString()} views</span>
                                 </div>
                               </div>
                         </div>

@@ -155,20 +155,22 @@ export const getCharacterLeaderboard = async (req, res) => {
   try {
     const { limit = 50, type = 'total' } = req.query;
     
-    const orderColumn = type === 'unique' ? 'unique_views' : 'total_views';
-    
+    // For trending, always use display_views (total_views + fake_views)
+    // For unique ranking, still use unique_views
     // Get ranked characters by view count with timeout handling
+    // Use the character_display_views view or calculate display_views in query
     const { data: rankedCharacters, error } = await Promise.race([
       supabase
         .from("character_view_counts")
         .select(`
           character_id,
           total_views,
+          fake_views,
           unique_views,
           last_viewed_at
         `)
-        .order(orderColumn, { ascending: false })
-        .limit(parseInt(limit)),
+        .order(type === 'unique' ? 'unique_views' : 'total_views', { ascending: false })
+        .limit(Number.parseInt(limit) * 2), // Get more to account for display_views sorting
       new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Database query timeout')), 5000)
       )
@@ -182,9 +184,28 @@ export const getCharacterLeaderboard = async (req, res) => {
       console.error("Leaderboard query error:", error.message || error);
     }
 
-    // Add ranking numbers
-    const leaderboard = (rankedCharacters || []).map((character, index) => ({
+    // Calculate display_views and sort by it (unless using unique_views)
+    let processedCharacters = (rankedCharacters || []).map((character) => ({
       ...character,
+      display_views: (character.total_views || 0) + (character.fake_views || 0),
+    }));
+
+    // Sort by display_views if not using unique ranking
+    if (type !== 'unique') {
+      processedCharacters.sort((a, b) => b.display_views - a.display_views);
+    }
+
+    // Limit to requested amount
+    processedCharacters = processedCharacters.slice(0, Number.parseInt(limit));
+
+    // Add ranking numbers
+    const leaderboard = processedCharacters.map((character, index) => ({
+      character_id: character.character_id,
+      total_views: character.total_views,
+      fake_views: character.fake_views || 0,
+      display_views: character.display_views,
+      unique_views: character.unique_views,
+      last_viewed_at: character.last_viewed_at,
       rank: index + 1,
     }));
 
@@ -251,11 +272,18 @@ export const getCharacterViewStats = async (req, res) => {
       viewsByDay[day] = (viewsByDay[day] || 0) + 1;
     });
 
+    // Calculate display_views
+    const totalViews = viewStats?.total_views || 0;
+    const fakeViews = viewStats?.fake_views || 0;
+    const displayViews = totalViews + fakeViews;
+
     return res.status(200).json({
       success: true,
       data: {
         character_id,
-        total_views: viewStats?.total_views || 0,
+        total_views: totalViews,
+        fake_views: fakeViews,
+        display_views: displayViews,
         unique_views: viewStats?.unique_views || 0,
         last_viewed_at: viewStats?.last_viewed_at,
         recent_views_30d: recentViews?.length || 0,

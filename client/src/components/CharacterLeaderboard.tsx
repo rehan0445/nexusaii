@@ -39,11 +39,12 @@ export function CharacterLeaderboard({ characters, isOpen, onClose }: CharacterL
           console.log('✅ Ranked characters from backend:', rankedCharacters.length, 'characters');
           
           // Map ranked characters to include character data
+          // ranked.views now contains display_views from backend
           const mappedCharacters = rankedCharacters
             .map(ranked => ({
               slug: ranked.id,
               character: characters[ranked.id],
-              views: ranked.views,
+              views: ranked.views, // This is now display_views (total_views + fake_views)
               rank: ranked.rank
             }))
             .filter(item => item.character); // Filter out any undefined characters
