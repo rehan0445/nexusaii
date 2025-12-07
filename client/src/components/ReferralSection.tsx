@@ -82,9 +82,9 @@ const ReferralSection: React.FC = () => {
           stats: { total: 0, pending: 0, confirmed: 0, invalid: 0 },
           tiers: {
             tier1: { threshold: 10, unlocked: false, status: null },
-            tier2: { threshold: 100, unlocked: false, status: null },
-            tier3: { threshold: 300, unlocked: false, status: null },
-            tier4: { threshold: 500, unlocked: false, status: null },
+            tier2: { threshold: 50, unlocked: false, status: null },
+            tier3: { threshold: 150, unlocked: false, status: null },
+            tier4: { threshold: 300, unlocked: false, status: null },
           },
           nextTier: { tier: 1, threshold: 10, remaining: 10 },
           code: 'Error',
@@ -125,9 +125,9 @@ const ReferralSection: React.FC = () => {
         stats: { total: 0, pending: 0, confirmed: 0, invalid: 0 },
         tiers: {
           tier1: { threshold: 10, unlocked: false, status: null },
-          tier2: { threshold: 100, unlocked: false, status: null },
-          tier3: { threshold: 300, unlocked: false, status: null },
-          tier4: { threshold: 500, unlocked: false, status: null },
+          tier2: { threshold: 50, unlocked: false, status: null },
+          tier3: { threshold: 150, unlocked: false, status: null },
+          tier4: { threshold: 300, unlocked: false, status: null },
         },
         nextTier: { tier: 1, threshold: 10, remaining: 10 },
       };
@@ -189,9 +189,9 @@ const ReferralSection: React.FC = () => {
         stats: { total: 0, pending: 0, confirmed: 0, invalid: 0 },
         tiers: {
           tier1: { threshold: 10, unlocked: false, status: null },
-          tier2: { threshold: 100, unlocked: false, status: null },
-          tier3: { threshold: 300, unlocked: false, status: null },
-          tier4: { threshold: 500, unlocked: false, status: null },
+          tier2: { threshold: 50, unlocked: false, status: null },
+          tier3: { threshold: 150, unlocked: false, status: null },
+          tier4: { threshold: 300, unlocked: false, status: null },
         },
         nextTier: { tier: 1, threshold: 10, remaining: 10 },
         code: 'Error',
@@ -478,9 +478,9 @@ const ReferralSection: React.FC = () => {
                       <div className="space-y-3">
                         {[
                           { key: 'tier1', label: 'Tier 1', threshold: 10, reward: '1 Month Premium' },
-                          { key: 'tier2', label: 'Tier 2', threshold: 100, reward: 'Ultra Premium AI + Coupons' },
-                          { key: 'tier3', label: 'Tier 3', threshold: 300, reward: 'Exclusive Merchandise' },
-                          { key: 'tier4', label: 'Tier 4', threshold: 500, reward: '1 Year Premium + Cash + Benefits' },
+                          { key: 'tier2', label: 'Tier 2', threshold: 50, reward: 'Ultra Premium AI + Coupons' },
+                          { key: 'tier3', label: 'Tier 3', threshold: 150, reward: 'Exclusive Merchandise' },
+                          { key: 'tier4', label: 'Tier 4', threshold: 300, reward: '1 Year Premium + Cash + Benefits' },
                         ].map(({ key, label, threshold, reward }) => {
                           const tier = data.tiers[key as keyof typeof data.tiers];
                           const isUnlocked = tier.unlocked;

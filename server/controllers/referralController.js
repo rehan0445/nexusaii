@@ -201,9 +201,9 @@ export const getReferralStats = async (req, res) => {
     const confirmedCount = stats.confirmed;
     const tiers = {
       tier1: { threshold: 10, unlocked: confirmedCount >= 10, status: null },
-      tier2: { threshold: 100, unlocked: confirmedCount >= 100, status: null },
-      tier3: { threshold: 300, unlocked: confirmedCount >= 300, status: null },
-      tier4: { threshold: 500, unlocked: confirmedCount >= 500, status: null },
+      tier2: { threshold: 50, unlocked: confirmedCount >= 50, status: null },
+      tier3: { threshold: 150, unlocked: confirmedCount >= 150, status: null },
+      tier4: { threshold: 300, unlocked: confirmedCount >= 300, status: null },
     };
     
     // Update tier statuses from rewards
@@ -229,9 +229,9 @@ export const getReferralStats = async (req, res) => {
 
 const getNextTier = (count) => {
   if (count < 10) return { tier: 1, threshold: 10, remaining: 10 - count };
-  if (count < 100) return { tier: 2, threshold: 100, remaining: 100 - count };
-  if (count < 300) return { tier: 3, threshold: 300, remaining: 300 - count };
-  if (count < 500) return { tier: 4, threshold: 500, remaining: 500 - count };
+  if (count < 50) return { tier: 2, threshold: 50, remaining: 50 - count };
+  if (count < 150) return { tier: 3, threshold: 150, remaining: 150 - count };
+  if (count < 300) return { tier: 4, threshold: 300, remaining: 300 - count };
   return null; // All tiers unlocked
 };
 
