@@ -20,17 +20,14 @@ const normalizeConfession = (row) => {
 };
 
 // Fallback function to get confessions from all tables (general confessions aggregation)
+// Updated to prioritize the main 'confessions' table, with fallback to legacy tables if needed
 const getConfessionsFallback = async (limit, sortBy = 'created_at', filter24h = false) => {
   console.log(`[FALLBACK] Fetching confessions with limit=${limit}, sortBy=${sortBy}, filter24h=${filter24h}`);
   
-  // Aggregate from all tables (general confessions approach)
+  // Primary table is 'confessions' (new unified table)
+  // Legacy tables removed after migration
   const allTables = [
-    'confessions',
-    'confessions_mit_adt',
-    'confessions_mit_wpu',
-    'confessions_vit_vellore',
-    'confessions_parul_university',
-    'confessions_iict'
+    'confessions'  // Unified table - all data migrated here
   ];
 
   const allConfessions = [];
@@ -470,7 +467,7 @@ export const getAllConfessions = async (req, res) => {
       console.warn(`[ALL] ⚠️  This could mean:`);
       console.warn(`[ALL]     1. The table is empty`);
       console.warn(`[ALL]     2. RLS policies are blocking access`);
-      console.warn(`[ALL]     3. Data exists in other tables (confessions_mit_adt, etc.)`);
+      console.warn(`[ALL]     3. Data should be in the 'confessions' table`);
       console.warn(`[ALL] ⚠️  Attempting fallback to aggregated tables...`);
       
       const fallbackData = await getConfessionsFallback(limit, 'created_at', false);

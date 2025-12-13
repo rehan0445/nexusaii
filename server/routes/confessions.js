@@ -459,19 +459,19 @@ const ensureCache = async (force = false) => {
 
 const fetchConfessionFromSupabase = async (id) => {
   console.log(`[FETCH CONFESSION] Searching for confession ID: ${id}`);
-  console.log(`[FETCH CONFESSION] Querying 'confessions_mit_adt' table`);
+  console.log(`[FETCH CONFESSION] Querying 'confessions' table`);
   
   try {
-    // Query confessions_mit_adt table (all confessions are stored here)
+    // Query confessions table (all confessions are stored here)
     const { data, error } = await supabase
-      .from('confessions_mit_adt')
+      .from('confessions')
       .select("*")
       .eq("id", id)
       .maybeSingle();
 
     if (error) {
       const errorInfo = handleSupabaseError(error);
-      console.error(`[FETCH CONFESSION] ❌ [${errorInfo.errorCode}] Error querying confessions_mit_adt:`, {
+      console.error(`[FETCH CONFESSION] ❌ [${errorInfo.errorCode}] Error querying confessions:`, {
         confessionId: id,
         error: errorInfo.logMessage,
         code: error.code,
@@ -491,7 +491,7 @@ const fetchConfessionFromSupabase = async (id) => {
     }
 
     if (data) {
-      console.log(`[FETCH CONFESSION] ✅ Found confession in 'confessions_mit_adt' table`);
+      console.log(`[FETCH CONFESSION] ✅ Found confession in 'confessions' table`);
       console.log(`[FETCH CONFESSION] Confession data keys:`, Object.keys(data));
       console.log(`[FETCH CONFESSION] Confession ID: ${data.id}, Content length: ${data.content?.length || 0}`);
       
@@ -505,7 +505,7 @@ const fetchConfessionFromSupabase = async (id) => {
         return null;
       }
     } else {
-      console.log(`[FETCH CONFESSION] Not found in 'confessions_mit_adt' table`);
+      console.log(`[FETCH CONFESSION] Not found in 'confessions' table`);
       
       // Fallback to in-memory cache
       const cached = confessions.find((c) => c.id === id);
@@ -519,7 +519,7 @@ const fetchConfessionFromSupabase = async (id) => {
     }
   } catch (error) {
     const errorInfo = handleSupabaseError(error);
-    console.error(`[FETCH CONFESSION] ❌ [${errorInfo.errorCode}] Exception querying confessions_mit_adt:`, {
+    console.error(`[FETCH CONFESSION] ❌ [${errorInfo.errorCode}] Exception querying confessions:`, {
       confessionId: id,
       error: errorInfo.logMessage,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
@@ -593,14 +593,9 @@ const getBestConfessionOfDay = async () => {
 };
 
 // Helper: Get all confession tables for aggregation (used by SQL functions)
-// Note: SQL functions aggregate from all tables for "general" confessions
+// Note: All confessions are now in the unified 'confessions' table
 const getAllConfessionTables = () => [
-  'confessions',
-  'confessions_mit_adt',
-  'confessions_mit_wpu',
-  'confessions_vit_vellore',
-  'confessions_parul_university',
-  'confessions_iict'
+  'confessions'  // Unified table - legacy tables removed after migration
 ];
 
 // Helper: Update confession in database (tries all tables since we aggregate from all)
@@ -909,11 +904,12 @@ router.post(
   async (req, res) => {
     await ensureCache();
 
-    const { content, alias, sessionId, poll, userName, userEmail } = req.body || {};
-    // Store ALL confessions in confessions_mit_adt table
-    const table = 'confessions_mit_adt';
-    const campusCode = 'mit_adt'; // Always mit_adt
-    console.log(`[CONFESSION CREATE] Using table: ${table}`);
+    const { content, alias, sessionId, poll, userName, userEmail, campus } = req.body || {};
+    // Store ALL confessions in general confessions table (single feed)
+    const table = 'confessions';
+    // Use campus from request or default to null (campus is nullable in general table)
+    const campusValue = campus || null;
+    console.log(`[CONFESSION CREATE] Using table: ${table}, campus: ${campusValue}`);
 
     const hasText = content && typeof content === "string" && content.length > 0;
     const hasPoll = poll && poll.question && poll.options && poll.options.length >= 2;
@@ -942,7 +938,13 @@ router.post(
 
     const id = uuidv4();
     const timestamp = new Date().toISOString();
-    const normalizedAlias = alias && typeof alias === "object" ? alias : alias ? { name: alias } : null;
+    // Normalize alias - ensure it's never null (alias is required in database)
+    // Provide default alias if missing
+    let normalizedAlias = alias && typeof alias === "object" ? alias : alias ? { name: alias } : null;
+    if (!normalizedAlias) {
+      // Default alias if none provided
+      normalizedAlias = { name: "Anonymous", emoji: "👤" };
+    }
     const normalizedPoll = poll ? { question: poll.question, options: poll.options, votes: poll.votes || {} } : undefined;
     const isExplicit = detectExplicitContent([
       typeof content === "string" ? content : "",
@@ -955,7 +957,7 @@ router.post(
       content: content || "",
       alias: normalizedAlias,
       sessionId: sessionId || null,
-      campus: campusCode,
+      campus: campusValue,
       createdAt: timestamp,
       score: 0,
       reactions: {},
@@ -967,30 +969,23 @@ router.post(
     };
 
     try {
-      // Determine if anonymous based on whether author_id exists
-      const isAnonymous = !req.body.author_id || true; // Default to anonymous
-      
+      // Insert into general confessions table
+      // Note: General confessions table doesn't have upvotes, downvotes, comment_count,
+      // is_anonymous, is_trending, trending_score, user_name, user_email fields
       const { data: insertedData, error } = await supabase
         .from(table)
         .insert({
           id,
           content: confession.content,
-          alias: confession.alias,
+          alias: confession.alias, // Required field - already ensured not null above
           session_id: confession.sessionId,
-          campus: campusCode, // Always 'mit_adt'
+          campus: campusValue, // Nullable - use from request or null
           created_at: confession.createdAt,
           reactions: confession.reactions,
           poll: confession.poll || null,
           score: confession.score,
-          upvotes: 0, // Initialize upvotes
-          downvotes: 0, // Initialize downvotes
-          comment_count: 0, // Initialize comment_count
+          replies_count: 0, // Initialize replies_count (general table uses replies_count, not comment_count)
           is_explicit: confession.isExplicit,
-          is_anonymous: isAnonymous,
-          is_trending: false, // Initialize trending status
-          trending_score: 0, // Initialize trending score
-          user_name: confession.userName,
-          user_email: confession.userEmail,
           updated_at: confession.createdAt
         })
         .select()
@@ -1025,7 +1020,7 @@ router.post(
         });
       }
 
-      console.log("✅ Confession stored in confessions_mit_adt successfully:", id);
+      console.log("✅ Confession stored in confessions table successfully:", id);
     } catch (error) {
       // Handle non-Supabase errors (network, timeout, etc.)
       const errorInfo = handleSupabaseError(error);
@@ -1339,12 +1334,12 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
     });
   }
 
-  // Update upvotes/downvotes in confessions_mit_adt
+  // Update score in confessions table (using score field, not separate upvotes/downvotes)
   try {
-    // Fetch current counts
+    // Fetch current score
     const { data: currentConfession, error: fetchError } = await supabase
-      .from('confessions_mit_adt')
-      .select('upvotes, downvotes, score')
+      .from('confessions')
+      .select('score')
       .eq('id', id)
       .maybeSingle();
     
@@ -1369,7 +1364,7 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
     }
     
     if (!currentConfession) {
-      console.error(`❌ [NOT_FOUND] Confession ${id} not found in confessions_mit_adt`);
+      console.error(`❌ [NOT_FOUND] Confession ${id} not found in confessions`);
       return res.status(404).json({
         success: false,
         error_code: "NOT_FOUND",
@@ -1377,26 +1372,20 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
       });
     }
     
-    // Calculate new counts
-    let newUpvotes = safeNumber(currentConfession.upvotes, 0);
-    let newDownvotes = safeNumber(currentConfession.downvotes, 0);
+    // Calculate new score (new table uses single score field, not separate upvotes/downvotes)
+    let currentScore = safeNumber(currentConfession.score, 0);
     
-    // Adjust counts based on vote change
-    if (previousVote === 1) newUpvotes -= 1; // Remove previous upvote
-    if (previousVote === -1) newDownvotes -= 1; // Remove previous downvote
-    if (newVote === 1) newUpvotes += 1; // Add new upvote
-    if (newVote === -1) newDownvotes += 1; // Add new downvote
-    
-    newUpvotes = Math.max(0, newUpvotes);
-    newDownvotes = Math.max(0, newDownvotes);
-    const newScore = newUpvotes - newDownvotes;
+    // Adjust score based on vote change
+    if (previousVote === 1) currentScore -= 1; // Remove previous upvote
+    if (previousVote === -1) currentScore += 1; // Remove previous downvote
+    if (newVote === 1) currentScore += 1; // Add new upvote
+    if (newVote === -1) currentScore -= 1; // Add new downvote
     
     // Update confession
     const { error: updateError } = await supabase
-      .from('confessions_mit_adt')
+      .from('confessions')
       .update({ 
-        upvotes: newUpvotes,
-        downvotes: newDownvotes,
+        score: currentScore,
         score: newScore,
         updated_at: new Date().toISOString()
       })
@@ -1826,11 +1815,11 @@ router.post(
 
       console.log(`✅ Stored comment in confession_comments_mit_adt`);
 
-      // Update comment_count in confessions_mit_adt (trigger will also handle this, but we do it explicitly)
+      // Update replies_count in confessions table
       try {
         const { data: currentConfession, error: fetchError } = await supabase
-          .from("confessions_mit_adt")
-          .select("comment_count")
+          .from("confessions")
+          .select("replies_count")
           .eq("id", id)
           .maybeSingle();
         
@@ -1842,12 +1831,12 @@ router.post(
           });
           // Don't fail the request, just log the warning
         } else if (currentConfession) {
-          const newCommentCount = safeNumber(currentConfession.comment_count, 0) + 1;
+          const newRepliesCount = safeNumber(currentConfession.replies_count, 0) + 1;
           
           const { error: updateError } = await supabase
-            .from("confessions_mit_adt")
+            .from("confessions")
             .update({ 
-              comment_count: newCommentCount,
+              replies_count: newRepliesCount,
               updated_at: new Date().toISOString()
             })
             .eq("id", id);
@@ -1860,10 +1849,10 @@ router.post(
             });
             // Don't fail the request, comment was already inserted
           } else {
-            console.log(`✅ Updated comment_count for confession ${id}: ${newCommentCount}`);
+            console.log(`✅ Updated replies_count for confession ${id}: ${newRepliesCount}`);
           }
         } else {
-          console.warn(`⚠️ [NOT_FOUND] Confession ${id} not found in confessions_mit_adt for comment count update`);
+          console.warn(`⚠️ [NOT_FOUND] Confession ${id} not found in confessions for replies_count update`);
           // Don't fail the request, comment was already inserted
         }
       } catch (countUpdateError) {
@@ -2091,7 +2080,7 @@ router.delete("/:id", rateLimitSimple(10, 60_000), async (req, res) => {
 
   try {
     const { error: deleteError } = await supabase
-      .from("confessions_mit_adt")
+      .from("confessions")
       .delete()
       .eq("id", id);
     
@@ -2115,7 +2104,7 @@ router.delete("/:id", rateLimitSimple(10, 60_000), async (req, res) => {
       });
     }
     
-    console.log(`✅ Confession ${id} deleted successfully from confessions_mit_adt`);
+    console.log(`✅ Confession ${id} deleted successfully from confessions`);
   } catch (error) {
     const errorInfo = handleSupabaseError(error);
     console.error(`❌ [${errorInfo.errorCode}] Unexpected error deleting confession:`, {
@@ -2288,13 +2277,13 @@ router.get("/:id", async (req, res) => {
   }
   
   if (!confession) {
-    console.error(`[GET /:id] ❌ Confession ${id} not found after searching confessions_mit_adt and cache`);
+    console.error(`[GET /:id] ❌ Confession ${id} not found after searching confessions and cache`);
     console.log(`[GET /:id] Completed in ${Date.now() - startTime}ms`);
     return res.status(404).json({ 
       success: false,
       error_code: "NOT_FOUND",
       message: "Confession not found. It may have been deleted or doesn't exist.",
-      searchedTable: 'confessions_mit_adt',
+      searchedTable: 'confessions',
       searchedCache: true
     });
   }
