@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { supabase } from '../../lib/supabase';
 
 // Get the server URL for API calls
 const getServerUrl = () => {
@@ -695,8 +696,20 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
     socket.on('vote-update', (data) => {
       try {
         console.log('📊 Vote update received:', data);
-        if (data && typeof data === 'object' && data.id && typeof data.score === 'number') {
-          setConfession(prev => prev && prev.id === data.id ? { ...prev, score: data.score } : prev);
+        if (data && typeof data === 'object' && (data.id || data.confessionId) && typeof data.score === 'number') {
+          const confessionId = data.id || data.confessionId;
+          setConfession(prev => {
+            if (prev && prev.id === confessionId) {
+              // Update score for everyone, but only update userVote if it's this user's vote
+              const updates: any = { score: data.score };
+              const currentSessionId = localStorage.getItem('confession_session_id');
+              if (data.sessionId === currentSessionId && typeof data.userVote === 'number') {
+                updates.userVote = data.userVote;
+              }
+              return { ...prev, ...updates };
+            }
+            return prev;
+          });
         }
       } catch (error) {
         console.error('Error handling vote update:', error);
@@ -761,6 +774,39 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
     });
 
     // Cleanup on unmount
+    // Supabase Realtime subscription for confessions table updates (for near-instant sync)
+    const channel = supabase
+      .channel(`confession-${confessionId}-updates`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'confessions',
+          filter: `id=eq.${confessionId}`,
+        },
+        (payload) => {
+          console.log('📡 Supabase Realtime update received for confession:', payload);
+          if (payload.new && payload.new.id === confessionId) {
+            // Update confession with new data from database
+            setConfession((prev) => {
+              if (prev && prev.id === confessionId) {
+                return {
+                  ...prev,
+                  score: payload.new.score ?? prev.score,
+                  replies_count: payload.new.replies_count ?? prev.repliesCount,
+                  // Preserve userVote from local state
+                };
+              }
+              return prev;
+            });
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log(`📡 Supabase Realtime subscription status for confession ${confessionId}:`, status);
+      });
+
     return () => {
       const socket = socketRef.current;
       if (socket) {
@@ -773,6 +819,8 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
         socket.emit('leave-confession', confessionId);
         socket.disconnect();
       }
+      // Cleanup Supabase Realtime subscription
+      supabase.removeChannel(channel);
     };
   }, [confessionId, confession]);
 
@@ -798,7 +846,9 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
     const currentVote = confession.userVote;
     const nextVote = direction === 1 ? (currentVote === 1 ? 0 : 1) : (currentVote === -1 ? 0 : -1);
     const scoreDelta = nextVote - currentVote;
+    const previousScore = confession.score;
 
+    // Optimistic update
     setConfession(prev => prev ? {
       ...prev,
       userVote: nextVote,
@@ -809,13 +859,42 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
       const SESSION_KEY = 'confession_session_id';
       const currentSessionId = localStorage.getItem(SESSION_KEY) || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       try { localStorage.setItem(SESSION_KEY, currentSessionId); } catch {}
-      await fetch(`${getServerUrl()}/api/confessions/${confession.id}/vote`, {
+      
+      const response = await fetch(`${getServerUrl()}/api/confessions/${confession.id}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ direction, sessionId: currentSessionId })
       });
+
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        // Revert optimistic update on error
+        console.error('Vote failed:', result.message || 'Unknown error');
+        setConfession(prev => prev ? {
+          ...prev,
+          userVote: currentVote,
+          score: previousScore
+        } : null);
+        return;
+      }
+
+      // Update with server response
+      if (result.data && typeof result.data.score === 'number') {
+        setConfession(prev => prev ? {
+          ...prev,
+          score: result.data.score,
+          userVote: result.data.userVote !== undefined ? result.data.userVote : nextVote
+        } : null);
+      }
     } catch (err) {
-      if (import.meta.env.DEV) console.warn('vote API failed', err);
+      console.error('Vote API error:', err);
+      // Revert optimistic update on error
+      setConfession(prev => prev ? {
+        ...prev,
+        userVote: currentVote,
+        score: previousScore
+      } : null);
     }
   };
 

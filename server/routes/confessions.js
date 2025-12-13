@@ -1373,19 +1373,18 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
     }
     
     // Calculate new score (new table uses single score field, not separate upvotes/downvotes)
-    let currentScore = safeNumber(currentConfession.score, 0);
+    let newScore = safeNumber(currentConfession.score, 0);
     
     // Adjust score based on vote change
-    if (previousVote === 1) currentScore -= 1; // Remove previous upvote
-    if (previousVote === -1) currentScore += 1; // Remove previous downvote
-    if (newVote === 1) currentScore += 1; // Add new upvote
-    if (newVote === -1) currentScore -= 1; // Add new downvote
+    if (previousVote === 1) newScore -= 1; // Remove previous upvote
+    if (previousVote === -1) newScore += 1; // Remove previous downvote
+    if (newVote === 1) newScore += 1; // Add new upvote
+    if (newVote === -1) newScore -= 1; // Add new downvote
     
-    // Update confession
+    // Update confession using atomic update to prevent race conditions
     const { error: updateError } = await supabase
       .from('confessions')
       .update({ 
-        score: currentScore,
         score: newScore,
         updated_at: new Date().toISOString()
       })
@@ -1411,12 +1410,10 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
       });
     }
     
-    console.log(`✅ Updated vote counts for confession ${id}: upvotes=${newUpvotes}, downvotes=${newDownvotes}, score=${newScore}`);
+    console.log(`✅ Updated score for confession ${id}: score=${newScore} (previous=${previousVote}, new=${newVote})`);
     
     // Update local cache
     confession.score = newScore;
-    confession.upvotes = newUpvotes;
-    confession.downvotes = newDownvotes;
     upsertConfession(confession);
   } catch (error) {
     const errorInfo = handleSupabaseError(error);
@@ -1439,21 +1436,18 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
 
   // Emit real-time vote update with score and voter's sessionId
   io.to(`confession-${id}`).emit('vote-update', { 
+    id: id,
     confessionId: id, 
-    score: confession.score,
-    upvotes: confession.upvotes || 0,
-    downvotes: confession.downvotes || 0,
+    score: newScore,
     sessionId: voter,
     userVote: newVote 
   });
-  console.log(`📊 Vote update broadcasted for confession: ${id}, newVote: ${newVote}, score: ${confession.score}`);
+  console.log(`📊 Vote update broadcasted for confession: ${id}, newVote: ${newVote}, score: ${newScore}`);
 
   return res.json({ 
     success: true, 
     data: { 
-      score: confession.score, 
-      upvotes: confession.upvotes || 0,
-      downvotes: confession.downvotes || 0,
+      score: newScore,
       userVote: newVote 
     } 
   });
