@@ -1761,23 +1761,27 @@ router.post(
     };
 
     try {
-      console.log(`📝 Storing comment in confession_comments_mit_adt: confessionId=${id}, parentId=${reply.parentId || 'none'}`);
+      console.log(`📝 Storing comment in confession_replies: confessionId=${id}, parentId=${reply.parentId || 'none'}`);
       
-      // Store comment in confession_comments_mit_adt table
-      const aliasData = typeof reply.alias === 'string' ? { name: reply.alias } : reply.alias;
+      // Store comment in confession_replies table (unified table with proper RLS policies)
+      // Ensure alias is never null (required field in confession_replies)
+      let aliasData = typeof reply.alias === 'string' ? { name: reply.alias } : reply.alias;
+      if (!aliasData || (typeof aliasData === 'object' && !aliasData.name)) {
+        aliasData = { name: 'Anonymous', emoji: '👤' }; // Default fallback
+      }
       
       const { data: insertedComment, error: commentError } = await supabase
-        .from("confession_comments_mit_adt")
+        .from("confession_replies")
         .insert({
           id: reply.id,
           confession_id: reply.confessionId,
           content: reply.content,
-          alias: aliasData,
+          alias: aliasData, // JSONB field, required
           session_id: reply.sessionId,
-          parent_comment_id: reply.parentId || null,
+          parent_id: reply.parentId || null, // Map parent_comment_id to parent_id
           created_at: reply.createdAt,
-          updated_at: reply.createdAt,
           score: reply.score,
+          campus: reply.campus || null,
           metadata: reply.metadata || {}
         })
         .select()
@@ -1813,7 +1817,7 @@ router.post(
         });
       }
 
-      console.log(`✅ Stored comment in confession_comments_mit_adt`);
+      console.log(`✅ Stored comment in confession_replies`);
 
       // Update replies_count in confessions table
       try {
@@ -1911,9 +1915,9 @@ router.get("/:id/replies", async (req, res) => {
   const { id } = req.params;
   
   try {
-    // Fetch comments from confession_comments_mit_adt
+    // Fetch comments from confession_replies (unified table with proper RLS policies)
     const { data: comments, error } = await supabase
-      .from('confession_comments_mit_adt')
+      .from('confession_replies')
       .select('*')
       .eq('confession_id', id)
       .order('created_at', { ascending: true });
@@ -1938,8 +1942,8 @@ router.get("/:id/replies", async (req, res) => {
       });
     }
     
-    // Normalize comments
-    const normalized = Array.isArray(comments) ? comments.map((row) => normalizeCommentRecord(row, row.parent_comment_id)) : [];
+    // Normalize comments (map parent_id to parentId for compatibility)
+    const normalized = Array.isArray(comments) ? comments.map((row) => normalizeCommentRecord(row, row.parent_id)) : [];
     
     return res.json({ success: true, data: normalized });
   } catch (error) {
