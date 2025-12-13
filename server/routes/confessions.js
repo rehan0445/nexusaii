@@ -1334,23 +1334,37 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
     });
   }
 
-  // Update score in confessions table (using score field, not separate upvotes/downvotes)
+  // Update score atomically using RPC function to prevent race conditions
   try {
-    // Fetch current score
-    const { data: currentConfession, error: fetchError } = await supabase
-      .from('confessions')
-      .select('score')
-      .eq('id', id)
-      .maybeSingle();
+    // Calculate score delta based on vote change
+    // If user previously upvoted (+1) and now removes it, delta = -1
+    // If user previously downvoted (-1) and now removes it, delta = +1
+    // If user adds upvote, delta = +1
+    // If user adds downvote, delta = -1
+    let scoreDelta = 0;
+    if (previousVote === 1 && newVote === 0) scoreDelta = -1; // Remove upvote
+    else if (previousVote === -1 && newVote === 0) scoreDelta = 1; // Remove downvote
+    else if (previousVote === 0 && newVote === 1) scoreDelta = 1; // Add upvote
+    else if (previousVote === 0 && newVote === -1) scoreDelta = -1; // Add downvote
+    else if (previousVote === -1 && newVote === 1) scoreDelta = 2; // Change downvote to upvote (+1 for upvote, +1 to remove downvote)
+    else if (previousVote === 1 && newVote === -1) scoreDelta = -2; // Change upvote to downvote (-1 for downvote, -1 to remove upvote)
     
-    if (fetchError) {
-      const errorInfo = handleSupabaseError(fetchError);
-      console.error(`❌ [${errorInfo.errorCode}] Failed to fetch confession for vote update:`, {
+    // Use atomic RPC function to update score in database
+    const { data: newScoreResult, error: rpcError } = await supabase
+      .rpc('update_confession_score', {
+        p_confession_id: id,
+        p_score_delta: scoreDelta
+      });
+    
+    if (rpcError) {
+      const errorInfo = handleSupabaseError(rpcError);
+      console.error(`❌ [${errorInfo.errorCode}] Failed to update score atomically:`, {
         confessionId: id,
+        scoreDelta,
         error: errorInfo.logMessage,
-        details: fetchError.details,
-        hint: fetchError.hint,
-        code: fetchError.code
+        details: rpcError.details,
+        hint: rpcError.hint,
+        code: rpcError.code
       });
       return res.status(errorInfo.statusCode).json({
         success: false,
@@ -1358,13 +1372,14 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
         message: errorInfo.userMessage,
         ...(process.env.NODE_ENV === 'development' && {
           developer_message: errorInfo.logMessage,
-          error_details: fetchError.details || fetchError.hint
+          error_details: rpcError.details || rpcError.hint
         })
       });
     }
     
-    if (!currentConfession) {
-      console.error(`❌ [NOT_FOUND] Confession ${id} not found in confessions`);
+    // RPC function returns the new score, or NULL if confession not found
+    if (newScoreResult === null || newScoreResult === undefined) {
+      console.error(`❌ [NOT_FOUND] Confession ${id} not found for score update`);
       return res.status(404).json({
         success: false,
         error_code: "NOT_FOUND",
@@ -1372,49 +1387,50 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
       });
     }
     
-    // Calculate new score (new table uses single score field, not separate upvotes/downvotes)
-    let newScore = safeNumber(currentConfession.score, 0);
+    const newScore = safeNumber(newScoreResult, 0);
     
-    // Adjust score based on vote change
-    if (previousVote === 1) newScore -= 1; // Remove previous upvote
-    if (previousVote === -1) newScore += 1; // Remove previous downvote
-    if (newVote === 1) newScore += 1; // Add new upvote
-    if (newVote === -1) newScore -= 1; // Add new downvote
+    console.log(`✅ Atomically updated score for confession ${id}: score=${newScore} (delta=${scoreDelta}, previous=${previousVote}, new=${newVote})`);
     
-    // Update confession using atomic update to prevent race conditions
-    const { error: updateError } = await supabase
-      .from('confessions')
-      .update({ 
-        score: newScore,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id);
-    
-    if (updateError) {
-      const errorInfo = handleSupabaseError(updateError);
-      console.error(`❌ [${errorInfo.errorCode}] Failed to update vote counts:`, {
-        confessionId: id,
-        error: errorInfo.logMessage,
-        details: updateError.details,
-        hint: updateError.hint,
-        code: updateError.code
-      });
-      return res.status(errorInfo.statusCode).json({
-        success: false,
-        error_code: errorInfo.errorCode,
-        message: errorInfo.userMessage,
-        ...(process.env.NODE_ENV === 'development' && {
-          developer_message: errorInfo.logMessage,
-          error_details: updateError.details || updateError.hint
-        })
-      });
-    }
-    
-    console.log(`✅ Updated score for confession ${id}: score=${newScore} (previous=${previousVote}, new=${newVote})`);
-    
-    // Update local cache
+    // Update local cache with new score from database
     confession.score = newScore;
     upsertConfession(confession);
+    
+    await writeFallback();
+
+    // Fetch the updated confession to get accurate score (in case of concurrent updates)
+    let finalScore = newScore;
+    try {
+      const { data: updatedConfession, error: fetchError } = await supabase
+        .from('confessions')
+        .select('score')
+        .eq('id', id)
+        .maybeSingle();
+      
+      if (!fetchError && updatedConfession) {
+        finalScore = safeNumber(updatedConfession.score, newScore);
+      }
+    } catch (error) {
+      // If fetch fails, use the score from RPC function
+      console.warn('Could not fetch updated confession score, using RPC result');
+    }
+
+    // Emit real-time vote update with score and voter's sessionId
+    io.to(`confession-${id}`).emit('vote-update', { 
+      id: id,
+      confessionId: id, 
+      score: finalScore,
+      sessionId: voter,
+      userVote: newVote 
+    });
+    console.log(`📊 Vote update broadcasted for confession: ${id}, newVote: ${newVote}, score: ${finalScore}`);
+
+    return res.json({ 
+      success: true, 
+      data: { 
+        score: finalScore,
+        userVote: newVote 
+      } 
+    });
   } catch (error) {
     const errorInfo = handleSupabaseError(error);
     console.error(`❌ [${errorInfo.errorCode}] Unexpected error updating vote counts:`, {
@@ -1431,26 +1447,6 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
       })
     });
   }
-
-  await writeFallback();
-
-  // Emit real-time vote update with score and voter's sessionId
-  io.to(`confession-${id}`).emit('vote-update', { 
-    id: id,
-    confessionId: id, 
-    score: newScore,
-    sessionId: voter,
-    userVote: newVote 
-  });
-  console.log(`📊 Vote update broadcasted for confession: ${id}, newVote: ${newVote}, score: ${newScore}`);
-
-  return res.json({ 
-    success: true, 
-    data: { 
-      score: newScore,
-      userVote: newVote 
-    } 
-  });
 });
 
 router.post("/:id/react", rateLimitSimple(60, 60_000), async (req, res) => {
