@@ -1857,47 +1857,47 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
 
   if (showAliasPrompt) {
     return (
-      <div className="fixed inset-0 bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 z-50">
+      <div className="fixed inset-0 bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 z-50">
         
-        <div className="relative bg-black/80 backdrop-blur-2xl border-2 border-green-500 rounded-3xl p-8 w-full max-w-md">
+        <div className="relative bg-black/80 backdrop-blur-2xl border-2 border-green-500 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 w-full max-w-md max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
           {/* Glassmorphism overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-2xl sm:rounded-3xl pointer-events-none"></div>
           
           <div className="relative z-10">
             {/* Header */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-4 sm:mb-6 md:mb-8">
               {/* Avatar */}
-              <div className="relative mx-auto mb-6 w-24 h-24">
+              <div className="relative mx-auto mb-3 sm:mb-4 md:mb-6 w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24">
                 {alias.imageUrl ? (
                   <img 
                     src={alias.imageUrl} 
                     alt="Alias avatar" 
-                    className="relative w-24 h-24 rounded-3xl object-cover border-2 border-[#22c55e]/30 " 
+                    className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-2xl sm:rounded-3xl object-cover border-2 border-[#22c55e]/30" 
                   />
                 ) : (
-                  <div className={`relative w-24 h-24 bg-gradient-to-br ${alias.color} rounded-3xl flex items-center justify-center text-4xl border-2 border-[#22c55e]/30 `}>
+                  <div className={`relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-gradient-to-br ${alias.color} rounded-2xl sm:rounded-3xl flex items-center justify-center text-2xl sm:text-3xl md:text-4xl border-2 border-[#22c55e]/30`}>
                     {alias.emoji}
                   </div>
                 )}
               </div>
               
-              <h2 className="text-3xl font-bold text-white mb-3">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3">
                 Create Your Identity
               </h2>
-              <p className="text-[#a1a1aa] text-sm leading-relaxed px-2">
+              <p className="text-[#a1a1aa] text-xs sm:text-sm leading-relaxed px-1 sm:px-2">
                 Choose an anonymous identity for this session.<br/>
                 <span className="text-[#22c55e]/80">Complete privacy guaranteed.</span>
               </p>
             </div>
 
             {/* Form */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-5 md:space-y-6">
               {/* Name Input */}
               <div>
-                <label htmlFor="alias-name" className="text-white font-semibold mb-3 block text-sm">
+                <label htmlFor="alias-name" className="text-white font-semibold mb-2 sm:mb-3 block text-xs sm:text-sm">
                   Anonymous Name
                 </label>
-                <div className="flex gap-3">
+                <div className="flex gap-2 sm:gap-3">
                   <div className="flex-1 relative">
                     <input
                       id="alias-name"
@@ -1906,30 +1906,30 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                       onChange={(e) => setAlias(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Enter your alias..."
                       maxLength={20}
-                      className="w-full bg-black/50 backdrop-blur-sm border border-[#22c55e]/20 rounded-2xl px-4 py-3 text-white placeholder-zinc-500 focus:border-[#22c55e]/50 focus:outline-none focus:ring-2 focus:ring-[#22c55e]/20 transition-all duration-300"
+                      className="w-full bg-black/50 backdrop-blur-sm border border-[#22c55e]/20 rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-zinc-500 focus:border-[#22c55e]/50 focus:outline-none focus:ring-2 focus:ring-[#22c55e]/20 transition-all duration-300"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#22c55e]/5 to-transparent rounded-2xl pointer-events-none"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#22c55e]/5 to-transparent rounded-xl sm:rounded-2xl pointer-events-none"></div>
                   </div>
                   <button
                     onClick={generateNewAlias}
-                    className="w-12 h-12 bg-black/50 backdrop-blur-sm hover:bg-black/70 text-[#22c55e] hover:text-[#22c55e] rounded-2xl transition-all duration-300 border border-[#22c55e]/20 hover:border-[#22c55e]/40 flex items-center justify-center group"
+                    className="w-11 h-11 sm:w-12 sm:h-12 min-w-[44px] min-h-[44px] bg-black/50 backdrop-blur-sm hover:bg-black/70 text-[#22c55e] hover:text-[#22c55e] rounded-xl sm:rounded-2xl transition-all duration-300 border border-[#22c55e]/20 hover:border-[#22c55e]/40 flex items-center justify-center group"
                     title="Generate random alias"
                   >
-                    <span className="text-xl group-hover:scale-110 transition-transform duration-200">🎲</span>
+                    <span className="text-lg sm:text-xl group-hover:scale-110 transition-transform duration-200">🎲</span>
                   </button>
                 </div>
-                <p className="mt-3 text-zinc-500 text-xs flex items-center gap-2">
-                  <Lock className="w-3 h-3" />
+                <p className="mt-2 sm:mt-3 text-zinc-500 text-[11px] sm:text-xs flex items-center gap-1.5 sm:gap-2">
+                  <Lock className="w-3 h-3 flex-shrink-0" />
                   Completely anonymous and temporary
                 </p>
               </div>
 
               {/* Avatar Upload */}
               <div>
-                <label className="text-white font-semibold mb-3 block text-sm">
+                <label className="text-white font-semibold mb-2 sm:mb-3 block text-xs sm:text-sm">
                   Avatar (Optional)
                 </label>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 sm:gap-4">
                   <input
                     id="alias-avatar-input"
                     type="file"
@@ -1965,40 +1965,40 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                   />
                   <button
                     onClick={() => document.getElementById('alias-avatar-input')?.click()}
-                    className="flex-1 px-4 py-3 bg-black/50 backdrop-blur-sm hover:bg-black/70 text-[#22c55e] rounded-2xl border border-[#22c55e]/20 hover:border-[#22c55e]/40 transition-all duration-300 text-sm font-medium"
+                    className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 min-h-[44px] bg-black/50 backdrop-blur-sm hover:bg-black/70 text-[#22c55e] rounded-xl sm:rounded-2xl border border-[#22c55e]/20 hover:border-[#22c55e]/40 transition-all duration-300 text-xs sm:text-sm font-medium"
                   >
                     📸 Upload Photo
                   </button>
                   {alias.imageUrl && (
                     <button
                       onClick={() => setAlias(prev => ({ ...prev, imageUrl: null }))}
-                      className="px-4 py-3 text-[#a1a1aa] hover:text-red-400 transition-colors text-sm"
+                      className="px-3 sm:px-4 py-2.5 sm:py-3 min-h-[44px] text-[#a1a1aa] hover:text-red-400 transition-colors text-xs sm:text-sm"
                     >
                       Remove
                     </button>
                   )}
                 </div>
-                <p className="mt-3 text-zinc-500 text-xs">
+                <p className="mt-2 sm:mt-3 text-zinc-500 text-[11px] sm:text-xs">
                   Random emoji avatar will be used if not uploaded
                 </p>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-6 border-t border-zinc-800/50">
+              <div className="flex items-center justify-between pt-4 sm:pt-5 md:pt-6 border-t border-zinc-800/50 gap-2">
                 <button
                   onClick={onBack}
-                  className="text-[#a1a1aa] hover:text-white transition-colors text-sm flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-[#27272a]/30"
+                  className="text-[#a1a1aa] hover:text-white transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 min-h-[44px] rounded-xl hover:bg-[#27272a]/30"
                 >
-                  <ArrowLeft className="w-4 h-4" />
+                  <ArrowLeft className="w-4 h-4 flex-shrink-0" />
                   Back
                 </button>
                 <button
                   onClick={handleAliasContinue}
                   disabled={!alias.name.trim()}
-                  className="relative bg-gradient-to-r from-[#22c55e] to-[#22c55e] hover:from-[#22c55e] hover:to-[#22c55e] text-black px-8 py-3 rounded-2xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 disabled:hover:scale-100"
+                  className="relative bg-gradient-to-r from-[#22c55e] to-[#22c55e] hover:from-[#22c55e] hover:to-[#22c55e] text-black px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 min-h-[44px] rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 disabled:hover:scale-100"
                 >
                   <span className="relative z-10">Enter Anonymously</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-xl sm:rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
                 </button>
               </div>
             </div>
@@ -2010,22 +2010,25 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
 
   if (showDisclaimer) {
     return (
-      <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-6">
-        <div className="bg-black border border-[#22c55e]/30 rounded-2xl p-8 max-w-2xl w-full">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-[#22c55e]/30 flex items-center justify-center border border-[#22c55e]/30">
-              <Shield className="w-6 h-6 text-[#22c55e]" />
+      <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 md:p-6 z-50">
+        <div className="bg-black border border-[#22c55e]/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+          {/* Header */}
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-[#22c55e]/30 flex items-center justify-center border border-[#22c55e]/30 flex-shrink-0">
+              <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-[#22c55e]" />
             </div>
-            <h3 className="text-2xl font-bold text-white">Complete Anonymity Guaranteed</h3>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white leading-tight">Complete Anonymity Guaranteed</h3>
           </div>
-          <div className="bg-[#22c55e]/10 border border-[#22c55e]/20 rounded-lg p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-red-900/30 flex items-center justify-center border border-red-500/30 flex-shrink-0 mt-0.5">
-                <span className="text-red-400 text-sm">⚠️</span>
+          
+          {/* Important Reminder Box */}
+          <div className="bg-[#22c55e]/10 border border-[#22c55e]/20 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-900/30 flex items-center justify-center border border-red-500/30 flex-shrink-0 mt-0.5">
+                <span className="text-red-400 text-xs sm:text-sm">⚠️</span>
               </div>
-              <div>
-                <h4 className="text-[#22c55e] font-semibold mb-2">Important Reminder</h4>
-                <p className="text-zinc-300 leading-relaxed">
+              <div className="min-w-0 flex-1">
+                <h4 className="text-[#22c55e] font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Important Reminder</h4>
+                <p className="text-zinc-300 leading-relaxed text-xs sm:text-sm md:text-base">
                   This is a safe space for sharing thoughts. Please be respectful and kind. 
                   Harassment, bullying, or harmful content is not tolerated. 
                   Remember that real people are behind these anonymous confessions.
@@ -2033,13 +2036,17 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
               </div>
             </div>
           </div>
-          <p className="text-zinc-300 leading-relaxed mb-6">
+          
+          {/* Privacy Text */}
+          <p className="text-zinc-300 leading-relaxed mb-4 sm:mb-6 text-xs sm:text-sm md:text-base">
             Your identity is completely protected. No IP tracking, no account linking, no digital fingerprints. Share your thoughts freely while maintaining complete privacy.
           </p>
-          <div className="flex items-center justify-end">
+          
+          {/* Action Button */}
+          <div className="flex items-center justify-end pt-2 sm:pt-0">
             <button
               onClick={() => setShowDisclaimer(false)}
-              className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium shadow-button transition-colors"
+              className="bg-green-500 hover:bg-green-600 text-white px-5 sm:px-6 py-2.5 sm:py-3 min-h-[44px] rounded-lg font-medium shadow-button transition-colors text-sm sm:text-base w-full sm:w-auto"
             >
               I understand
             </button>
