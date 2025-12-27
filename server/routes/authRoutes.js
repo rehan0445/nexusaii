@@ -381,6 +381,92 @@ router.post('/session/revoke', requireAuth, async (req, res) => {
   }
 });
 
+// Get user email hash for GA4 tracking
+// This endpoint returns the SHA-256 hashed email for the authenticated user
+// Used for Google Analytics User-ID tracking (PII-safe)
+router.get('/user-hash', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Unauthorized' 
+      });
+    }
+
+    // Query user_email_hashes table to get the hash
+    const { data, error } = await supabase
+      .from('user_email_hashes')
+      .select('email_hash')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      // If hash doesn't exist, compute it on-the-fly
+      // This handles edge cases where trigger didn't fire or hasn't completed yet
+      console.warn('⚠️ Email hash not found for user, computing on-the-fly:', userId);
+      
+      try {
+        // Get user email from auth.users (requires service role)
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+        
+        if (userError || !userData?.user?.email) {
+          console.error('❌ Failed to get user email:', userError);
+          // Return 404 but don't log as critical error - hash will be created by trigger eventually
+          return res.status(404).json({ 
+            success: false, 
+            message: 'User email hash not available yet. Please try again in a moment.' 
+          });
+        }
+
+        // Compute hash using the same function logic
+        const crypto = await import('node:crypto');
+        const normalizedEmail = userData.user.email.toLowerCase().trim();
+        const emailHash = crypto.createHash('sha256').update(normalizedEmail).digest('hex');
+
+        // Store it for future use (non-blocking - don't fail if this fails)
+        try {
+          await supabase
+            .from('user_email_hashes')
+            .upsert({ 
+              user_id: userId, 
+              email_hash: emailHash,
+              updated_at: new Date().toISOString()
+            });
+        } catch (upsertError) {
+          // Log but don't fail - hash computation succeeded
+          console.warn('⚠️ Failed to store computed hash (will be created by trigger):', upsertError);
+        }
+
+        return res.json({
+          success: true,
+          emailHash: emailHash
+        });
+      } catch (computeError) {
+        console.error('❌ Error computing email hash on-the-fly:', computeError);
+        // Return 404 - hash will be available after trigger completes
+        return res.status(404).json({ 
+          success: false, 
+          message: 'User email hash not available yet. Please try again in a moment.' 
+        });
+      }
+    }
+
+    return res.json({
+      success: true,
+      emailHash: data.email_hash
+    });
+
+  } catch (error) {
+    console.error('❌ Error getting user email hash:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
 // Health check
 router.get('/health', (req, res) => {
   res.json({ 

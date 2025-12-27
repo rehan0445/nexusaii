@@ -8,7 +8,13 @@
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
-      gtag('config', 'G-7CPN2Y2QPW');
+      // Initialize GA4 with User-ID support
+      // Note: user_id will be set dynamically after login via AuthContext
+      // This ensures NO PII (email, name, phone) is ever sent to GA
+      gtag('config', 'G-7CPN2Y2QPW', {
+        // user_id will be set after authentication (hashed email only)
+        // Do NOT set user_id here - it will be set by gaTracking.ts after login
+      });
     </script>
     <!-- End Google Tag Manager -->
     <meta charset="UTF-8" />

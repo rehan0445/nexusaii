@@ -8,6 +8,7 @@ import React, {
 import { supabase, signOut } from "../lib/supabase";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { API_CONFIG } from "../lib/config";
+import { fetchEmailHash, setGAUserId, clearGAUserId } from "../lib/gaTracking";
 
 // Define User type based on Supabase user
 type User = {
@@ -80,6 +81,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const user = mapUser(session.user);
         setCurrentUser(user);
         setUserLoggedin(true);
+        
+        // Set GA4 User-ID when session is restored (e.g., on page refresh)
+        // Delay to ensure session is fully established before fetching hash
+        setTimeout(() => {
+          try {
+            fetchEmailHash().then((emailHash) => {
+              if (emailHash) {
+                setGAUserId(emailHash);
+              }
+            }).catch((error) => {
+              console.warn('⚠️ GA User-ID tracking error on session check:', error);
+            });
+          } catch (gaError) {
+            console.warn('⚠️ GA User-ID tracking error:', gaError);
+          }
+        }, 500); // Small delay to ensure session is ready
       } else {
         setCurrentUser(null);
         setUserLoggedin(false);
@@ -105,6 +122,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (mounted) {
           const currentPath = window.location.pathname;
           const publicPaths = [
+            '/',  // ✅ Root path for guest onboarding
             '/login', 
             '/register', 
             '/signup', 
@@ -117,13 +135,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // Check if path is a public path or starts with /onboarding
           const isPublicPath = publicPaths.includes(currentPath) || currentPath.startsWith('/onboarding');
           
+          // ✅ NEW: Check for active guest session (allows guest users to access the app)
+          const hasGuestSession = localStorage.getItem('hasGuestSession') === 'true';
+          const guestSession = localStorage.getItem('guest_session');
+          const hasValidGuestSession = hasGuestSession && guestSession;
+          
           // Get session status after checkSession completes
           const { data: { session } } = await supabase.auth.getSession();
           
-          if (!session && !isPublicPath) {
-            console.log('⚠️ No session found, redirecting to login');
+          // Only redirect if no Supabase session AND no guest session AND not on a public path
+          if (!session && !hasValidGuestSession && !isPublicPath) {
+            console.log('⚠️ No session found (and no guest session), redirecting to login');
             window.location.href = '/login';
             return;
+          }
+          
+          // Log guest session status for debugging
+          if (hasValidGuestSession) {
+            console.log('✅ Guest session active, allowing access');
           }
         }
     };
@@ -181,7 +210,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
           const token = session.access_token;
           if (token) {
-            await bridgeSession(token);
+            const bridgeSuccess = await bridgeSession(token);
+            
+            // Set GA4 User-ID after successful session bridge
+            // Delay the call to ensure trigger has completed and session is fully established
+            // Use setTimeout to avoid blocking the auth flow
+            if (bridgeSuccess) {
+              // Delay by 1 second to allow trigger to complete and hash to be available
+              setTimeout(async () => {
+                try {
+                  // Retry logic: try up to 3 times with delays
+                  let emailHash = null;
+                  let attempts = 0;
+                  const maxAttempts = 3;
+                  
+                  while (!emailHash && attempts < maxAttempts) {
+                    attempts++;
+                    emailHash = await fetchEmailHash();
+                    
+                    if (!emailHash && attempts < maxAttempts) {
+                      // Wait before retrying (exponential backoff)
+                      await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+                    }
+                  }
+                  
+                  if (emailHash) {
+                    setGAUserId(emailHash);
+                  } else {
+                    console.warn('⚠️ GA User-ID tracking: Could not fetch email hash after', maxAttempts, 'attempts');
+                  }
+                } catch (gaError) {
+                  console.warn('⚠️ GA User-ID tracking error:', gaError);
+                  // Don't block auth flow if GA tracking fails
+                }
+              }, 1000); // 1 second delay to allow trigger to complete
+            }
           }
         } catch (error) {
           console.error('❌ Session bridge error:', error);
@@ -192,8 +255,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setCurrentUser(null);
         setUserLoggedin(false);
         
+        // Clear GA User-ID on logout
+        try {
+          clearGAUserId();
+        } catch (gaError) {
+          console.warn('⚠️ GA User-ID clearing error:', gaError);
+        }
+        
         const currentPath = window.location.pathname;
         const publicPaths = [
+          '/',  // ✅ Root path for guest onboarding
           '/login', 
           '/register', 
           '/signup', 
@@ -204,7 +275,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
           '/auth/callback'
         ];
         const isPublicPath = publicPaths.includes(currentPath) || currentPath.startsWith('/onboarding');
-        if (!isPublicPath) {
+        
+        // Check for guest session - don't redirect if user has active guest session
+        const hasGuestSession = localStorage.getItem('hasGuestSession') === 'true';
+        const guestSession = localStorage.getItem('guest_session');
+        const hasValidGuestSession = hasGuestSession && guestSession;
+        
+        if (!isPublicPath && !hasValidGuestSession) {
           console.log('⚠️ User signed out, redirecting to login');
           window.location.href = '/login';
         }
@@ -229,6 +306,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Logout function
   const logout = async () => {
     try {
+      // Clear GA User-ID before signing out
+      try {
+        clearGAUserId();
+      } catch (gaError) {
+        console.warn('⚠️ GA User-ID clearing error:', gaError);
+      }
+
       // Sign out from Supabase
       await signOut();
 

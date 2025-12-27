@@ -24,7 +24,8 @@ import {
   ThumbsUp,
   Home,
   MessageCircle,
-  Trophy
+  Trophy,
+  UserPlus
 } from "lucide-react";
 import { useCharacterContext } from "../contexts/CharacterContext";
 import { useSettings } from "../contexts/SettingsContext";
@@ -46,6 +47,9 @@ import { useResponsive } from "../hooks/useResponsive";
 import CompanionBanners from "../components/CompanionBanners";
 import EditorChoiceReels from "../components/EditorChoiceReels";
 import { animeCharacters } from "../utils/animeCharacters";
+import { useGuestTimer } from "../hooks/useGuestTimer";
+import RegistrationExpiredModal from "../components/RegistrationExpiredModal";
+import { useAuth } from "../contexts/AuthContext";
 
 // Add genre categories
 const genreCategories = [
@@ -435,6 +439,8 @@ function AiChat() {
   const location = useLocation();
   const { characters, loading: loadingCharacters, refreshCharacters } = useCharacterContext(); // ✅ Use global shared characters
   const { incognitoMode } = useSettings(); // ✅ Get incognito mode from settings
+  const { userLoggedin } = useAuth(); // Get auth state
+  const { isGuest, isExpired, formatTimeRemaining, timeRemaining } = useGuestTimer(); // Guest timer hook
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -1909,9 +1915,21 @@ function AiChat() {
                 )}
               </div>
               
-              {/* Right: Filters */}
-              {!showFavorites && (
-                <div className="flex items-center gap-4" ref={filterContainerRef}>
+              {/* Right: Register Now Button (for guest users) and Filters */}
+              <div className="flex items-center gap-4" ref={filterContainerRef}>
+                {/* Register Now Button - Show for guest users */}
+                {isGuest && !userLoggedin && (
+                  <button
+                    onClick={() => navigate('/register', { replace: false })}
+                    className="relative flex items-center space-x-2 px-4 py-2 rounded-[10px] bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium transition-all duration-300 ease-in-out focus:outline-none shadow-lg shadow-green-500/20 hover:shadow-green-500/30"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Register Now</span>
+                  </button>
+                )}
+                
+                {/* Filters */}
+                {!showFavorites && (
                   <div className="relative group">
                     {/* Gradient border wrapper - shows on hover/active */}
                     <div className={`absolute inset-0 rounded-[10px] bg-gradient-to-r from-green-500 to-green-600 transition-opacity duration-300 ease-in-out ${
@@ -1941,14 +1959,14 @@ function AiChat() {
                       )}
                     </button>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ) : (
             /* Mobile Layout - Keep original structure */
             <>
-              <div className="flex items-center justify-between py-1">
-                <div className="flex items-center space-x-3">
+              <div className="flex items-center justify-between py-1 gap-4">
+                <div className="flex items-center space-x-3 flex-shrink-0">
                   <button
                     onClick={() => setIsDrawerOpen(true)}
                     className={`p-2 rounded-xl bg-black/70 border border-green-500/30 hover:bg-black/80 transition-colors`}
@@ -1973,8 +1991,18 @@ function AiChat() {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <NexusChatsButton variant="compact" />
+                <div className="flex items-center space-x-2 ml-auto">
+                  {/* Register Now Button - Matches other nav icon buttons */}
+                  {isGuest && !userLoggedin && (
+                    <button
+                      onClick={() => navigate('/register', { replace: false })}
+                      className="p-2 rounded-xl bg-black/70 border border-green-500/30 hover:bg-black/80 transition-colors"
+                      aria-label="Register"
+                      title="Register Now"
+                    >
+                      <UserPlus className="w-5 h-5 text-green-500" />
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setMobileSearchOpen((prev) => !prev);
@@ -3288,6 +3316,12 @@ function AiChat() {
         isOpen={showEditorChoice}
         onClose={() => setShowEditorChoice(false)}
         characters={editorChoiceCharacters}
+      />
+      
+      {/* Registration Expired Modal - Shows when guest session expires */}
+      <RegistrationExpiredModal
+        isOpen={isExpired && isGuest && !userLoggedin}
+        timeRemaining={timeRemaining ? formatTimeRemaining(timeRemaining) : undefined}
       />
     </div>
   );

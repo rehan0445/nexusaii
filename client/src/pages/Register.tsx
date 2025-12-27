@@ -43,11 +43,24 @@ const Register: React.FC = () => {
     }
     
     // Only redirect if user is already logged in
-    // Don't redirect to onboarding from register page - that's WelcomeScreen's job
     if (userLoggedin) {
       console.log('✅ User already logged in, redirecting to companion');
       localStorage.setItem('hasSeenOnboarding', 'true');
       navigate("/companion", { replace: true });
+      return;
+    }
+    
+    // NEW: If user is a first-time visitor (no guest session), redirect to root
+    // This ensures they see the guest onboarding form first
+    const hasGuestSession = localStorage.getItem('hasGuestSession') === 'true';
+    const guestSession = localStorage.getItem('guest_session');
+    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+    
+    // If no guest session and no onboarding seen, redirect to root for guest onboarding
+    if (!hasGuestSession && !guestSession && !hasSeenOnboarding) {
+      console.log('🔄 First-time visitor on register page, redirecting to guest onboarding');
+      navigate("/", { replace: true });
+      return;
     }
   }, [userLoggedin, navigate]);
 
@@ -179,6 +192,37 @@ const Register: React.FC = () => {
           // User is automatically logged in - redirect to companion page
           console.log('✅ Session created automatically');
           console.log('🚀 Redirecting to companion page...');
+          
+          // Migrate guest session if exists
+          const guestSessionStr = localStorage.getItem('guest_session');
+          if (guestSessionStr) {
+            try {
+              const guestSession = JSON.parse(guestSessionStr);
+              const serverUrl = import.meta.env.VITE_SERVER_URL || globalThis.location.origin;
+              
+              await fetch(`${serverUrl}/api/guest/migrate-to-user`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                  sessionId: guestSession.sessionId,
+                  userId: data.user.id
+                })
+              });
+              
+              console.log('✅ Guest session migrated to registered user');
+              
+              // Clear guest session data from localStorage
+              localStorage.removeItem('guest_session');
+              localStorage.removeItem('guest_session_start');
+              localStorage.removeItem('hasGuestSession');
+            } catch (error) {
+              console.error('⚠️ Error migrating guest session:', error);
+              // Don't block registration if migration fails
+            }
+          }
           
           // Set onboarding completion flags
           localStorage.setItem('hasSeenOnboarding', 'true');
