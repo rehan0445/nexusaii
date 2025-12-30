@@ -329,17 +329,22 @@ export function ConfessionPage({ onBack, universityId, collegeName, collegeFullN
   const [hasMore, setHasMore] = useState(true);
   const [cursor, setCursor] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'text' | 'image' | 'poll'>('all');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const [recentSearches, setRecentSearches] = useState<string[]>([
-    'Love confession',
-    'Exam stress',
-    'Roommate problems',
-    'Career advice',
-    'Friendship issues'
-  ]);
+  // Load recent searches from localStorage, fallback to empty array
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('confession_recent_searches');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Engagement features state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -1382,17 +1387,45 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
     return confession.repliesList ? confession.repliesList.length : (confession.replies || 0);
   };
 
-  // Search and filter handlers
+  // Search and filter handlers with debouncing
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    // Add to recent searches if not already present
+    
+    // Clear previous debounce timer
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+    
+    // Show searching state if query is not empty
+    if (query.trim()) {
+      setIsSearching(true);
+    }
+    
+    // Debounce the actual search (300ms delay)
+    searchDebounceRef.current = setTimeout(() => {
+      setDebouncedSearchQuery(query);
+      setIsSearching(false);
+    }, 300);
+  };
+
+  // Add to recent searches when user submits/selects a search
+  const addToRecentSearches = (query: string) => {
     if (query.trim() && !recentSearches.includes(query.trim())) {
-      setRecentSearches(prev => [query.trim(), ...prev.slice(0, 4)]);
+      const updated = [query.trim(), ...recentSearches.filter(s => s !== query.trim())].slice(0, 5);
+      setRecentSearches(updated);
+      try {
+        localStorage.setItem('confession_recent_searches', JSON.stringify(updated));
+      } catch {}
     }
-    // Close search modal if query is cleared
-    if (!query.trim()) {
-      setIsSearchOpen(false);
-    }
+  };
+
+  // Clear a specific recent search
+  const removeRecentSearch = (searchToRemove: string) => {
+    const updated = recentSearches.filter(s => s !== searchToRemove);
+    setRecentSearches(updated);
+    try {
+      localStorage.setItem('confession_recent_searches', JSON.stringify(updated));
+    } catch {}
   };
 
   // Focus search input when modal opens
@@ -1401,6 +1434,15 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
       searchInputRef.current.focus();
     }
   }, [isSearchOpen]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, []);
 
   const handleFilter = (filters: { categories: string[]; tags: string[] }) => {
     // Update the filter type based on filter selection
@@ -1748,17 +1790,27 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
   };
 
 
-  // Filter and search confessions
+  // Filter and search confessions using debounced query for performance
   const filteredConfessions = confessions.filter(confession => {
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      const matchesContent = confession.content.toLowerCase().includes(query);
-      const matchesAuthor = confession.authorAlias?.name?.toLowerCase().includes(query) || false;
-      const matchesPoll = confession.poll?.question.toLowerCase().includes(query) || 
-                         confession.poll?.options.some(option => option.toLowerCase().includes(query));
+    // Apply search filter using debounced query
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase().trim();
+      const confessionContent = (confession.content || '').toLowerCase();
+      const authorName = (confession.authorAlias?.name || '').toLowerCase();
+      const pollQuestion = (confession.poll?.question || '').toLowerCase();
+      const pollOptions = confession.poll?.options?.map(o => o.toLowerCase()).join(' ') || '';
       
-      if (!matchesContent && !matchesAuthor && !matchesPoll) {
+      // Combine all searchable text
+      const searchableText = `${confessionContent} ${authorName} ${pollQuestion} ${pollOptions}`;
+      
+      // Split query into keywords and check if ALL keywords match (for better multi-word search)
+      const keywords = query.split(/\s+/).filter(k => k.length > 0);
+      const matchesAllKeywords = keywords.every(keyword => searchableText.includes(keyword));
+      
+      // Also check if the full query matches (for exact phrase search)
+      const matchesFullQuery = searchableText.includes(query);
+      
+      if (!matchesAllKeywords && !matchesFullQuery) {
         return false;
       }
     }
@@ -1779,6 +1831,9 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
 
     return true;
   });
+
+  // Get search results for the modal (limited to top 5 for preview)
+  const searchResults = searchQuery.trim() ? filteredConfessions.slice(0, 5) : [];
 
   // Show confession detail page
   if (selectedConfessionId) {
@@ -2082,7 +2137,7 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
             </div>
 
             {/* Search Input */}
-            <div className="relative mb-6">
+            <div className="relative mb-4">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#22c55e]/60" />
               <input
                 ref={searchInputRef}
@@ -2090,9 +2145,13 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 placeholder="Search confessions, authors, or polls..."
-                className="w-full pl-12 pr-4 py-3 bg-black/50 border border-[#22c55e]/20 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-[#22c55e]/50 focus:ring-2 focus:ring-[#22c55e]/20 transition-all duration-300"
+                className="w-full pl-12 pr-10 py-3 bg-black/50 border border-[#22c55e]/20 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-[#22c55e]/50 focus:ring-2 focus:ring-[#22c55e]/20 transition-all duration-300"
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') {
+                    setIsSearchOpen(false);
+                  }
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    addToRecentSearches(searchQuery);
                     setIsSearchOpen(false);
                   }
                 }}
@@ -2100,34 +2159,129 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
               {searchQuery && (
                 <button
                   onClick={() => handleSearch('')}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400 hover:text-[#22c55e] transition-colors"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-zinc-400 hover:text-[#22c55e] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
 
-            {/* Recent Searches */}
-            {recentSearches.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-zinc-400 mb-3">Recent Searches</h3>
-                <div className="space-y-2">
-                  {recentSearches.map((search, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        handleSearch(search);
-                        setIsSearchOpen(false);
-                      }}
-                      className="w-full text-left p-3 bg-black/50 hover:bg-[#22c55e]/10 border border-[#22c55e]/10 hover:border-[#22c55e]/30 rounded-lg text-white transition-colors flex items-center gap-3"
-                    >
-                      <Search className="w-4 h-4 text-[#22c55e]/60" />
-                      <span>{search}</span>
-                    </button>
-                  ))}
+            {/* Search Results or Recent Searches */}
+            <div className="max-h-[60vh] overflow-y-auto">
+              {/* Loading State */}
+              {isSearching && searchQuery.trim() && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin w-6 h-6 border-2 border-[#22c55e]/30 border-t-[#22c55e] rounded-full"></div>
+                  <span className="ml-3 text-zinc-400">Searching...</span>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Search Results */}
+              {!isSearching && searchQuery.trim() && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium text-zinc-400">
+                      {filteredConfessions.length > 0 
+                        ? `Found ${filteredConfessions.length} confession${filteredConfessions.length !== 1 ? 's' : ''}`
+                        : 'No results found'
+                      }
+                    </h3>
+                    {filteredConfessions.length > 5 && (
+                      <button
+                        onClick={() => {
+                          addToRecentSearches(searchQuery);
+                          setIsSearchOpen(false);
+                        }}
+                        className="text-xs text-[#22c55e] hover:text-[#22c55e]/80 transition-colors"
+                      >
+                        View all →
+                      </button>
+                    )}
+                  </div>
+
+                  {filteredConfessions.length > 0 ? (
+                    <div className="space-y-2">
+                      {searchResults.map((confession) => (
+                        <button
+                          key={confession.id}
+                          onClick={() => {
+                            addToRecentSearches(searchQuery);
+                            setSelectedConfessionId(confession.id);
+                            setIsSearchOpen(false);
+                          }}
+                          className="w-full text-left p-3 bg-black/50 hover:bg-[#22c55e]/10 border border-[#22c55e]/10 hover:border-[#22c55e]/30 rounded-lg transition-colors"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-white font-medium text-sm">
+                              {confession.authorAlias?.name || 'Anonymous'}
+                            </span>
+                            {confession.isExplicit && (
+                              <span className="px-1 py-0.5 bg-red-600/90 text-white text-[9px] font-bold rounded uppercase">
+                                NSFW
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-zinc-300 text-sm line-clamp-2">
+                            {confession.content || (confession.poll ? `Poll: ${confession.poll.question}` : 'Media confession')}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-12 h-12 mx-auto mb-3 bg-zinc-800 rounded-full flex items-center justify-center">
+                        <Search className="w-6 h-6 text-zinc-500" />
+                      </div>
+                      <p className="text-zinc-400 mb-2">No confessions found for "{searchQuery}"</p>
+                      <p className="text-zinc-500 text-sm">Try different keywords or check spelling</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Recent Searches - Only show when not searching */}
+              {!searchQuery.trim() && recentSearches.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-zinc-400 mb-3">Recent Searches</h3>
+                  <div className="space-y-2">
+                    {recentSearches.map((search, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2"
+                      >
+                        <button
+                          onClick={() => {
+                            handleSearch(search);
+                          }}
+                          className="flex-1 text-left p-3 bg-black/50 hover:bg-[#22c55e]/10 border border-[#22c55e]/10 hover:border-[#22c55e]/30 rounded-lg text-white transition-colors flex items-center gap-3"
+                        >
+                          <Search className="w-4 h-4 text-[#22c55e]/60" />
+                          <span>{search}</span>
+                        </button>
+                        <button
+                          onClick={() => removeRecentSearch(search)}
+                          className="p-2 text-zinc-500 hover:text-red-400 transition-colors"
+                          title="Remove"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty State - No recent searches and no query */}
+              {!searchQuery.trim() && recentSearches.length === 0 && (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 mx-auto mb-3 bg-zinc-800 rounded-full flex items-center justify-center">
+                    <Search className="w-6 h-6 text-zinc-500" />
+                  </div>
+                  <p className="text-zinc-400">Start typing to search confessions</p>
+                  <p className="text-zinc-500 text-sm mt-1">Search by content, author name, or poll questions</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

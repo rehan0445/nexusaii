@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-12-30T06:11:32.323Z",
+  "generatedAt": "2025-12-30T07:02:06.532Z",
   "confessions": [
     {
       "id": "421d6e82-5652-47a9-8643-54ed9eb61614",
@@ -29,7 +29,7 @@
       "sessionId": "1760595955706-sqs1td91lwa",
       "campus": "general",
       "createdAt": "2025-12-30T00:26:27.998",
-      "score": 0,
+      "score": 1,
       "reactions": {},
       "replies": 0,
       "isExplicit": true,
@@ -85,7 +85,7 @@
       "sessionId": "1765393210042-7ils026pqi",
       "campus": "general",
       "createdAt": "2025-12-29T14:13:51.414",
-      "score": 0,
+      "score": 1,
       "reactions": {},
       "replies": 0,
       "isExplicit": true,
@@ -141,7 +141,7 @@
       "sessionId": "1767008054681-iugeu2mju1k",
       "campus": "general",
       "createdAt": "2025-12-29T11:37:02.589",
-      "score": 0,
+      "score": 1,
       "reactions": {},
       "replies": 1,
       "isExplicit": true,
@@ -504,7 +504,7 @@
       "sessionId": "1760609820485-muxioyukdy",
       "campus": "mit_adt",
       "createdAt": "2025-10-16T10:22:17.104",
-      "score": 22,
+      "score": 23,
       "reactions": {},
       "replies": 0,
       "isExplicit": false
@@ -612,7 +612,7 @@
       "sessionId": "1760256437475-bqcwts1y6k7",
       "campus": "mit_adt",
       "createdAt": "2025-10-12T08:14:59.616",
-      "score": 14,
+      "score": 15,
       "reactions": {},
       "replies": 1,
       "isExplicit": true
@@ -1258,39 +1258,6 @@
       "isExplicit": true
     },
     {
-      "id": "7c0e9357-2346-4899-bc74-1a0938920f20",
-      "content": "I think you’re the president of some business club… I’m not even sure which one, but the way people listen when you speak makes it obvious. I really like you, even though we’ve never properly talked. Maybe you’ll never read this, but if you do \njust know someone admires you quietly from the crowd.",
-      "alias": {
-        "name": "CampusCrusader",
-        "badge": {
-          "id": "first_whisper",
-          "icon": "🌟",
-          "name": "First Whisper",
-          "color": "text-green-400",
-          "pfpColor": "from-gray-600 to-gray-700",
-          "description": "Posted your first confession",
-          "requirement": {
-            "type": "confessions",
-            "count": 1
-          }
-        },
-        "color": "from-gray-600 to-gray-700",
-        "emoji": "🤖",
-        "stats": {
-          "totalEngagement": 0,
-          "totalConfessions": 6
-        },
-        "imageUrl": null
-      },
-      "sessionId": "1765722997013-stqsfcjny4",
-      "campus": "general",
-      "createdAt": null,
-      "score": 0,
-      "reactions": {},
-      "replies": 0,
-      "isExplicit": false
-    },
-    {
       "id": "a79d0fb9-5247-4a5f-9e95-3a489852fdb4",
       "content": "Some people act like they’re everyone’s friend, but privately unka favourite hobby dusron ke secrets share karna hota hai. Trust carefully, guys.",
       "alias": {
@@ -1318,7 +1285,7 @@
       "sessionId": "1765722997013-stqsfcjny4",
       "campus": "general",
       "createdAt": null,
-      "score": 0,
+      "score": 2,
       "reactions": {},
       "replies": 2,
       "isExplicit": false
@@ -1351,7 +1318,7 @@
       "sessionId": "1765722997013-stqsfcjny4",
       "campus": "general",
       "createdAt": null,
-      "score": 0,
+      "score": 1,
       "reactions": {},
       "replies": 0,
       "isExplicit": false
@@ -1454,6 +1421,39 @@
       "reactions": {},
       "replies": 1,
       "isExplicit": true
+    },
+    {
+      "id": "7c0e9357-2346-4899-bc74-1a0938920f20",
+      "content": "I think you’re the president of some business club… I’m not even sure which one, but the way people listen when you speak makes it obvious. I really like you, even though we’ve never properly talked. Maybe you’ll never read this, but if you do \njust know someone admires you quietly from the crowd.",
+      "alias": {
+        "name": "CampusCrusader",
+        "badge": {
+          "id": "first_whisper",
+          "icon": "🌟",
+          "name": "First Whisper",
+          "color": "text-green-400",
+          "pfpColor": "from-gray-600 to-gray-700",
+          "description": "Posted your first confession",
+          "requirement": {
+            "type": "confessions",
+            "count": 1
+          }
+        },
+        "color": "from-gray-600 to-gray-700",
+        "emoji": "🤖",
+        "stats": {
+          "totalEngagement": 0,
+          "totalConfessions": 6
+        },
+        "imageUrl": null
+      },
+      "sessionId": "1765722997013-stqsfcjny4",
+      "campus": "general",
+      "createdAt": null,
+      "score": 3,
+      "reactions": {},
+      "replies": 0,
+      "isExplicit": false
     }
   ],
   "replies": {}
