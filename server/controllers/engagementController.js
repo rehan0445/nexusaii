@@ -164,6 +164,7 @@ export const getTrendingConfessions = async (req, res) => {
     console.log(`[TRENDING] ✅ RPC Success - Received ${data?.length || 0} confessions`);
 
     // Normalize the data to match the expected format
+    // IMPORTANT: Use combined metrics (total_views, total_upvotes) for display
     const normalizedData = (data || []).map((confession) => ({
       id: confession.id,
       content: confession.content,
@@ -171,7 +172,10 @@ export const getTrendingConfessions = async (req, res) => {
       sessionId: confession.session_id,
       campus: confession.campus || "general",
       createdAt: confession.created_at,
-      score: confession.score || 0,
+      // Use combined total_upvotes (fake + real) for display
+      score: confession.total_upvotes ?? confession.score ?? 0,
+      // Use combined total_views (fake + real) for display
+      viewCount: confession.total_views ?? confession.view_count ?? 0,
       replies: confession.replies_count || 0,
       reactions: confession.reactions || {},
       poll: confession.poll,
@@ -179,7 +183,7 @@ export const getTrendingConfessions = async (req, res) => {
       engagementScore: confession.engagement_score || 0
     }));
 
-    console.log(`[TRENDING] ✅ Normalized ${normalizedData.length} confessions`);
+    console.log(`[TRENDING] ✅ Normalized ${normalizedData.length} confessions with combined metrics`);
     console.log(`[TRENDING] Completed in ${Date.now() - startTime}ms`);
 
     return res.json({
@@ -270,6 +274,7 @@ export const getFreshConfessions = async (req, res) => {
     console.log(`[FRESH] ✅ RPC Success - Received ${data?.length || 0} confessions`);
 
     // Normalize the data to match the expected format
+    // IMPORTANT: Use combined metrics (total_views, total_upvotes) for display
     const normalizedData = (data || []).map((confession) => ({
       id: confession.id,
       content: confession.content,
@@ -277,14 +282,17 @@ export const getFreshConfessions = async (req, res) => {
       sessionId: confession.session_id,
       campus: confession.campus || "general",
       createdAt: confession.created_at,
-      score: confession.score || 0,
+      // Use combined total_upvotes (fake + real) for display
+      score: confession.total_upvotes ?? confession.score ?? 0,
+      // Use combined total_views (fake + real) for display
+      viewCount: confession.total_views ?? confession.view_count ?? 0,
       replies: confession.replies_count || 0,
       reactions: confession.reactions || {},
       poll: confession.poll,
       isExplicit: confession.is_explicit || false
     }));
 
-    console.log(`[FRESH] ✅ Normalized ${normalizedData.length} confessions`);
+    console.log(`[FRESH] ✅ Normalized ${normalizedData.length} confessions with combined metrics`);
     console.log(`[FRESH] Completed in ${Date.now() - startTime}ms`);
 
     return res.json({
@@ -369,6 +377,7 @@ export const getTopRatedConfessions = async (req, res) => {
     console.log(`[TOP] ✅ RPC Success - Received ${data?.length || 0} confessions`);
 
     // Normalize the data to match the expected format
+    // IMPORTANT: Use combined metrics (total_views, total_upvotes) for display
     const normalizedData = (data || []).map((confession) => ({
       id: confession.id,
       content: confession.content,
@@ -376,14 +385,17 @@ export const getTopRatedConfessions = async (req, res) => {
       sessionId: confession.session_id,
       campus: confession.campus || "general",
       createdAt: confession.created_at,
-      score: confession.score || 0,
+      // Use combined total_upvotes (fake + real) for display
+      score: confession.total_upvotes ?? confession.score ?? 0,
+      // Use combined total_views (fake + real) for display
+      viewCount: confession.total_views ?? confession.view_count ?? 0,
       replies: confession.replies_count || 0,
       reactions: confession.reactions || {},
       poll: confession.poll,
       isExplicit: confession.is_explicit || false
     }));
 
-    console.log(`[TOP] ✅ Normalized ${normalizedData.length} confessions`);
+    console.log(`[TOP] ✅ Normalized ${normalizedData.length} confessions with combined metrics`);
     console.log(`[TOP] Completed in ${Date.now() - startTime}ms`);
 
     return res.json({
