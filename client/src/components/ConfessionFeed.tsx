@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Sparkles, Trophy, List, ChevronUp, ChevronDown, MessageCircle, AlertTriangle } from 'lucide-react';
+import { TrendingUp, Sparkles, Trophy, List, ChevronUp, ChevronDown, MessageCircle, AlertTriangle, Eye } from 'lucide-react';
 import { apiFetch, formatTimeAgo } from '../lib/utils';
 
 // Get the server URL for API calls
@@ -23,6 +23,7 @@ interface Confession {
   isExplicit?: boolean;
   engagementScore?: number;
   userVote?: -1 | 0 | 1;
+  viewCount?: number;
 }
 
 interface ConfessionFeedProps {
@@ -445,6 +446,12 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
                   <MessageCircle className="w-4 h-4" strokeWidth={2} />
                   <span>{confession.replies || 0}</span>
                 </button>
+                
+                {/* View Count */}
+                <div className="flex items-center gap-1 text-sm text-zinc-500" title="Views">
+                  <Eye className="w-4 h-4" strokeWidth={2} />
+                  <span>{confession.viewCount || 0}</span>
+                </div>
               </div>
             )}
           </div>

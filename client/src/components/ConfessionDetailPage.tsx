@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
 import { supabase } from '../lib/supabase';
-import { formatTimeAgo } from '../lib/utils';
+import { formatTimeAgo, getOrCreateAnonymousId, apiFetch } from '../lib/utils';
 
 // Get the server URL for API calls
 const getServerUrl = () => {
@@ -16,6 +16,7 @@ import {
   Send,
   Clock,
   EyeOff,
+  Eye,
   Calendar,
   Star,
   Flame,
@@ -123,6 +124,7 @@ interface Confession {
   };
   commentsCount: number;
   isExplicit?: boolean;
+  viewCount?: number;
 }
 
 interface ConfessionDetailPageProps {
@@ -266,6 +268,52 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
     return actualCount;
   };
 
+  // Track confession view for both authenticated and anonymous users
+  const trackConfessionView = async (confessionId: string) => {
+    try {
+      // Check if user is authenticated via Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let payload: { confessionId: string; userId?: string; anonymousId?: string };
+      
+      if (user?.id) {
+        // Authenticated user - track by user_id
+        payload = { confessionId, userId: user.id };
+      } else {
+        // Anonymous user - track by anonymous_id from localStorage
+        const anonymousId = getOrCreateAnonymousId();
+        if (!anonymousId) {
+          console.warn('Could not create anonymous ID for view tracking');
+          return;
+        }
+        payload = { confessionId, anonymousId };
+      }
+      
+      // Fire and forget - don't block UI
+      const response = await apiFetch(`${getServerUrl()}/api/confessions/track-view`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update local view count if this is a new view
+        if (!result.data.alreadyViewed) {
+          setConfession(prev => prev ? {
+            ...prev,
+            viewCount: result.data.newViewCount
+          } : null);
+        }
+        console.log('👁️ View tracked:', result.data);
+      }
+    } catch (error) {
+      // Silently fail - view tracking should not block UI
+      console.warn('Failed to track view:', error);
+    }
+  };
+
   // Load specific confession and its comments
   useEffect(() => {
     const loadConfessionData = async () => {
@@ -335,8 +383,12 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
             backgroundImageUrl: foundConfession.backgroundImageUrl,
             poll: foundConfession.poll,
             commentsCount: foundConfession.replies || 0,
-            isExplicit
+            isExplicit,
+            viewCount: foundConfession.viewCount ?? foundConfession.view_count ?? 0
           });
+          
+          // Track view asynchronously (fire and forget)
+          trackConfessionView(foundConfession.id);
           
           // Load comments/replies for this confession
           try {
@@ -1690,7 +1742,13 @@ export function ConfessionDetailPage({ confessionId, onBack, universityId }: Con
               <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-white via-[#22c55e] to-[#22c55e] bg-clip-text text-transparent">
                 Confessions
               </h1>
-              <p className="text-xs text-[#a1a1aa]">{getCommentCount(confession)} comments</p>
+              <div className="flex items-center gap-3 text-xs text-[#a1a1aa]">
+                <span>{getCommentCount(confession)} comments</span>
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  {confession.viewCount || 0} views
+                </span>
+              </div>
             </div>
           </div>
           

@@ -159,4 +159,72 @@ export function getSupabaseAccessToken(): string | null {
   }
 }
 
+// ============ ANONYMOUS USER IDENTIFICATION ============
+
+const ANONYMOUS_USER_KEY = 'confession_anonymous_user_id';
+
+/**
+ * Generates a UUID v4-like string for anonymous user identification
+ */
+function generateUUID(): string {
+  // Use crypto.randomUUID if available (modern browsers)
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  
+  // Fallback to manual UUID generation
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+/**
+ * Gets or generates an anonymous user ID for view tracking
+ * This ID is stored in localStorage and persists across sessions
+ * until the user clears browser data
+ * 
+ * @returns The anonymous user ID, or null if localStorage is unavailable
+ */
+export function getOrCreateAnonymousId(): string | null {
+  try {
+    // Check if localStorage is available
+    if (typeof localStorage === 'undefined') {
+      console.warn('localStorage is not available for anonymous ID');
+      return null;
+    }
+    
+    // Check for existing anonymous ID
+    let anonymousId = localStorage.getItem(ANONYMOUS_USER_KEY);
+    
+    if (!anonymousId) {
+      // Generate new anonymous ID
+      anonymousId = generateUUID();
+      localStorage.setItem(ANONYMOUS_USER_KEY, anonymousId);
+      console.log('✅ Generated new anonymous user ID:', anonymousId);
+    }
+    
+    return anonymousId;
+  } catch (error) {
+    // localStorage might be disabled (e.g., private browsing)
+    console.warn('Failed to get/create anonymous ID:', error);
+    return null;
+  }
+}
+
+/**
+ * Checks if localStorage is available in the current browser context
+ */
+export function isLocalStorageAvailable(): boolean {
+  try {
+    const testKey = '__localStorage_test__';
+    localStorage.setItem(testKey, testKey);
+    localStorage.removeItem(testKey);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 

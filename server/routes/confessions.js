@@ -255,6 +255,7 @@ const normalizeConfession = (row) => {
   const aliasValue = row.alias ?? row.meta?.alias ?? null;
   const repliesValue = safeNumber(row.comment_count ?? row.replies_count ?? row.replies ?? row.meta?.replies, 0);
   const scoreValue = safeNumber(row.score ?? row.likes ?? row.meta?.likes, 0);
+  const viewCountValue = safeNumber(row.view_count ?? row.viewCount ?? 0, 0);
   return {
     id: String(row.id),
     content: row.content ?? "",
@@ -266,7 +267,8 @@ const normalizeConfession = (row) => {
     reactions,
     replies: repliesValue,
     poll,
-    isExplicit: Boolean(row.isExplicit ?? row.is_explicit ?? row.meta?.isExplicit ?? false)
+    isExplicit: Boolean(row.isExplicit ?? row.is_explicit ?? row.meta?.isExplicit ?? false),
+    viewCount: viewCountValue
   };
 };
 
@@ -2194,6 +2196,95 @@ router.get("/:id/deletion-status", rateLimitSimple(30, 60_000), async (req, res)
 
 router.post("/:id/report", rateLimitSimple(10, 60_000), (_req, res) => {
   return res.json({ success: true, message: "Reported" });
+});
+
+// ============ VIEW TRACKING ============
+
+/**
+ * Track confession view for both authenticated and anonymous users
+ * POST /api/confessions/track-view
+ * Body: { confessionId: string, userId?: string, anonymousId?: string }
+ */
+router.post("/track-view", rateLimitSimple(60, 60_000), async (req, res) => {
+  const startTime = Date.now();
+  console.log(`\n[TRACK-VIEW] ========================================`);
+  console.log(`[TRACK-VIEW] Request received at ${new Date().toISOString()}`);
+  
+  try {
+    const { confessionId, userId, anonymousId } = req.body || {};
+    
+    console.log(`[TRACK-VIEW] Input:`, { confessionId, userId, anonymousId });
+    
+    // Validate input
+    if (!confessionId || typeof confessionId !== 'string') {
+      console.log(`[TRACK-VIEW] ❌ Invalid confession ID`);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid confession ID' 
+      });
+    }
+    
+    // Either userId or anonymousId must be provided
+    if (!userId && !anonymousId) {
+      console.log(`[TRACK-VIEW] ❌ Either userId or anonymousId must be provided`);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Either userId or anonymousId must be provided' 
+      });
+    }
+    
+    // Only one should be provided
+    if (userId && anonymousId) {
+      console.log(`[TRACK-VIEW] ❌ Only one of userId or anonymousId should be provided`);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Only one of userId or anonymousId should be provided' 
+      });
+    }
+    
+    // Call the database function to track view
+    const { data, error } = await supabase.rpc('track_confession_view', {
+      p_confession_id: confessionId,
+      p_user_id: userId || null,
+      p_anonymous_id: anonymousId || null
+    });
+    
+    if (error) {
+      console.error(`[TRACK-VIEW] ❌ RPC Error:`, error);
+      
+      // Handle specific errors
+      if (error.message.includes('Confession not found')) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Confession not found' 
+        });
+      }
+      
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Failed to track view',
+        error: error.message 
+      });
+    }
+    
+    console.log(`[TRACK-VIEW] ✅ Success:`, data);
+    console.log(`[TRACK-VIEW] Completed in ${Date.now() - startTime}ms`);
+    
+    return res.json({
+      success: true,
+      data: {
+        alreadyViewed: data?.already_viewed || false,
+        newViewCount: data?.new_view_count || 0
+      }
+    });
+  } catch (error) {
+    console.error(`[TRACK-VIEW] ❌ Exception:`, error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error',
+      error: error.message 
+    });
+  }
 });
 
 // ============ ENGAGEMENT FEATURES ROUTES ============

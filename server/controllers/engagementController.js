@@ -15,7 +15,8 @@ const normalizeConfession = (row) => {
     reactions: row.reactions && typeof row.reactions === "object" ? row.reactions : {},
     poll: row.poll,
     isExplicit: Boolean(row.isExplicit ?? row.is_explicit ?? false),
-    engagementScore: row.engagement_score || 0
+    engagementScore: row.engagement_score || 0,
+    viewCount: row.view_count ?? 0
   };
 };
 
@@ -406,12 +407,12 @@ export const getTopRatedConfessions = async (req, res) => {
 };
 
 /**
- * Get all confessions (simple query, newest first)
+ * Get all confessions (sorted by view_count, then created_at)
  * GET /api/confessions/all
  * 
  * This endpoint queries the main 'confessions' table with a simple SELECT,
- * ordered by created_at descending (newest first).
- * No filters, no restrictions - just all confessions.
+ * ordered by view_count descending (most viewed first), with created_at as secondary sort.
+ * Supports pagination via cursor parameter.
  */
 export const getAllConfessions = async (req, res) => {
   const startTime = Date.now();
@@ -420,18 +421,20 @@ export const getAllConfessions = async (req, res) => {
   console.log(`[ALL] Query params:`, JSON.stringify(req.query, null, 2));
 
   try {
-    const limit = Math.min(Number.parseInt(req.query.limit || "20", 10), 100);
+    const limit = Math.min(Number.parseInt(req.query.limit || "30", 10), 100);
+    const cursor = Number.parseInt(req.query.cursor || "0", 10);
 
-    console.log(`[ALL] 📋 Executing query: SELECT * FROM confessions ORDER BY created_at DESC LIMIT ${limit}`);
-    console.log(`[ALL] 📋 Query details: limit=${limit}, no filters, no restrictions`);
+    console.log(`[ALL] 📋 Executing query: SELECT * FROM confessions ORDER BY view_count DESC, created_at DESC LIMIT ${limit} OFFSET ${cursor}`);
+    console.log(`[ALL] 📋 Query details: limit=${limit}, cursor=${cursor}, sorted by view_count DESC`);
 
-    // Simple, unrestricted query: fetch all confessions ordered by created_at descending (newest first)
-    // This is intentionally simple - no filters, no RLS bypass, just a direct query
-    const { data, error } = await supabase
+    // Query all confessions ordered by view_count descending (most viewed first)
+    // with created_at as secondary sort for ties
+    const { data, error, count } = await supabase
       .from('confessions')
-      .select('*')
+      .select('*', { count: 'exact' })
+      .order('view_count', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .range(cursor, cursor + limit - 1);
 
     // Detailed error logging
     if (error) {
@@ -488,6 +491,7 @@ export const getAllConfessions = async (req, res) => {
         id: data[0]?.id,
         content_preview: data[0]?.content?.substring(0, 50) + '...',
         created_at: data[0]?.created_at,
+        view_count: data[0]?.view_count,
         has_alias: !!data[0]?.alias
       });
     }
@@ -501,7 +505,13 @@ export const getAllConfessions = async (req, res) => {
       return normalized;
     }).filter(Boolean);
 
+    // Calculate pagination info
+    const totalCount = count || 0;
+    const hasMore = cursor + dataLength < totalCount;
+    const nextCursor = hasMore ? cursor + dataLength : null;
+
     console.log(`[ALL] ✅ Normalized ${normalizedData.length} confessions (${dataLength - normalizedData.length} failed normalization)`);
+    console.log(`[ALL] ✅ Total count: ${totalCount}, hasMore: ${hasMore}, nextCursor: ${nextCursor}`);
     console.log(`[ALL] ✅ Returning ${normalizedData.length} confessions to client`);
     console.log(`[ALL] Completed in ${Date.now() - startTime}ms`);
 
@@ -509,6 +519,9 @@ export const getAllConfessions = async (req, res) => {
       success: true,
       data: normalizedData,
       count: normalizedData.length,
+      totalCount,
+      hasMore,
+      nextCursor,
       fallback: false
     });
   } catch (error) {

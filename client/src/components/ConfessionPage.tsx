@@ -11,6 +11,7 @@ import {
   Shield, 
   MessageCircle, 
   EyeOff, 
+  Eye,
   Lock,
   ChevronUp,
   ChevronDown,
@@ -93,6 +94,7 @@ interface Confession {
     votes?: Record<string, string>; // userId -> selectedOption
   };
   isExplicit?: boolean;
+  viewCount?: number;
 }
 
 interface Reply {
@@ -646,7 +648,8 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
       isTrending: Boolean(serverConfession.isTrending),
       engagementScore: 0,
       poll: pollValue,
-      isExplicit: Boolean(serverConfession.isExplicit)
+      isExplicit: Boolean(serverConfession.isExplicit),
+      viewCount: serverConfession.viewCount ?? serverConfession.view_count ?? 0
     };
   };
 
@@ -662,7 +665,8 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
       poll: formatted.poll,
       isExplicit: formatted.isExplicit,
       authorAlias: formatted.authorAlias,
-      creatorSessionId: formatted.creatorSessionId
+      creatorSessionId: formatted.creatorSessionId,
+      viewCount: formatted.viewCount
     };
   };
 
@@ -2695,6 +2699,13 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                       <span className="font-medium">{getCommentCount(confession)}</span>
                       <span className="hidden sm:inline text-sm">comments</span>
                     </button>
+                    
+                    {/* View count */}
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-2xl text-zinc-400 border border-zinc-700/30 bg-zinc-800/30">
+                      <Eye className="w-4 h-4" />
+                      <span className="font-medium text-sm">{confession.viewCount || 0}</span>
+                      <span className="hidden sm:inline text-xs">views</span>
+                    </div>
                   </div>
                 </div>
                 )}
