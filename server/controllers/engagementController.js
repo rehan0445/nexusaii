@@ -1,8 +1,21 @@
 import { supabase } from "../config/supabase.js";
 
 // Helper function to normalize confession data
+// IMPORTANT: Returns combined metrics (fake + real) for display
+// Never expose fake_views or fake_upvotes to frontend
 const normalizeConfession = (row) => {
   if (!row) return null;
+  
+  // Calculate combined metrics if fake metrics are available
+  const fakeViews = row.fake_views ?? 0;
+  const fakeUpvotes = row.fake_upvotes ?? 0;
+  const realViews = row.view_count ?? 0;
+  const realScore = row.score ?? 0;
+  
+  // Combined totals for display (use pre-calculated if available, otherwise calculate)
+  const totalViews = row.total_views ?? (fakeViews + realViews);
+  const totalUpvotes = row.total_upvotes ?? Math.max(0, fakeUpvotes + realScore);
+  
   return {
     id: String(row.id),
     content: row.content ?? "",
@@ -10,13 +23,16 @@ const normalizeConfession = (row) => {
     sessionId: row.sessionId ?? row.session_id ?? row.user_id ?? null,
     campus: row.campus ?? 'general',
     createdAt: row.created_at ?? row.createdAt ?? new Date().toISOString(),
-    score: row.score ?? 0,
+    // DISPLAY VALUES: Combined fake + real metrics
+    score: totalUpvotes,
+    viewCount: totalViews,
+    // Keep real score for voting logic (internal use)
+    realScore: realScore,
     replies: row.replies_count ?? row.replies ?? 0,
     reactions: row.reactions && typeof row.reactions === "object" ? row.reactions : {},
     poll: row.poll,
     isExplicit: Boolean(row.isExplicit ?? row.is_explicit ?? false),
-    engagementScore: row.engagement_score || 0,
-    viewCount: row.view_count ?? 0
+    engagementScore: row.engagement_score || 0
   };
 };
 
@@ -82,8 +98,8 @@ const getConfessionsFallback = async (limit, sortBy = 'created_at', filter24h = 
 };
 
 /**
- * Get trending confessions based on engagement score
- * Score = (upvotes * 1) + (comment_count * 3)
+ * Get trending confessions based on engagement score (with combined fake + real metrics)
+ * Score = (total_upvotes * 1) + (comment_count * 3)
  * GET /api/confessions/trending
  */
 export const getTrendingConfessions = async (req, res) => {
@@ -98,11 +114,11 @@ export const getTrendingConfessions = async (req, res) => {
       ? Number.parseInt(req.query.daysLookback, 10) 
       : null;
 
-    console.log(`[TRENDING] Calling RPC: get_trending_confessions with limit=${limit}, daysLookback=${daysLookback}`);
+    console.log(`[TRENDING] Calling RPC: get_trending_confessions_with_metrics with limit=${limit}, daysLookback=${daysLookback}`);
 
-    // Try RPC call first
-    const { data, error } = await supabase.rpc("get_trending_confessions", {
-      p_limit_count: limit,
+    // Use new RPC with combined metrics
+    const { data, error } = await supabase.rpc("get_trending_confessions_with_metrics", {
+      p_limit: limit,
       p_days_lookback: daysLookback
     });
 
@@ -209,7 +225,7 @@ export const getTrendingConfessions = async (req, res) => {
 };
 
 /**
- * Get fresh confessions (random selection from last 24 hours)
+ * Get fresh confessions (random selection from last 24 hours, with combined metrics)
  * GET /api/confessions/fresh
  */
 export const getFreshConfessions = async (req, res) => {
@@ -221,11 +237,11 @@ export const getFreshConfessions = async (req, res) => {
   try {
     const limit = Math.min(Number.parseInt(req.query.limit || "20", 10), 100);
 
-    console.log(`[FRESH] Calling RPC: get_fresh_random_confessions with limit=${limit}`);
+    console.log(`[FRESH] Calling RPC: get_fresh_confessions_with_metrics with limit=${limit}`);
 
-    // Try RPC call first
-    const { data, error } = await supabase.rpc("get_fresh_random_confessions", {
-      p_limit_count: limit
+    // Use new RPC with combined metrics
+    const { data, error } = await supabase.rpc("get_fresh_confessions_with_metrics", {
+      p_limit: limit
     });
 
     if (error) {
@@ -308,7 +324,7 @@ export const getFreshConfessions = async (req, res) => {
 };
 
 /**
- * Get top rated confessions (all time, sorted by upvotes)
+ * Get top rated confessions (all time, sorted by combined upvotes: fake + real)
  * GET /api/confessions/top
  */
 export const getTopRatedConfessions = async (req, res) => {
@@ -320,11 +336,11 @@ export const getTopRatedConfessions = async (req, res) => {
   try {
     const limit = Math.min(Number.parseInt(req.query.limit || "20", 10), 100);
 
-    console.log(`[TOP] Calling RPC: get_top_rated_confessions with limit=${limit}`);
+    console.log(`[TOP] Calling RPC: get_top_rated_confessions_with_metrics with limit=${limit}`);
 
-    // Try RPC call first
-    const { data, error } = await supabase.rpc("get_top_rated_confessions", {
-      p_limit_count: limit
+    // Use new RPC with combined metrics
+    const { data, error } = await supabase.rpc("get_top_rated_confessions_with_metrics", {
+      p_limit: limit
     });
 
     if (error) {
@@ -407,11 +423,11 @@ export const getTopRatedConfessions = async (req, res) => {
 };
 
 /**
- * Get all confessions (sorted by view_count, then created_at)
+ * Get all confessions (sorted by combined view count: fake + real)
  * GET /api/confessions/all
  * 
- * This endpoint queries the main 'confessions' table with a simple SELECT,
- * ordered by view_count descending (most viewed first), with created_at as secondary sort.
+ * This endpoint uses an RPC function that JOINs confessions with fake_metrics
+ * to return combined totals sorted by total_views (fake + real) descending.
  * Supports pagination via cursor parameter.
  */
 export const getAllConfessions = async (req, res) => {
@@ -424,17 +440,19 @@ export const getAllConfessions = async (req, res) => {
     const limit = Math.min(Number.parseInt(req.query.limit || "30", 10), 100);
     const cursor = Number.parseInt(req.query.cursor || "0", 10);
 
-    console.log(`[ALL] 📋 Executing query: SELECT * FROM confessions ORDER BY view_count DESC, created_at DESC LIMIT ${limit} OFFSET ${cursor}`);
-    console.log(`[ALL] 📋 Query details: limit=${limit}, cursor=${cursor}, sorted by view_count DESC`);
+    console.log(`[ALL] 📋 Calling RPC: get_confessions_with_combined_metrics(limit=${limit}, offset=${cursor})`);
+    console.log(`[ALL] 📋 Query details: limit=${limit}, cursor=${cursor}, sorted by total_views DESC (fake + real)`);
 
-    // Query all confessions ordered by view_count descending (most viewed first)
-    // with created_at as secondary sort for ties
-    const { data, error, count } = await supabase
-      .from('confessions')
-      .select('*', { count: 'exact' })
-      .order('view_count', { ascending: false, nullsFirst: false })
-      .order('created_at', { ascending: false })
-      .range(cursor, cursor + limit - 1);
+    // Use RPC function to get confessions with combined fake + real metrics
+    // Sorted by total_views (fake_views + real_views) descending
+    const { data, error } = await supabase.rpc('get_confessions_with_combined_metrics', {
+      p_limit: limit,
+      p_offset: cursor
+    });
+    
+    // Get total count for pagination
+    const { data: countData } = await supabase.rpc('get_confessions_total_count');
+    const count = countData || 0;
 
     // Detailed error logging
     if (error) {
@@ -485,18 +503,24 @@ export const getAllConfessions = async (req, res) => {
       });
     }
 
-    // Log sample data for debugging
+    // Log sample data for debugging (including combined metrics)
     if (dataLength > 0) {
       console.log(`[ALL] 📊 Sample confession (first item):`, {
         id: data[0]?.id,
         content_preview: data[0]?.content?.substring(0, 50) + '...',
         created_at: data[0]?.created_at,
-        view_count: data[0]?.view_count,
+        real_views: data[0]?.view_count,
+        fake_views: data[0]?.fake_views,
+        total_views: data[0]?.total_views,
+        real_score: data[0]?.score,
+        fake_upvotes: data[0]?.fake_upvotes,
+        total_upvotes: data[0]?.total_upvotes,
         has_alias: !!data[0]?.alias
       });
     }
 
-    // Normalize the data to match the expected format
+    // Normalize the data - this will use combined metrics for display
+    // IMPORTANT: fake_views and fake_upvotes are stripped out, only totals are exposed
     const normalizedData = (data || []).map((confession) => {
       const normalized = normalizeConfession(confession);
       if (!normalized) {

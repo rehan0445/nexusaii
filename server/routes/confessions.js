@@ -254,8 +254,17 @@ const normalizeConfession = (row) => {
   const reactions = row.reactions && typeof row.reactions === "object" ? row.reactions : {};
   const aliasValue = row.alias ?? row.meta?.alias ?? null;
   const repliesValue = safeNumber(row.comment_count ?? row.replies_count ?? row.replies ?? row.meta?.replies, 0);
-  const scoreValue = safeNumber(row.score ?? row.likes ?? row.meta?.likes, 0);
-  const viewCountValue = safeNumber(row.view_count ?? row.viewCount ?? 0, 0);
+  
+  // Handle combined metrics (fake + real) if available
+  const fakeViews = safeNumber(row.fake_views, 0);
+  const fakeUpvotes = safeNumber(row.fake_upvotes, 0);
+  const realViews = safeNumber(row.view_count ?? row.viewCount, 0);
+  const realScore = safeNumber(row.score ?? row.likes ?? row.meta?.likes, 0);
+  
+  // Use pre-calculated totals if available, otherwise calculate
+  const totalViews = row.total_views !== undefined ? safeNumber(row.total_views, 0) : (fakeViews + realViews);
+  const totalUpvotes = row.total_upvotes !== undefined ? safeNumber(row.total_upvotes, 0) : Math.max(0, fakeUpvotes + realScore);
+  
   return {
     id: String(row.id),
     content: row.content ?? "",
@@ -263,12 +272,15 @@ const normalizeConfession = (row) => {
     sessionId: row.sessionId ?? row.session_id ?? row.user_id ?? null,
     campus: row.campus ?? 'general',
     createdAt, // Always DB value
-    score: scoreValue,
+    // DISPLAY VALUES: Combined fake + real metrics (never expose breakdown)
+    score: totalUpvotes,
+    viewCount: totalViews,
+    // Keep real score for voting logic (internal use only)
+    realScore: realScore,
     reactions,
     replies: repliesValue,
     poll,
-    isExplicit: Boolean(row.isExplicit ?? row.is_explicit ?? row.meta?.isExplicit ?? false),
-    viewCount: viewCountValue
+    isExplicit: Boolean(row.isExplicit ?? row.is_explicit ?? row.meta?.isExplicit ?? false)
   };
 };
 
@@ -2287,6 +2299,108 @@ router.post("/track-view", rateLimitSimple(60, 60_000), async (req, res) => {
   }
 });
 
+// ============ ADMIN ROUTES ============
+
+/**
+ * Generate fake metrics for all confessions
+ * POST /api/confessions/admin/generate-fake-metrics
+ * 
+ * This is an admin endpoint to populate fake views and upvotes for confessions.
+ * Should be run once initially and periodically for new confessions.
+ */
+router.post("/admin/generate-fake-metrics", rateLimitSimple(5, 60_000), async (req, res) => {
+  const startTime = Date.now();
+  console.log(`\n[ADMIN] ========================================`);
+  console.log(`[ADMIN] Generate fake metrics request received`);
+  
+  try {
+    // Call the database function to generate fake metrics for all confessions
+    const { data, error } = await supabase.rpc('generate_fake_metrics_for_all_confessions');
+    
+    if (error) {
+      console.error(`[ADMIN] ❌ Error generating fake metrics:`, error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to generate fake metrics',
+        error: error.message
+      });
+    }
+    
+    console.log(`[ADMIN] ✅ Fake metrics generated:`, data);
+    console.log(`[ADMIN] Completed in ${Date.now() - startTime}ms`);
+    
+    return res.json({
+      success: true,
+      message: 'Fake metrics generated successfully',
+      data: data
+    });
+  } catch (error) {
+    console.error(`[ADMIN] ❌ Exception:`, error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Generate fake metrics for a single confession
+ * POST /api/confessions/admin/generate-fake-metrics/:id
+ */
+router.post("/admin/generate-fake-metrics/:id", rateLimitSimple(10, 60_000), async (req, res) => {
+  const { id } = req.params;
+  console.log(`\n[ADMIN] Generate fake metrics for confession: ${id}`);
+  
+  try {
+    // First, get the confession to get its stats
+    const { data: confession, error: confessionError } = await supabase
+      .from('confessions')
+      .select('id, replies_count, score, created_at')
+      .eq('id', id)
+      .single();
+    
+    if (confessionError || !confession) {
+      return res.status(404).json({
+        success: false,
+        message: 'Confession not found'
+      });
+    }
+    
+    // Generate fake metrics
+    const { data, error } = await supabase.rpc('generate_fake_metrics_for_confession', {
+      p_confession_id: id,
+      p_comment_count: confession.replies_count || 0,
+      p_upvote_count: confession.score || 0,
+      p_created_at: confession.created_at
+    });
+    
+    if (error) {
+      console.error(`[ADMIN] ❌ Error generating fake metrics:`, error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to generate fake metrics',
+        error: error.message
+      });
+    }
+    
+    console.log(`[ADMIN] ✅ Fake metrics generated for confession ${id}:`, data);
+    
+    return res.json({
+      success: true,
+      message: 'Fake metrics generated for confession',
+      data: data
+    });
+  } catch (error) {
+    console.error(`[ADMIN] ❌ Exception:`, error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+});
+
 // ============ ENGAGEMENT FEATURES ROUTES ============
 
 // All confessions (newest first, default view)
@@ -2314,79 +2428,104 @@ router.get("/:id", async (req, res) => {
     return res.status(404).json({ success: false, message: "Not found" });
   }
 
-  await ensureCache();
-  
-  // Try in-memory cache first
-  let confession = confessions.find((item) => item.id === id);
-  if (confession) {
-    console.log(`[GET /:id] ✅ Found in memory cache`);
-  } else {
-    console.log(`[GET /:id] Not in cache, searching database...`);
-    confession = await fetchConfessionFromSupabase(id);
-  }
-  
-  if (!confession) {
-    console.error(`[GET /:id] ❌ Confession ${id} not found after searching confessions and cache`);
-    console.log(`[GET /:id] Completed in ${Date.now() - startTime}ms`);
-    return res.status(404).json({ 
-      success: false,
-      error_code: "NOT_FOUND",
-      message: "Confession not found. It may have been deleted or doesn't exist.",
-      searchedTable: 'confessions',
-      searchedCache: true
+  try {
+    // Use RPC to get confession with combined metrics
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_confession_with_metrics', {
+      p_confession_id: id
     });
-  }
+    
+    let confession = null;
+    
+    if (!rpcError && rpcData && rpcData.length > 0) {
+      const row = rpcData[0];
+      // Normalize with combined metrics
+      confession = normalizeConfession(row);
+      console.log(`[GET /:id] ✅ Found via RPC with combined metrics:`, {
+        id: confession.id,
+        total_views: row.total_views,
+        total_upvotes: row.total_upvotes
+      });
+    }
+    
+    // Fallback to cache if RPC fails
+    if (!confession) {
+      await ensureCache();
+      confession = confessions.find((item) => item.id === id);
+      if (confession) {
+        console.log(`[GET /:id] ✅ Found in memory cache (fallback)`);
+      } else {
+        console.log(`[GET /:id] Not in cache, searching database...`);
+        confession = await fetchConfessionFromSupabase(id);
+      }
+    }
+    
+    if (!confession) {
+      console.error(`[GET /:id] ❌ Confession ${id} not found`);
+      console.log(`[GET /:id] Completed in ${Date.now() - startTime}ms`);
+      return res.status(404).json({ 
+        success: false,
+        error_code: "NOT_FOUND",
+        message: "Confession not found. It may have been deleted or doesn't exist.",
+        searchedTable: 'confessions',
+        searchedCache: true
+      });
+    }
 
-  console.log(`[GET /:id] ✅ Confession found:`, {
-    id: confession.id,
-    contentLength: confession.content?.length || 0,
-    hasAlias: !!confession.alias,
-    score: confession.score,
-    replies: confession.replies
-  });
+    console.log(`[GET /:id] ✅ Confession found:`, {
+      id: confession.id,
+      contentLength: confession.content?.length || 0,
+      hasAlias: !!confession.alias,
+      score: confession.score,
+      viewCount: confession.viewCount,
+      replies: confession.replies
+    });
 
-  // Fetch user's vote for this confession from unified confession_votes table
-  const sessionId = req.query.sessionId;
-  let userVote = 0;
-  if (sessionId) {
-    try {
-      console.log(`[GET /:id] Fetching user vote for sessionId: ${sessionId}`);
-      const { data, error } = await supabase
-        .from('confession_votes')
-        .select('vote')
-        .eq('confession_id', id)
-        .eq('voter_session_id', sessionId)
-        .maybeSingle();
+    // Fetch user's vote for this confession from unified confession_votes table
+    const sessionId = req.query.sessionId;
+    let userVote = 0;
+    if (sessionId) {
+      try {
+        console.log(`[GET /:id] Fetching user vote for sessionId: ${sessionId}`);
+        const { data, error } = await supabase
+          .from('confession_votes')
+          .select('vote')
+          .eq('confession_id', id)
+          .eq('voter_session_id', sessionId)
+          .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        // PGRST116 = not found, which is OK
-        const errorInfo = handleSupabaseError(error);
-        console.warn(`⚠️ [${errorInfo.errorCode}] Error fetching user vote:`, {
+        if (error && error.code !== 'PGRST116') {
+          const errorInfo = handleSupabaseError(error);
+          console.warn(`⚠️ [${errorInfo.errorCode}] Error fetching user vote:`, {
+            confessionId: id,
+            sessionId: sessionId,
+            error: errorInfo.logMessage
+          });
+        } else if (data) {
+          userVote = data.vote ?? 0;
+          console.log(`[GET /:id] User vote: ${userVote}`);
+        }
+      } catch (voteError) {
+        const errorInfo = handleSupabaseError(voteError);
+        console.error(`❌ [${errorInfo.errorCode}] Exception fetching user vote:`, {
           confessionId: id,
           sessionId: sessionId,
           error: errorInfo.logMessage
         });
-        // Don't fail the request, just log and continue
-      } else if (data) {
-        // The vote column directly stores -1, 0, or 1
-        userVote = data.vote ?? 0;
-        console.log(`[GET /:id] User vote: ${userVote}`);
       }
-    } catch (error) {
-      const errorInfo = handleSupabaseError(error);
-      console.error(`❌ [${errorInfo.errorCode}] Exception fetching user vote:`, {
-        confessionId: id,
-        sessionId: sessionId,
-        error: errorInfo.logMessage
-      });
-      // Don't fail the request, just log and continue
     }
+
+    console.log(`[GET /:id] ✅ Returning confession with userVote: ${userVote}`);
+    console.log(`[GET /:id] Completed in ${Date.now() - startTime}ms`);
+
+    return res.json({ success: true, data: { ...confession, userVote } });
+  } catch (error) {
+    console.error(`[GET /:id] ❌ Exception:`, error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
   }
-
-  console.log(`[GET /:id] ✅ Returning confession with userVote: ${userVote}`);
-  console.log(`[GET /:id] Completed in ${Date.now() - startTime}ms`);
-
-  return res.json({ success: true, data: { ...confession, userVote } });
 });
 
 export default router;
