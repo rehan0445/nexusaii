@@ -1719,59 +1719,6 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
     }
   };
 
-  const formatTimeAgo = (dateInput: Date | string | number | null | undefined) => {
-    try {
-      // Handle null, undefined, or empty values
-      if (!dateInput) {
-        return 'Just now';
-      }
-
-      // Convert input to a valid Date object
-      let date: Date;
-
-      if (typeof dateInput === 'string') {
-        // Handle ISO date strings or other date string formats
-        date = new Date(dateInput);
-      } else if (typeof dateInput === 'number') {
-        // Handle Unix timestamps
-        date = new Date(dateInput);
-      } else if (dateInput instanceof Date) {
-        // Already a Date object
-        date = dateInput;
-      } else {
-        // Fallback for any other type
-        console.warn('formatTimeAgo received invalid date input:', dateInput);
-        return 'Just now';
-      }
-
-      // Check if the date is valid
-      if (isNaN(date.getTime())) {
-        console.warn('formatTimeAgo received invalid date:', dateInput);
-        return 'Just now';
-      }
-
-      const now = new Date();
-      const diffInMs = now.getTime() - date.getTime();
-      const diffInSeconds = Math.floor(diffInMs / 1000);
-      const diffInMinutes = Math.floor(diffInSeconds / 60);
-      const diffInHours = Math.floor(diffInMinutes / 60);
-      const diffInDays = Math.floor(diffInHours / 24);
-
-      // Return appropriate time format
-      if (diffInSeconds < 60) return 'Just now';
-      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-      if (diffInHours < 24) return `${diffInHours}h ago`;
-      if (diffInDays < 7) return `${diffInDays}d ago`;
-      if (diffInDays < 30) return `${Math.floor(diffInDays / 7)}w ago`;
-      if (diffInDays < 365) return `${Math.floor(diffInDays / 30)}mo ago`;
-
-      return `${Math.floor(diffInDays / 365)}y ago`;
-    } catch (error) {
-      console.error('Error in formatTimeAgo:', error, 'with input:', dateInput);
-      return 'Just now';
-    }
-  };
-
   const canDeleteConfession = (confession: Confession) => {
     if (!confession.creatorSessionId || confession.creatorSessionId !== sessionId) {
       return false;
@@ -2237,6 +2184,12 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-white font-semibold text-sm">{confession.authorAlias?.name || ''}</span>
+                        {/* NSFW Badge - Always visible even after revealing content */}
+                        {confession.isExplicit && (
+                          <span className="px-1.5 py-0.5 bg-red-600/90 text-white text-[10px] font-bold rounded uppercase tracking-wider">
+                            NSFW
+                          </span>
+                        )}
                         {confession.authorAlias?.badge && (
                           <div className={`flex items-center gap-1 px-2 py-0.5 bg-black/40 backdrop-blur-sm rounded-full text-xs font-medium border border-white/10 ${confession.authorAlias.badge.color}`}>
                             <span className="text-xs">{confession.authorAlias.badge.icon}</span>
@@ -2365,29 +2318,26 @@ const formatConfessionFromServer = (serverConfession: any): Confession => {
                         </div>
                       )}
                       
-                      {/* Sensitive Content Overlay */}
+                      {/* Sensitive Content Overlay - Compact, contained within card */}
                       {confession.isExplicit && !revealedContent[confession.id] && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-2xl">
-                          <div className="text-center p-4 bg-black/95 backdrop-blur-xl rounded-xl border border-red-500/50 shadow-2xl max-w-xs mx-2">
-                            <div className="w-10 h-10 bg-red-900/40 rounded-full flex items-center justify-center mx-auto mb-3 border border-red-500/40">
-                              <AlertTriangle className="w-5 h-5 text-red-400" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
+                          <div className="text-center px-4 py-3 bg-black/90 rounded-xl border border-red-500/40 shadow-lg max-w-[200px]">
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                              <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                              <span className="text-white font-medium text-sm">Sensitive Content</span>
                             </div>
-                            <h3 className="text-white font-semibold text-base mb-2">Sensitive Content</h3>
-                            <p className="text-[#a1a1aa] text-xs mb-4 leading-relaxed">
-                              This confession might contain sensitive content including mature language or adult themes.
+                            <p className="text-[#a1a1aa] text-[11px] mb-2 leading-tight">
+                              May contain mature language
                             </p>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 revealSensitiveContent(confession.id);
                               }}
-                              className="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105  shadow-red-500/25 text-sm"
+                              className="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
                             >
-                              IDGF
+                              IDGAF
                             </button>
-                            <p className="text-xs text-[#a1a1aa] mt-2">
-                              Click to view content anyway
-                            </p>
                           </div>
                         </div>
                       )}

@@ -1,8 +1,91 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { differenceInDays, format, differenceInMinutes, differenceInHours } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+/**
+ * Formats a date/timestamp into a human-readable relative time string
+ * 
+ * Output examples:
+ * - "just now" (< 1 minute ago)
+ * - "5 minutes ago"
+ * - "2 hours ago"  
+ * - "yesterday"
+ * - "2 days ago"
+ * - "1 week ago"
+ * - "Dec 30" (if older than 7 days)
+ */
+export function formatTimeAgo(dateInput: Date | string | number | null | undefined): string {
+  try {
+    // Handle null, undefined, or empty values
+    if (!dateInput) {
+      return 'just now';
+    }
+
+    // Convert input to a valid Date object
+    let date: Date;
+
+    if (typeof dateInput === 'string') {
+      date = new Date(dateInput);
+    } else if (typeof dateInput === 'number') {
+      date = new Date(dateInput);
+    } else if (dateInput instanceof Date) {
+      date = dateInput;
+    } else {
+      console.warn('formatTimeAgo received invalid date input:', dateInput);
+      return 'just now';
+    }
+
+    // Check if the date is valid
+    if (Number.isNaN(date.getTime())) {
+      console.warn('formatTimeAgo received invalid date:', dateInput);
+      return 'just now';
+    }
+
+    const now = new Date();
+    const minutes = differenceInMinutes(now, date);
+    const hours = differenceInHours(now, date);
+    const days = differenceInDays(now, date);
+
+    // Less than 1 minute
+    if (minutes < 1) {
+      return 'just now';
+    }
+
+    // Less than 60 minutes
+    if (minutes < 60) {
+      return minutes === 1 ? '1 minute ago' : `${minutes} minutes ago`;
+    }
+
+    // Less than 24 hours
+    if (hours < 24) {
+      return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+    }
+
+    // Yesterday (1 day ago)
+    if (days === 1) {
+      return 'yesterday';
+    }
+
+    // 2-6 days ago
+    if (days < 7) {
+      return `${days} days ago`;
+    }
+
+    // 7-13 days (1 week ago)
+    if (days < 14) {
+      return '1 week ago';
+    }
+
+    // Older than 7 days - show formatted date (e.g., "Dec 30")
+    return format(date, 'MMM d');
+  } catch (error) {
+    console.error('Error in formatTimeAgo:', error, 'with input:', dateInput);
+    return 'just now';
+  }
 }
 
 

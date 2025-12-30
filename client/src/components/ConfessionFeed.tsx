@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Sparkles, Trophy, List, ChevronUp, ChevronDown, MessageCircle } from 'lucide-react';
-import { apiFetch } from '../lib/utils';
+import { TrendingUp, Sparkles, Trophy, List, ChevronUp, ChevronDown, MessageCircle, AlertTriangle } from 'lucide-react';
+import { apiFetch, formatTimeAgo } from '../lib/utils';
 
 // Get the server URL for API calls
 const getServerUrl = () => {
@@ -34,6 +34,17 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
   const [confessions, setConfessions] = useState<Confession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Track which NSFW confessions have been revealed by the user
+  const [revealedContent, setRevealedContent] = useState<{ [key: string]: boolean }>({});
+
+  // Function to reveal sensitive content for a specific confession
+  const revealSensitiveContent = (confessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click navigation
+    setRevealedContent(prev => ({
+      ...prev,
+      [confessionId]: true
+    }));
+  };
 
   // Get session ID for voting
   const getSessionId = () => {
@@ -309,7 +320,7 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
               </div>
             )}
 
-            {/* Meta/Header - Username, timestamp */}
+            {/* Meta/Header - Username, timestamp, NSFW badge */}
             <div className="flex items-center gap-3 mb-4">
               {confession.alias?.imageUrl ? (
                 <img
@@ -330,87 +341,112 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
                 <div className="text-base text-white font-semibold truncate">
                   {confession.alias?.name || 'Anonymous'}
                 </div>
+                {/* NSFW Badge - Always visible for explicit content */}
+                {confession.isExplicit && (
+                  <span className="px-1.5 py-0.5 bg-red-600/90 text-white text-[10px] font-bold rounded uppercase tracking-wider">
+                    NSFW
+                  </span>
+                )}
                 <span className="text-xs text-zinc-500">·</span>
                 <div className="text-xs text-zinc-500 font-normal">
-                  {new Date(confession.createdAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  {formatTimeAgo(confession.createdAt)}
                 </div>
               </div>
             </div>
 
-            {/* Body Content - Highly readable */}
-            <div className="text-base text-zinc-100 leading-relaxed mb-4 whitespace-pre-wrap break-words line-clamp-4">
-              {confession.content}
+            {/* Body Content - With blur effect for NSFW content */}
+            <div className="relative">
+              <div className={`text-base text-zinc-100 leading-relaxed mb-4 whitespace-pre-wrap break-words line-clamp-4 transition-all duration-300 ${
+                confession.isExplicit && !revealedContent[confessionId] ? 'blur-lg select-none' : ''
+              }`}>
+                {confession.content}
+              </div>
+              
+              {/* Sensitive Content Overlay - Compact, contained within card */}
+              {confession.isExplicit && !revealedContent[confessionId] && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+                  <div className="text-center px-3 py-2 bg-black/90 rounded-lg border border-red-500/40 shadow-lg">
+                    <div className="flex items-center justify-center gap-2 mb-1.5">
+                      <AlertTriangle className="w-4 h-4 text-red-400" />
+                      <span className="text-white font-medium text-sm">Sensitive Content</span>
+                    </div>
+                    <button
+                      onClick={(e) => revealSensitiveContent(confessionId, e)}
+                      className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                    >
+                      IDGAF
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Action Bar - Reddit Style */}
-            <div className="flex items-center gap-4 pt-4 border-t border-[#22c55e]/20">
-              {/* Voting Pill */}
-              <div 
-                className="flex items-center gap-1"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* Upvote Button */}
-                <button
-                  onClick={(e) => handleVote(confessionId, 1, e)}
-                  className={`p-1 rounded-full transition-all duration-200 flex items-center ${
-                    userVote === 1
-                      ? 'text-[#22c55e] hover:text-[#22c55e]/80'
-                      : 'text-zinc-400 hover:text-[#22c55e]'
-                  }`}
-                  title="Upvote"
+            {/* Action Bar - Reddit Style (hidden for unrevealed NSFW content) */}
+            {(!confession.isExplicit || revealedContent[confessionId]) && (
+              <div className="flex items-center gap-4 pt-4 border-t border-[#22c55e]/20">
+                {/* Voting Pill */}
+                <div 
+                  className="flex items-center gap-1"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <ChevronUp 
-                    className="w-4 h-4" 
-                    strokeWidth={userVote === 1 ? 2.5 : 2}
-                  />
-                </button>
-                
-                {/* Vote Count */}
-                <span className={`text-sm font-medium px-1 min-w-[2rem] text-center ${
-                  userVote === 1 
-                    ? 'text-[#22c55e]' 
-                    : userVote === -1
-                    ? 'text-red-400'
-                    : 'text-zinc-300'
-                }`}>
-                  {confession.score || 0}
-                </span>
-                
-                {/* Downvote Button */}
+                  {/* Upvote Button */}
+                  <button
+                    onClick={(e) => handleVote(confessionId, 1, e)}
+                    className={`p-1 rounded-full transition-all duration-200 flex items-center ${
+                      userVote === 1
+                        ? 'text-[#22c55e] hover:text-[#22c55e]/80'
+                        : 'text-zinc-400 hover:text-[#22c55e]'
+                    }`}
+                    title="Upvote"
+                  >
+                    <ChevronUp 
+                      className="w-4 h-4" 
+                      strokeWidth={userVote === 1 ? 2.5 : 2}
+                    />
+                  </button>
+                  
+                  {/* Vote Count */}
+                  <span className={`text-sm font-medium px-1 min-w-[2rem] text-center ${
+                    userVote === 1 
+                      ? 'text-[#22c55e]' 
+                      : userVote === -1
+                      ? 'text-red-400'
+                      : 'text-zinc-300'
+                  }`}>
+                    {confession.score || 0}
+                  </span>
+                  
+                  {/* Downvote Button */}
+                  <button
+                    onClick={(e) => handleVote(confessionId, -1, e)}
+                    className={`p-1 rounded-full transition-all duration-200 flex items-center ${
+                      userVote === -1
+                        ? 'text-red-400 hover:text-red-400/80'
+                        : 'text-zinc-400 hover:text-red-400'
+                    }`}
+                    title="Downvote"
+                  >
+                    <ChevronDown 
+                      className="w-4 h-4" 
+                      strokeWidth={userVote === -1 ? 2.5 : 2}
+                    />
+                  </button>
+                </div>
+
+                {/* Comment Button */}
                 <button
-                  onClick={(e) => handleVote(confessionId, -1, e)}
-                  className={`p-1 rounded-full transition-all duration-200 flex items-center ${
-                    userVote === -1
-                      ? 'text-red-400 hover:text-red-400/80'
-                      : 'text-zinc-400 hover:text-red-400'
-                  }`}
-                  title="Downvote"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClick();
+                  }}
+                  className="flex items-center gap-1 text-sm text-zinc-400 hover:text-[#22c55e] transition-colors"
+                  title="Comments"
                 >
-                  <ChevronDown 
-                    className="w-4 h-4" 
-                    strokeWidth={userVote === -1 ? 2.5 : 2}
-                  />
+                  <MessageCircle className="w-4 h-4" strokeWidth={2} />
+                  <span>{confession.replies || 0}</span>
                 </button>
               </div>
-
-              {/* Comment Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleClick();
-                }}
-                className="flex items-center gap-1 text-sm text-zinc-400 hover:text-[#22c55e] transition-colors"
-                title="Comments"
-              >
-                <MessageCircle className="w-4 h-4" strokeWidth={2} />
-                <span>{confession.replies || 0}</span>
-              </button>
-            </div>
+            )}
           </div>
           );
         })}

@@ -293,6 +293,7 @@ const normalizeReply = (row) => {
 };
 
 // Helper function to fetch user votes for multiple confessions
+// Uses the unified confession_votes table (migrated from per-college tables)
 const getUserVotesForConfessions = async (confessionIds, sessionId) => {
   if (!sessionId || !Array.isArray(confessionIds) || confessionIds.length === 0) {
     return {};
@@ -300,9 +301,9 @@ const getUserVotesForConfessions = async (confessionIds, sessionId) => {
 
   try {
     const { data, error } = await supabase
-      .from('confession_reactions_mit_adt')
-      .select('confession_id, reaction_type')
-      .eq('session_id', sessionId)
+      .from('confession_votes')
+      .select('confession_id, vote')
+      .eq('voter_session_id', sessionId)
       .in('confession_id', confessionIds);
 
     if (error) {
@@ -316,11 +317,11 @@ const getUserVotesForConfessions = async (confessionIds, sessionId) => {
     }
 
     // Create a map of confession_id -> vote (-1, 0, or 1)
+    // The vote column already stores the value directly (-1, 0, or 1)
     const votesMap = {};
     if (Array.isArray(data)) {
       for (const row of data) {
-        const vote = row.reaction_type === 'upvote' ? 1 : (row.reaction_type === 'downvote' ? -1 : 0);
-        votesMap[row.confession_id] = vote;
+        votesMap[row.confession_id] = row.vote ?? 0;
       }
     }
 
@@ -1187,33 +1188,33 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
     return res.status(404).json({ success: false, message: "Confession not found" });
   }
 
-  // Read previous reaction from confession_reactions_mit_adt
-  let previousReaction = null;
+  // Read previous vote from unified confession_votes table
+  // This table was introduced during the database migration to a single confessions table
   let previousVote = 0;
   try {
     const { data: existing, error: selectError } = await supabase
-      .from('confession_reactions_mit_adt')
-      .select('reaction_type')
+      .from('confession_votes')
+      .select('vote')
       .eq('confession_id', id)
-      .eq('session_id', voter)
+      .eq('voter_session_id', voter)
       .maybeSingle();
     
     // PGRST116 = not found, which is OK (user hasn't voted yet)
     if (selectError && selectError.code !== 'PGRST116') {
       const errorInfo = handleSupabaseError(selectError);
-      console.error(`❌ [${errorInfo.errorCode}] Failed to load previous reaction:`, {
+      console.error(`❌ [${errorInfo.errorCode}] Failed to load previous vote:`, {
         confessionId: id,
         sessionId: voter,
         error: errorInfo.logMessage
       });
       // Don't fail the request, just log and continue (user can still vote)
     } else {
-      previousReaction = existing?.reaction_type || null;
-      previousVote = previousReaction === 'upvote' ? 1 : (previousReaction === 'downvote' ? -1 : 0);
+      // confession_votes.vote is stored as -1, 0, or 1 directly
+      previousVote = existing?.vote ?? 0;
     }
   } catch (error) {
     const errorInfo = handleSupabaseError(error);
-    console.error(`❌ [${errorInfo.errorCode}] Unexpected error loading previous reaction:`, {
+    console.error(`❌ [${errorInfo.errorCode}] Unexpected error loading previous vote:`, {
       confessionId: id,
       sessionId: voter,
       error: errorInfo.logMessage
@@ -1221,104 +1222,67 @@ router.post("/:id/vote", rateLimitSimple(60, 60_000), async (req, res) => {
     // Don't fail the request, just log and continue
   }
 
-  // Compute new reaction
-  let newReactionType = null;
+  // Compute new vote value based on toggle logic
+  // If user clicks same vote direction again, toggle it off (set to 0)
+  // Otherwise, set to the new direction
   let newVote = 0;
   if (direction === 1) {
     // Upvote clicked
-    if (previousReaction === 'upvote') {
+    if (previousVote === 1) {
       // Toggle off: remove upvote
-      newReactionType = null;
       newVote = 0;
     } else {
-      // Add upvote (remove downvote if exists)
-      newReactionType = 'upvote';
+      // Add upvote (replaces any existing downvote)
       newVote = 1;
     }
   } else if (direction === -1) {
     // Downvote clicked
-    if (previousReaction === 'downvote') {
+    if (previousVote === -1) {
       // Toggle off: remove downvote
-      newReactionType = null;
       newVote = 0;
     } else {
-      // Add downvote (remove upvote if exists)
-      newReactionType = 'downvote';
+      // Add downvote (replaces any existing upvote)
       newVote = -1;
     }
   }
-  
-  // voteDelta is calculated but not used directly as we update counts explicitly
 
-  // Upsert or delete reaction in confession_reactions_mit_adt
+  // Upsert vote in the unified confession_votes table
+  // The table uses (confession_id, voter_session_id) as composite primary key
   try {
-    if (newReactionType === null) {
-      // Remove reaction
-      const { error: deleteError } = await supabase
-        .from('confession_reactions_mit_adt')
-        .delete()
-        .eq('confession_id', id)
-        .eq('session_id', voter);
-      
-      if (deleteError) {
-        const errorInfo = handleSupabaseError(deleteError);
-        console.error(`❌ [${errorInfo.errorCode}] Failed to delete reaction:`, {
-          confessionId: id,
-          sessionId: voter,
-          error: errorInfo.logMessage,
-          details: deleteError.details,
-          hint: deleteError.hint,
-          code: deleteError.code
-        });
-        return res.status(errorInfo.statusCode).json({
-          success: false,
-          error_code: errorInfo.errorCode,
-          message: errorInfo.userMessage,
-          ...(process.env.NODE_ENV === 'development' && {
-            developer_message: errorInfo.logMessage,
-            error_details: deleteError.details || deleteError.hint
-          })
-        });
-      }
-      console.log(`✅ Removed reaction for confession ${id}`);
-    } else {
-      // Upsert reaction
-      const { error: upsertError } = await supabase
-        .from('confession_reactions_mit_adt')
-        .upsert({ 
-          confession_id: id, 
-          session_id: voter,
-          user_id: voter, // Use session_id as user_id for anonymous users
-          reaction_type: newReactionType,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'confession_id,session_id' });
-      
-      if (upsertError) {
-        const errorInfo = handleSupabaseError(upsertError);
-        console.error(`❌ [${errorInfo.errorCode}] Failed to upsert reaction:`, {
-          confessionId: id,
-          sessionId: voter,
-          reactionType: newReactionType,
-          error: errorInfo.logMessage,
-          details: upsertError.details,
-          hint: upsertError.hint,
-          code: upsertError.code
-        });
-        return res.status(errorInfo.statusCode).json({
-          success: false,
-          error_code: errorInfo.errorCode,
-          message: errorInfo.userMessage,
-          ...(process.env.NODE_ENV === 'development' && {
-            developer_message: errorInfo.logMessage,
-            error_details: upsertError.details || upsertError.hint
-          })
-        });
-      }
-      console.log(`✅ Upserted reaction ${newReactionType} for confession ${id}`);
+    const { error: upsertError } = await supabase
+      .from('confession_votes')
+      .upsert({ 
+        confession_id: id, 
+        voter_session_id: voter,
+        vote: newVote,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'confession_id,voter_session_id' });
+    
+    if (upsertError) {
+      const errorInfo = handleSupabaseError(upsertError);
+      console.error(`❌ [${errorInfo.errorCode}] Failed to upsert vote:`, {
+        confessionId: id,
+        sessionId: voter,
+        vote: newVote,
+        error: errorInfo.logMessage,
+        details: upsertError.details,
+        hint: upsertError.hint,
+        code: upsertError.code
+      });
+      return res.status(errorInfo.statusCode).json({
+        success: false,
+        error_code: errorInfo.errorCode,
+        message: errorInfo.userMessage,
+        ...(process.env.NODE_ENV === 'development' && {
+          developer_message: errorInfo.logMessage,
+          error_details: upsertError.details || upsertError.hint
+        })
+      });
     }
+    console.log(`✅ Saved vote ${newVote} for confession ${id} by session ${voter}`);
   } catch (error) {
     const errorInfo = handleSupabaseError(error);
-    console.error(`❌ [${errorInfo.errorCode}] Unexpected error saving reaction:`, {
+    console.error(`❌ [${errorInfo.errorCode}] Unexpected error saving vote:`, {
       confessionId: id,
       sessionId: voter,
       error: errorInfo.logMessage,
@@ -2290,17 +2254,17 @@ router.get("/:id", async (req, res) => {
     replies: confession.replies
   });
 
-  // Fetch user's vote for this confession
+  // Fetch user's vote for this confession from unified confession_votes table
   const sessionId = req.query.sessionId;
   let userVote = 0;
   if (sessionId) {
     try {
       console.log(`[GET /:id] Fetching user vote for sessionId: ${sessionId}`);
       const { data, error } = await supabase
-        .from('confession_reactions_mit_adt')
-        .select('reaction_type')
+        .from('confession_votes')
+        .select('vote')
         .eq('confession_id', id)
-        .eq('session_id', sessionId)
+        .eq('voter_session_id', sessionId)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
@@ -2313,7 +2277,8 @@ router.get("/:id", async (req, res) => {
         });
         // Don't fail the request, just log and continue
       } else if (data) {
-        userVote = data.reaction_type === 'upvote' ? 1 : (data.reaction_type === 'downvote' ? -1 : 0);
+        // The vote column directly stores -1, 0, or 1
+        userVote = data.vote ?? 0;
         console.log(`[GET /:id] User vote: ${userVote}`);
       }
     } catch (error) {
