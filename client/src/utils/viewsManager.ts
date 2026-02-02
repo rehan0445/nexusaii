@@ -178,6 +178,23 @@ export const getAllViews = (): Record<string, number> => {
   return data.views;
 };
 
+// Get view counts for a list of character ids (slugs). Returns Record<slug, display_views> with 0 for missing.
+export const getViewCountsForCharacters = async (characterIds: string[]): Promise<Record<string, number>> => {
+  if (!characterIds.length) return {};
+  try {
+    const idsParam = characterIds.slice(0, 3000).join(',');
+    const response = await apiClient.get('/api/v1/views/counts', {
+      params: { ids: idsParam },
+    });
+    if (response.data?.success && response.data?.data?.counts) {
+      return response.data.data.counts as Record<string, number>;
+    }
+  } catch (error) {
+    console.error('❌ Failed to fetch bulk view counts:', error);
+  }
+  return {};
+};
+
 // Get ranked characters from backend
 export const getRankedCharacters = async (limit?: number): Promise<RankedCharacter[]> => {
   try {

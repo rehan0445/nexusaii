@@ -22,6 +22,10 @@ type User = {
 // Define the context type
 interface AuthContextType {
   currentUser: User | null;
+  /** When guest session is active (no Supabase user), this is the guest session id (e.g. guest_xxx). Use for companion chat and confessions. */
+  guestUserId: string | null;
+  /** Logged-in user id, or guest session id when guest. Use for API x-user-id so guests can chat and post. */
+  effectiveUserId: string | null;
   userLoggedin: boolean;
   loading: boolean;
   refreshAuth: () => Promise<void>;
@@ -31,6 +35,8 @@ interface AuthContextType {
 // Create the context with default value
 const AuthContext = createContext<AuthContextType>({
   currentUser: null,
+  guestUserId: null,
+  effectiveUserId: null,
   userLoggedin: false,
   loading: true,
   refreshAuth: async () => {},
@@ -47,10 +53,30 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+function getGuestUserId(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const hasGuest = localStorage.getItem('hasGuestSession') === 'true';
+    const raw = localStorage.getItem('guest_session');
+    if (!hasGuest || !raw) return null;
+    const data = JSON.parse(raw);
+    const sessionId = data?.sessionId;
+    if (!sessionId || typeof sessionId !== 'string') return null;
+    const start = data?.sessionStartTimestamp ? new Date(data.sessionStartTimestamp).getTime() : 0;
+    const elapsed = Date.now() - start;
+    if (elapsed > 30 * 60 * 1000) return null; // 30 min
+    return sessionId;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userLoggedin, setUserLoggedin] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [guestUserId, setGuestUserId] = useState<string | null>(null);
+  const effectiveUserId = currentUser?.uid ?? guestUserId ?? null;
 
   // Map Supabase user to our User type
   const mapUser = (supabaseUser: SupabaseUser | null): User | null => {
@@ -81,7 +107,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const user = mapUser(session.user);
         setCurrentUser(user);
         setUserLoggedin(true);
-        
+        setGuestUserId(null);
         // Set GA4 User-ID when session is restored (e.g., on page refresh)
         // Delay to ensure session is fully established before fetching hash
         setTimeout(() => {
@@ -100,6 +126,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } else {
         setCurrentUser(null);
         setUserLoggedin(false);
+        setGuestUserId(getGuestUserId());
       }
       
       setLoading(false);
@@ -337,6 +364,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const value: AuthContextType = {
     currentUser,
+    guestUserId,
+    effectiveUserId,
     userLoggedin,
     loading,
     refreshAuth: checkSession,

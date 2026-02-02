@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth } from '../middleware/authMiddleware.js';
+import { requireAuth, optionalAuth } from '../middleware/authMiddleware.js';
 import {
   saveContext,
   loadContext,
@@ -14,7 +14,7 @@ const router = express.Router();
  * POST /api/v1/chat/companion/context/load
  * Load existing context for a companion
  */
-router.post('/load', requireAuth, async (req, res) => {
+router.post('/load', optionalAuth, async (req, res) => {
   try {
     const { character_id } = req.body;
     const user_id = req.userId || req.user?.id;
@@ -62,10 +62,44 @@ router.post('/load', requireAuth, async (req, res) => {
 });
 
 /**
+ * POST /api/v1/chat/companion/context/get
+ * Alias for /load (client uses /get for greeting context).
+ */
+router.post('/get', optionalAuth, async (req, res) => {
+  try {
+    const { character_id } = req.body;
+    const user_id = req.userId || req.user?.id;
+    if (!user_id || !character_id) {
+      return res.status(400).json({ success: false, error: 'user_id and character_id are required' });
+    }
+    const context = await loadContext(user_id, character_id);
+    if (!context) {
+      return res.json({ success: true, context: null, message: 'No existing context found' });
+    }
+    res.json({
+      success: true,
+      context: {
+        relationship_status: context.relationship_status,
+        remembered_facts: context.remembered_facts || [],
+        conversation_tone: context.conversation_tone,
+        key_events: context.key_events || [],
+        user_preferences: context.user_preferences || {},
+        summary: context.summary,
+        message_count: context.message_count || 0,
+        last_interaction_at: context.updated_at || context.last_interaction_at
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error in /context/get:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * POST /api/v1/chat/companion/context/save
  * Save or update context for a companion
  */
-router.post('/save', requireAuth, async (req, res) => {
+router.post('/save', optionalAuth, async (req, res) => {
   try {
     const { character_id, context } = req.body;
     const user_id = req.userId || req.user?.id;

@@ -204,7 +204,7 @@ const MOOD_PRESETS: Mood[] = [
 
 function CharacterChat() {
   const { characterId } = useParams<{ characterId: string }>();
-  const { currentUser } = useAuth();
+  const { currentUser, effectiveUserId } = useAuth();
   const { characters, loading: loadingCharacters } = useCharacterContext();
   const navigate = useNavigate();
   const desktopLayout = useDesktopLayout();
@@ -314,13 +314,13 @@ function CharacterChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, isLoading]);
 
-  // Load affection status
+  // Load affection status (guests can skip or use effectiveUserId)
   useEffect(() => {
     const loadAffectionStatus = async () => {
-      if (!currentUser || !characterId || isIncognito) return;
+      if (!effectiveUserId || !characterId || isIncognito) return;
 
       try {
-        const response = await axios.get(`/api/v1/affection/status/${currentUser.uid}/${characterId}`);
+        const response = await axios.get(`/api/v1/affection/status/${effectiveUserId}/${characterId}`);
         if (response.data.success) {
           setAffectionStatus(response.data.status);
         }
@@ -330,15 +330,15 @@ function CharacterChat() {
     };
 
     loadAffectionStatus();
-  }, [currentUser, characterId, isIncognito]);
+  }, [effectiveUserId, characterId, isIncognito]);
 
   // Check for active quest
   useEffect(() => {
     const loadActiveQuest = async () => {
-      if (!currentUser || !characterId || isIncognito) return;
+      if (!effectiveUserId || !characterId || isIncognito) return;
 
       try {
-        const response = await axios.get(`/api/v1/quests/active/${currentUser.uid}/${characterId}`);
+        const response = await axios.get(`/api/v1/quests/active/${effectiveUserId}/${characterId}`);
         if (response.data.success && response.data.quest) {
           setActiveQuest(response.data.quest);
         }
@@ -348,18 +348,18 @@ function CharacterChat() {
     };
 
     loadActiveQuest();
-  }, [currentUser, characterId, isIncognito]);
+  }, [effectiveUserId, characterId, isIncognito]);
 
-  // Generate contextual greeting on first load
+  // Generate contextual greeting on first load (guests: use effectiveUserId)
   useEffect(() => {
     const generateGreeting = async () => {
-      if (!currentUser || !characterId || isIncognito || messages.length > 0) return;
+      if (!effectiveUserId || !characterId || isIncognito || messages.length > 0) return;
 
       try {
         // Get companion context for last interaction and memories
         const contextResponse = await axios.post('/api/v1/chat/companion/context/get', {
           character_id: characterId
-        }, { withCredentials: true });
+        }, { withCredentials: true, headers: { 'x-user-id': effectiveUserId } });
 
         if (contextResponse.data.success && contextResponse.data.context) {
           const context = contextResponse.data.context;
@@ -398,7 +398,7 @@ function CharacterChat() {
     };
 
     generateGreeting();
-  }, [currentUser, characterId, isIncognito, messages.length]);
+  }, [effectiveUserId, characterId, isIncognito, messages.length]);
 
   // Display contextual greeting as first message
   useEffect(() => {
@@ -416,9 +416,9 @@ function CharacterChat() {
     }
   }, [contextualGreeting, messages.length, character]);
 
-  // Initialize persistent context
+  // Initialize persistent context (allow guest via effectiveUserId)
   useEffect(() => {
-    if (!character || !characterId || !currentUser) return;
+    if (!character || !characterId || !effectiveUserId) return;
     
     const initializeContext = async () => {
       setContextLoading(true);
@@ -449,7 +449,7 @@ function CharacterChat() {
         const response = await axios.post(
           '/api/v1/chat/companion/context/load',
           { character_id: characterId },
-          { withCredentials: true, headers: { 'x-user-id': currentUser.uid } }
+          { withCredentials: true, headers: { 'x-user-id': effectiveUserId } }
         );
         
         if (response.data.success && response.data.context) {
@@ -481,7 +481,7 @@ function CharacterChat() {
     };
     
     initializeContext();
-  }, [character, characterId, currentUser?.uid, isIncognito]);
+  }, [character, characterId, effectiveUserId, isIncognito]);
 
   // Load character data and chat history
   useEffect(() => {
@@ -526,7 +526,7 @@ function CharacterChat() {
 
   // Inactivity detection for proactive messages
   useEffect(() => {
-    if (!currentUser || !characterId || isIncognito) return;
+    if (!effectiveUserId || !characterId || isIncognito) return;
 
     let inactivityTimer: NodeJS.Timeout | null = null;
     const inactivityThreshold = 10 * 60 * 1000; // 10 minutes
@@ -545,7 +545,7 @@ function CharacterChat() {
             character_id: characterId
           }, { 
             withCredentials: true, 
-            headers: { 'x-user-id': currentUser.uid } 
+            headers: { 'x-user-id': effectiveUserId } 
           });
 
           if (response.data.success && response.data.proactiveMessage) {
@@ -589,18 +589,18 @@ function CharacterChat() {
       window.removeEventListener('keydown', handleUserActivity);
       window.removeEventListener('scroll', handleUserActivity);
     };
-  }, [currentUser, characterId, isIncognito]);
+  }, [effectiveUserId, characterId, isIncognito]);
 
   // Socket.IO: Listen for character-initiated messages
   useEffect(() => {
-    if (!currentUser || !characterId || isIncognito) return;
+    if (!effectiveUserId || !characterId || isIncognito) return;
 
     let socketInstance: Socket | null = null;
 
     const initSocket = async () => {
       try {
         // Create socket connection
-        socketInstance = await createSocket({ userId: currentUser.uid });
+        socketInstance = await createSocket({ userId: effectiveUserId });
         
         if (!socketInstance) {
           console.warn('Failed to create socket connection for character initiative');
@@ -612,7 +612,7 @@ function CharacterChat() {
         // Check for initiative messages when user opens chat
         const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
         socketInstance.emit('check-character-initiative', {
-          userId: currentUser.uid,
+          userId: effectiveUserId,
           characterId,
           userTimezone
         });
@@ -639,7 +639,7 @@ function CharacterChat() {
             });
             
             // Clear pending messages after displaying
-            socketInstance?.emit('clear-pending-messages', { userId: currentUser.uid, characterId });
+            socketInstance?.emit('clear-pending-messages', { userId: effectiveUserId, characterId });
           } else if (message) {
             // Single initiative message
             const initiativeMessage: Message = {
@@ -672,13 +672,13 @@ function CharacterChat() {
         socketInstance.off('initiative-check-error');
       }
     };
-  }, [currentUser, characterId, isIncognito]);
+  }, [effectiveUserId, characterId, isIncognito]);
 
   const deleteIncognitoMessages = async () => {
     if (incognitoMessages.length === 0) return;
     
     try {
-      if (!currentUser || !characterId) return;
+      if (!effectiveUserId || !characterId) return;
       
       // Delete incognito messages from user's view
       setIncognitoMessages([]);
@@ -698,12 +698,12 @@ function CharacterChat() {
     }
     
     try {
-      if (!currentUser) {
-        console.warn("⚠️ No authenticated user found for chat history");
+      if (!effectiveUserId) {
+        console.warn("⚠️ No user/guest id for chat history");
         return;
       }
       
-      console.log(`📥 Loading chat history for user=${currentUser.uid}, character=${characterId}`);
+      console.log(`📥 Loading chat history for user=${effectiveUserId}, character=${characterId}`);
       
       // Load from Supabase companion_chat_messages table
       const response = await axios.post(
@@ -713,7 +713,7 @@ function CharacterChat() {
         },
         {
           withCredentials: true,
-          headers: { 'x-user-id': currentUser.uid }
+          headers: { 'x-user-id': effectiveUserId }
         }
       );
       
@@ -749,7 +749,7 @@ function CharacterChat() {
           {
             character_id: characterId,
           },
-          { withCredentials: true, headers: { 'x-user-id': currentUser?.uid || '' } }
+          { withCredentials: true, headers: { 'x-user-id': effectiveUserId || '' } }
         );
         
         if (response.data.success && response.data.data) {
@@ -789,14 +789,14 @@ function CharacterChat() {
     }
 
     try {
-      if (!currentUser || !characterId) return;
+      if (!effectiveUserId || !characterId) return;
 
       // Get last 15 messages for context
       const last15Messages = currentMessages.slice(-15);
       
       // Generate hints using AI based on conversation context
       const response = await axios.post("/api/v1/chat/companion/generate-hints", {
-        user_id: currentUser.uid,
+        user_id: effectiveUserId,
         character_id: characterId,
         context_messages: last15Messages.map(msg => ({
           sender: msg.sender,
@@ -851,7 +851,7 @@ function CharacterChat() {
   };
 
   const submitMessage = async (text: string) => {
-    if (!text.trim() || isLoading || !currentUser) return;
+    if (!text.trim() || isLoading || !effectiveUserId) return;
     
     setMessage("");
     
@@ -880,8 +880,8 @@ function CharacterChat() {
     try {
       // Store user message in Supabase if not in incognito mode
       if (!isIncognito) {
-        if (currentUser && characterId) {
-          console.log(`💾 Storing user message: user=${currentUser.uid}, character=${characterId}`);
+        if (effectiveUserId && characterId) {
+          console.log(`💾 Storing user message: user=${effectiveUserId}, character=${characterId}`);
           const storeResponse = await axios.post(
             "/api/v1/chat/companion/store-message",
             {
@@ -890,17 +890,26 @@ function CharacterChat() {
               content: cleanText,
               user_thoughts: userThoughts
             },
-            { withCredentials: true, headers: { 'x-user-id': currentUser.uid } }
+            { withCredentials: true, headers: { 'x-user-id': effectiveUserId } }
           );
           console.log("✅ User message stored:", storeResponse.data);
         }
       } else {
         // Store in incognito table
-        if (currentUser && characterId) {
+        if (effectiveUserId && characterId) {
           console.log(`🕵️ Storing incognito message for character=${characterId}`);
-          // Get user profile name for incognito storage
-          const profileResponse = await axios.get(`/api/v1/profile/${currentUser.uid}`);
-          const profileName = profileResponse.data?.username || currentUser.displayName || "Anonymous";
+          // Get user/guest display name for incognito storage
+          let profileName = "Guest";
+          try {
+            const profileResponse = await axios.get(`/api/v1/profile/${effectiveUserId}`);
+            profileName = profileResponse.data?.username || profileResponse.data?.displayName || profileName;
+          } catch {
+            try {
+              const g = typeof window !== 'undefined' && localStorage.getItem('guest_session');
+              const guestData = g ? JSON.parse(g) : null;
+              profileName = guestData?.name || profileName;
+            } catch {}
+          }
           
           await axios.post("/api/v1/chat/companion/store-incognito", {
             user_profile_name: profileName,
@@ -939,9 +948,9 @@ function CharacterChat() {
         incognitoMode: isIncognito,
         characterData: character, // Send full character data for accurate personality
         persistentContext: isIncognito ? null : persistentMemory, // Send persistent memory for context continuity
-        userId: currentUser?.uid, // Add userId for affection tracking
+        userId: effectiveUserId ?? undefined, // Add userId for affection tracking (guest or user)
         traceId
-      }, { withCredentials: true, headers: currentUser?.uid ? { 'x-user-id': currentUser.uid } : {} });
+      }, { withCredentials: true, headers: effectiveUserId ? { 'x-user-id': effectiveUserId } : {} });
       
       const aiResponse = response.data.answer || response.data;
       if (response.data.finishReason === 'length') {
@@ -1007,13 +1016,13 @@ function CharacterChat() {
           }
           
           // Store in database (only for non-incognito)
-          if (!isIncognito && currentUser?.uid) {
+          if (!isIncognito && effectiveUserId) {
             try {
               await axios.post('/api/v1/chat/companion/store-message', {
                 character_id: characterId,
                 message_type: 'ai_speech',
                 content: part
-              }, { withCredentials: true, headers: { 'x-user-id': currentUser.uid } });
+              }, { withCredentials: true, headers: { 'x-user-id': effectiveUserId } });
             } catch (error) {
               console.error('Error storing split message:', error);
             }
@@ -1056,7 +1065,7 @@ function CharacterChat() {
 
         // Reload affection status
         try {
-          const affectionResponse = await axios.get(`/api/v1/affection/status/${currentUser.uid}/${characterId}`);
+          const affectionResponse = await axios.get(`/api/v1/affection/status/${effectiveUserId}/${characterId}`);
           if (affectionResponse.data.success) {
             setAffectionStatus(affectionResponse.data.status);
           }
@@ -1066,7 +1075,7 @@ function CharacterChat() {
       } else if (affectionGain) {
         // Just update affection status for points gain
         try {
-          const affectionResponse = await axios.get(`/api/v1/affection/status/${currentUser.uid}/${characterId}`);
+          const affectionResponse = await axios.get(`/api/v1/affection/status/${effectiveUserId}/${characterId}`);
           if (affectionResponse.data.success) {
             setAffectionStatus(affectionResponse.data.status);
           }
@@ -1081,7 +1090,7 @@ function CharacterChat() {
         // Generate new quest
         try {
           const questResponse = await axios.post('/api/v1/quests/generate', {
-            userId: currentUser?.uid,
+            userId: effectiveUserId,
             characterId,
             characterName: character?.name,
             characterPersonality: character?.personality
@@ -1099,7 +1108,7 @@ function CharacterChat() {
       // Store AI message in Supabase if not in incognito mode
       if (aiMessage) {
         if (!isIncognito) {
-          if (currentUser && characterId) {
+          if (effectiveUserId && characterId) {
             console.log(`💾 Storing AI message`);
             await axios.post(
               "/api/v1/chat/companion/store-message",
@@ -1108,7 +1117,7 @@ function CharacterChat() {
                 message_type: aiMessage.message_type,
                 content: aiMessage.speech || aiMessage.text
               },
-              { withCredentials: true, headers: { 'x-user-id': currentUser.uid } }
+              { withCredentials: true, headers: { 'x-user-id': effectiveUserId } }
             );
             console.log(`✅ AI message stored: ${aiMessage.message_type}`);
             
@@ -1125,7 +1134,7 @@ function CharacterChat() {
                   characterAvatar: character?.image || null,
                   lastMessage: lastMessageContent
                 },
-                { withCredentials: true, headers: { 'x-user-id': currentUser.uid } }
+                { withCredentials: true, headers: { 'x-user-id': effectiveUserId } }
               );
               console.log("✅ Chat metadata updated for My Chats");
             } catch (metaError) {
@@ -1137,9 +1146,9 @@ function CharacterChat() {
           }
         } else {
           // Store AI messages in incognito table
-          if (currentUser && characterId) {
-            const profileResponse = await axios.get(`/api/v1/profile/${currentUser.uid}`);
-            const profileName = profileResponse.data?.username || currentUser.displayName || "Anonymous";
+          if (effectiveUserId && characterId) {
+            const profileResponse = await axios.get(`/api/v1/profile/${effectiveUserId}`);
+            const profileName = profileResponse.data?.username || profileResponse.data?.displayName || currentUser?.displayName || "Anonymous";
             
             await axios.post("/api/v1/chat/companion/store-incognito", {
               user_profile_name: profileName,
@@ -1354,7 +1363,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
         characterData: character,
         persistentContext: isIncognito ? null : persistentMemory,
         traceId
-      }, { withCredentials: true, headers: currentUser?.uid ? { 'x-user-id': currentUser.uid } : {} });
+      }, { withCredentials: true, headers: effectiveUserId ? { 'x-user-id': effectiveUserId } : {} });
       
       console.log('API response received:', response.data);
       
@@ -1646,7 +1655,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
 
   // Sync context to Supabase (non-blocking)
   const syncContextToSupabase = async (userMsg: Message, aiMsgs: Message[]) => {
-    if (!currentUser || !characterId || !companionContext || !persistentMemory) return;
+    if (!effectiveUserId || !characterId || !companionContext || !persistentMemory) return;
     
     try {
       // Extract context updates from conversation
@@ -1699,7 +1708,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
             messages: [...messages, userMsg, ...aiMsgs].slice(-20),
             current_context: updatedMemory
           },
-          { withCredentials: true, headers: { 'x-user-id': currentUser.uid } }
+          { withCredentials: true, headers: { 'x-user-id': effectiveUserId } }
         );
         
         if (summaryResponse.data.success) {
@@ -1715,7 +1724,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
           character_id: characterId,
           context: updatedMemory
         },
-        { withCredentials: true, headers: { 'x-user-id': currentUser.uid } }
+        { withCredentials: true, headers: { 'x-user-id': effectiveUserId } }
       );
       
       console.log('✅ Context synced to Supabase');
@@ -1741,12 +1750,12 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
         return;
       }
       
-      if (currentUser && characterId && character) {
+      if (effectiveUserId && characterId && character) {
         // Reset context in Supabase
         await axios.post(
           '/api/v1/chat/companion/context/reset',
           { character_id: characterId },
-          { withCredentials: true, headers: { 'x-user-id': currentUser.uid } }
+          { withCredentials: true, headers: { 'x-user-id': effectiveUserId } }
         );
         
         // Clear session storage
@@ -1776,10 +1785,10 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
     if (!confirmDelete) return;
     
     try {
-      if (currentUser && characterId) {
+      if (effectiveUserId && characterId) {
         // TODO: Add API call to delete chat from backend
         // await axios.delete(`/api/v1/chat/ai/delete-character-chat`, {
-        //   data: { user_id: currentUser.uid, character_id: characterId }
+        //   data: { user_id: effectiveUserId, character_id: characterId }
         // });
         
         // Clear local chat state
@@ -1820,7 +1829,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
     setReportSubmitting(true);
     try {
       const reportData = {
-        reporter_id: currentUser?.uid || 'anonymous',
+        reporter_id: effectiveUserId || 'anonymous',
         target_type: 'character',
         target_id: characterId,
         reason: reportReason,
@@ -1864,11 +1873,11 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
 
   // Quest submission handler
   const handleQuestSubmit = async (answer: string) => {
-    if (!currentUser || !characterId || !activeQuest) return;
+    if (!effectiveUserId || !characterId || !activeQuest) return;
 
     try {
       const response = await axios.post('/api/v1/quests/submit', {
-        userId: currentUser.uid,
+        userId: effectiveUserId,
         characterId,
         answer
       });
@@ -1903,7 +1912,7 @@ Do NOT output the word "continue". Resume seamlessly without prefacing or repeat
         }
 
         // Reload affection status
-        const affectionResponse = await axios.get(`/api/v1/affection/status/${currentUser.uid}/${characterId}`);
+        const affectionResponse = await axios.get(`/api/v1/affection/status/${effectiveUserId}/${characterId}`);
         if (affectionResponse.data.success) {
           setAffectionStatus(affectionResponse.data.status);
         }

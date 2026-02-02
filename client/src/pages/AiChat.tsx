@@ -34,13 +34,11 @@ import NexusChatsButton from "../components/NexusChatsButton";
 import axios from "axios";
 import { toggleCharacterLike, getMultipleCharacterLikes } from "../services/likeService";
 import { menuItems } from "../data/AI-chat-data/data";
-import { useCharacterViews } from "../utils/viewsManager";
+import { useCharacterViews, getViewCountsForCharacters, incrementView } from "../utils/viewsManager";
 import { CharacterLeaderboard } from "../components/CharacterLeaderboard";
 import CharacterCardSkeleton from "../components/CharacterCardSkeleton";
 import CharacterEndlessFeed from "../components/CharacterEndlessFeed";
-import CharacterCard from "../components/CharacterCard";
 import { pluralizeLikes } from "../utils/pluralize";
-import { incrementView } from "../utils/viewsManager";
 // import { useAuth } from "../contexts/AuthContext";
 import { useResponsive } from "../hooks/useResponsive";
 // import { CreateCharacterModal } from "../components/CreateCharacterModal";
@@ -714,6 +712,19 @@ function AiChat() {
       return initialViews;
     }, [characters]) // Add characters as dependency
   );
+
+  // Fetch accurate view counts for ALL characters once loaded (fixes "0 views" for characters not in top-500 leaderboard)
+  useEffect(() => {
+    const slugs = Object.keys(characters);
+    if (slugs.length === 0) return;
+    let cancelled = false;
+    getViewCountsForCharacters(slugs).then((counts) => {
+      if (!cancelled && Object.keys(counts).length > 0) {
+        setViews((prev) => ({ ...prev, ...counts }));
+      }
+    });
+    return () => { cancelled = true; };
+  }, [characters]);
 
   // Debug views state changes
   useEffect(() => {

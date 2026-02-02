@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/authMiddleware.js";
+import { requireAuth, optionalAuth } from "../middleware/authMiddleware.js";
 import {
   chatAiGemini,
   chatAiBulkGemini,
@@ -17,12 +17,12 @@ import {
 const chatAiRouter = Router();
 
 // In development, skip strict auth for Venice AI chat endpoint (for testing)
-// In production, always require auth for security
+// In production, allow guest via x-user-id: guest_xxx (optionalAuth) so guests can chat
 const isDev = process.env.NODE_ENV === 'development';
 const chatAuthMiddleware = isDev ? (req, res, next) => {
   console.log('⚠️ Development mode: Skipping auth for chat endpoints');
   next();
-} : requireAuth;
+} : optionalAuth;
 
 chatAiRouter.post("/gemini", chatAuthMiddleware, chatAiGemini);
 chatAiRouter.post("/claude", chatAuthMiddleware, chatAiClaude); // Venice AI

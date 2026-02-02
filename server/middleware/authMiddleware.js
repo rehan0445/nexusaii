@@ -54,6 +54,25 @@ const requireAuth = async (req, res, next) => {
   }
 };
 
+/**
+ * Optional auth: sets req.userId from token if present, or from x-user-id if it starts with "guest_"
+ * (allows guest sessions for companion chat and confessions).
+ */
+const optionalAuth = async (req, res, next) => {
+  try {
+    const guestHeader = req.headers['x-user-id'];
+    if (guestHeader && String(guestHeader).startsWith('guest_')) {
+      req.userId = String(guestHeader);
+      req.isGuest = true;
+      req.user = { id: req.userId, provider: 'guest' };
+      return next();
+    }
+    return requireAuth(req, res, next);
+  } catch (e) {
+    next(e);
+  }
+};
+
 const rateLimitSimple = (limit = 30, windowMs = 60_000) => {
   const hits = new Map();
   return (req, res, next) => {
@@ -89,6 +108,7 @@ const sanitizeInput = (fields = []) => (req, res, next) => {
 
 export {
   requireAuth,
+  optionalAuth,
   rateLimitSimple,
   sanitizeInput
 };

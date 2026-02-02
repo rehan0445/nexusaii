@@ -1,6 +1,6 @@
 import express from 'express';
 import { supabase } from '../config/supabase.js';
-import { requireAuth } from '../middleware/authMiddleware.js';
+import { requireAuth, optionalAuth } from '../middleware/authMiddleware.js';
 import affectionService from '../services/affectionService.js';
 import proactiveMessageService from '../services/proactiveMessageService.js';
 import { companionChat, healthCheck, veniceTest } from '../controllers/companionChatController.js';
@@ -36,16 +36,16 @@ router.get('/debug-env', (req, res) => {
   });
 });
 
-// Get chat history for a character
-router.post('/history', requireAuth, async (req, res) => {
+// Get chat history for a character (optionalAuth: allows guest via x-user-id: guest_xxx)
+router.post('/history', optionalAuth, async (req, res) => {
   try {
     const { character_id } = req.body;
     const user_id = req.userId || req.user?.id || req.body?.user_id;
 
     if (!user_id || !character_id) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'user_id and character_id are required' 
+      return res.status(400).json({
+        success: false,
+        error: 'user_id and character_id are required (send x-user-id for guest)'
       });
     }
 
@@ -82,8 +82,8 @@ router.post('/history', requireAuth, async (req, res) => {
   }
 });
 
-// Store a message
-router.post('/store-message', requireAuth, async (req, res) => {
+// Store a message (optionalAuth: allows guest)
+router.post('/store-message', optionalAuth, async (req, res) => {
   try {
     const { character_id, message_type, content, user_thoughts } = req.body;
     const user_id = req.userId || req.user?.id || req.body?.user_id;
@@ -213,7 +213,7 @@ router.post('/store-incognito', requireAuth, async (req, res) => {
 });
 
 // Generate hints based on last 15 messages
-router.post('/generate-hints', requireAuth, async (req, res) => {
+router.post('/generate-hints', optionalAuth, async (req, res) => {
   try {
     const { user_id, character_id, context_messages, character_name } = req.body;
 

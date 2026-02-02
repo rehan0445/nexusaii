@@ -236,6 +236,68 @@ export const getCharacterLeaderboard = async (req, res) => {
   }
 };
 
+// Get view counts for multiple character ids (bulk) - returns { [character_id]: display_views } with 0 for missing
+export const getBulkViewCounts = async (req, res) => {
+  try {
+    const idsParam = req.query.ids || req.query.character_ids;
+    if (!idsParam || typeof idsParam !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Query parameter 'ids' (comma-separated character ids) is required",
+      });
+    }
+    const characterIds = idsParam.split(',').map((id) => id.trim()).filter(Boolean);
+    const limit = 3000;
+    if (characterIds.length > limit) {
+      return res.status(400).json({
+        success: false,
+        message: `Maximum ${limit} character ids per request`,
+      });
+    }
+    if (characterIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: { counts: {} },
+      });
+    }
+
+    const { data: rows, error } = await supabase
+      .from("character_view_counts")
+      .select("character_id, total_views, fake_views")
+      .in("character_id", characterIds);
+
+    if (error) {
+      console.error("Error in getBulkViewCounts:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch view counts",
+        error: error.message,
+      });
+    }
+
+    const counts = {};
+    characterIds.forEach((id) => {
+      counts[id] = 0;
+    });
+    (rows || []).forEach((row) => {
+      const display = (row.total_views || 0) + (row.fake_views || 0);
+      counts[row.character_id] = display;
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: { counts },
+    });
+  } catch (error) {
+    console.error("Error in getBulkViewCounts:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch bulk view counts",
+      error: error.message,
+    });
+  }
+};
+
 // Get view statistics for a specific character
 export const getCharacterViewStats = async (req, res) => {
   try {
