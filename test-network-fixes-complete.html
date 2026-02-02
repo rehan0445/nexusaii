@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Network Fixes Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #0066cc;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .success {
+            color: #90ee90;
+        }
+        .error {
+            color: #ee9090;
+        }
+        .warning {
+            color: #ffcc00;
+        }
+        .info {
+            color: #87ceeb;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Complete Network Fixes Test</h1>
+    <p>This page tests both the CSP fix and the centralized API configuration fixes.</p>
+    
+    <div class="test-section">
+        <h2>🎯 Test Scenarios</h2>
+        <button onclick="testCSPFix()">Test CSP Fix</button>
+        <button onclick="testAPIConfiguration()">Test API Configuration</button>
+        <button onclick="testCharacterLoading()">Test Character Loading</button>
+        <button onclick="testAllFixes()">Test All Fixes</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="grid">
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div class="log" id="testLog"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 What This Tests</h3>
+            <ul>
+                <li><strong>CSP Fix:</strong> Verifies connections to 10.87.73.163:8000 are allowed</li>
+                <li><strong>API Configuration:</strong> Tests centralized URL detection</li>
+                <li><strong>Character Loading:</strong> Tests the specific endpoint that was failing</li>
+                <li><strong>Error Handling:</strong> Shows specific error messages for debugging</li>
+            </ul>
+            
+            <h3>✅ Expected Results</h3>
+            <ul>
+                <li>No CSP violation errors</li>
+                <li>API connections succeed</li>
+                <li>Character loading works</li>
+                <li>Proper error messages if server is down</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+        }
+
+        // Simulate the centralized API configuration
+        function getServerUrl() {
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            // Special handling for 10.x.x.x network range
+            if (hostname.startsWith('10.')) {
+                const port = hostname === '10.87.73.163' ? '8000' : '8002';
+                return `${protocol}//${hostname}:${port}`;
+            }
+            
+            // Use same hostname as frontend with backend port
+            return `${protocol}//${hostname}:8002`;
+        }
+
+        async function testCSPFix() {
+            log('🧪 Testing CSP Fix...', 'info');
+            
+            const testUrls = [
+                'http://10.87.73.163:8000/api/v1/chat/models',
+                'http://10.87.73.163:8000/api/v1/health',
+                'ws://10.87.73.163:8000'
+            ];
+            
+            for (const url of testUrls) {
+                try {
+                    if (url.startsWith('ws://')) {
+                        // Test WebSocket
+                        const ws = new WebSocket(url);
+                        ws.onopen = () => {
+                            log(`✅ WebSocket connection to ${url} successful`, 'success');
+                            ws.close();
+                        };
+                        ws.onerror = (error) => {
+                            log(`❌ WebSocket connection to ${url} failed: ${error}`, 'error');
+                        };
+                        setTimeout(() => ws.close(), 3000);
+                    } else {
+                        // Test HTTP
+                        const response = await fetch(url, { mode: 'cors' });
+                        if (response.ok) {
+                            log(`✅ HTTP connection to ${url} successful (${response.status})`, 'success');
+                        } else {
+                            log(`⚠️ HTTP connection to ${url} established but server returned ${response.status}`, 'warning');
+                        }
+                    }
+                } catch (error) {
+                    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                        log(`❌ CSP Violation or Network Error for ${url}: ${error.message}`, 'error');
+                    } else {
+                        log(`❌ Connection to ${url} failed: ${error.message}`, 'error');
+                    }
+                }
+            }
+        }
+
+        async function testAPIConfiguration() {
+            log('🧪 Testing API Configuration...', 'info');
+            
+            const detectedUrl = getServerUrl();
+            log(`🔍 Detected API URL: ${detectedUrl}`, 'info');
+            
+            // Test the detected URL
+            try {
+                const response = await fetch(`${detectedUrl}/api/v1/chat/models`, { mode: 'cors' });
+                if (response.ok) {
+                    log(`✅ API Configuration working! Connected to ${detectedUrl}`, 'success');
+                } else {
+                    log(`⚠️ API Configuration working but server returned ${response.status}`, 'warning');
+                }
+            } catch (error) {
+                log(`❌ API Configuration test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCharacterLoading() {
+            log('🧪 Testing Character Loading (the specific failing endpoint)...', 'info');
+            
+            const apiUrl = getServerUrl();
+            const characterEndpoint = `${apiUrl}/api/v1/chat/models`;
+            
+            log(`🔍 Testing character endpoint: ${characterEndpoint}`, 'info');
+            
+            try {
+                const response = await fetch(characterEndpoint, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Character loading successful! Found ${data.length} characters`, 'success');
+                    log(`📊 Sample characters: ${data.slice(0, 3).map(c => c.name).join(', ')}`, 'info');
+                } else {
+                    log(`⚠️ Character endpoint responded with ${response.status} ${response.statusText}`, 'warning');
+                }
+            } catch (error) {
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    log(`❌ Character loading failed - CSP violation or network error: ${error.message}`, 'error');
+                    log('🔍 This is the same error that was occurring in characters.ts:74', 'error');
+                } else {
+                    log(`❌ Character loading failed: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testAllFixes() {
+            log('🚀 Starting comprehensive network fixes test...', 'info');
+            clearLog();
+            
+            // Test 1: CSP Fix
+            await testCSPFix();
+            
+            // Wait a moment, then test API Configuration
+            setTimeout(async () => {
+                await testAPIConfiguration();
+            }, 1000);
+            
+            // Wait a moment, then test Character Loading
+            setTimeout(async () => {
+                await testCharacterLoading();
+            }, 2000);
+            
+            // Final summary
+            setTimeout(() => {
+                log('🎯 Test Summary:', 'info');
+                log('✅ CSP Fix: Should allow connections to 10.87.73.163:8000', 'info');
+                log('✅ API Configuration: Should auto-detect correct server URL', 'info');
+                log('✅ Character Loading: Should work without Axios Network Error', 'info');
+                log('🔍 Check the results above to verify all fixes are working', 'info');
+            }, 3000);
+        }
+
+        // Log initial information
+        log('🔧 Complete Network Fixes Test initialized', 'info');
+        log(`🌐 Current hostname: ${window.location.hostname}`, 'info');
+        log(`🔗 Current protocol: ${window.location.protocol}`, 'info');
+        log(`🎯 Detected API URL: ${getServerUrl()}`, 'info');
+        log('📋 Ready to test all network fixes', 'info');
+    </script>
+</body>
+</html>

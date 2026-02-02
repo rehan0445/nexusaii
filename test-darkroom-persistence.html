@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Room Persistence Test</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4ade80;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .test-section {
+            background: #1f1f1f;
+            border: 1px solid #4ade80;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .test-section h2 {
+            color: #4ade80;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .test-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        input, button, select {
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+        }
+        input {
+            flex: 1;
+        }
+        button {
+            background: #4ade80;
+            color: #0a0a0a;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #22c55e;
+        }
+        button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .status.success {
+            background: #064e3b;
+            border: 1px solid #4ade80;
+        }
+        .status.error {
+            background: #7f1d1d;
+            border: 1px solid #ef4444;
+        }
+        .status.info {
+            background: #1e3a8a;
+            border: 1px solid #3b82f6;
+        }
+        .messages-container {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .message {
+            padding: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid #4ade80;
+            background: #1a1a1a;
+        }
+        .message .alias {
+            color: #4ade80;
+            font-weight: bold;
+        }
+        .message .time {
+            color: #666;
+            font-size: 11px;
+        }
+        .log {
+            color: #999;
+            font-size: 12px;
+            padding: 5px 0;
+        }
+        .log.success { color: #4ade80; }
+        .log.error { color: #ef4444; }
+        .log.info { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌑 Dark Room Persistence Test Suite</h1>
+        
+        <!-- Connection Status -->
+        <div class="test-section">
+            <h2>📡 Connection Status</h2>
+            <div id="connection-status" class="status info">
+                Disconnected
+            </div>
+        </div>
+
+        <!-- Test 1: Create Room -->
+        <div class="test-section">
+            <h2>Test 1: Create New Room (ID Increment Test)</h2>
+            <div class="test-row">
+                <input type="text" id="room-name" placeholder="Room name (e.g., Test Room 1)">
+                <input type="text" id="room-alias" placeholder="Your alias" value="Tester1">
+                <button onclick="createRoom()">Create Room</button>
+            </div>
+            <div id="create-status"></div>
+        </div>
+
+        <!-- Test 2: Join Room -->
+        <div class="test-section">
+            <h2>Test 2: Join Room & Load Messages</h2>
+            <div class="test-row">
+                <select id="room-select">
+                    <option value="">Select a room...</option>
+                </select>
+                <button onclick="joinRoom()">Join Room</button>
+                <button onclick="loadRooms()">Refresh Rooms</button>
+            </div>
+            <div id="join-status"></div>
+            <div id="current-room-info" style="margin-top: 10px;"></div>
+        </div>
+
+        <!-- Test 3: Send Messages -->
+        <div class="test-section">
+            <h2>Test 3: Send Messages (Persistence Test)</h2>
+            <div class="test-row">
+                <input type="text" id="message-text" placeholder="Type a message..." disabled>
+                <button onclick="sendMessage()" id="send-btn" disabled>Send</button>
+            </div>
+            <div id="send-status"></div>
+        </div>
+
+        <!-- Test 4: View Messages -->
+        <div class="test-section">
+            <h2>Test 4: View Messages (Real-time & Persistent)</h2>
+            <button onclick="refreshMessages()">Refresh Messages from DB</button>
+            <button onclick="clearDisplay()">Clear Display</button>
+            <div id="messages-container" class="messages-container" style="margin-top: 10px;">
+                <div class="log info">No messages yet. Join a room and send messages.</div>
+            </div>
+        </div>
+
+        <!-- Test Logs -->
+        <div class="test-section">
+            <h2>📋 Test Logs</h2>
+            <button onclick="clearLogs()">Clear Logs</button>
+            <button onclick="exportLogs()">Export Logs</button>
+            <div id="test-logs" class="messages-container" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <script>
+        const SERVER_URL = 'http://localhost:8002';
+        let socket = null;
+        let currentRoom = null;
+        let logs = [];
+
+        // Logging functions
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logs.push({ timestamp, message, type });
+            const logsDiv = document.getElementById('test-logs');
+            logsDiv.innerHTML += `<div class="log ${type}">[${timestamp}] ${message}</div>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLogs() {
+            logs = [];
+            document.getElementById('test-logs').innerHTML = '';
+            log('Logs cleared', 'info');
+        }
+
+        function exportLogs() {
+            const text = logs.map(l => `[${l.timestamp}] [${l.type.toUpperCase()}] ${l.message}`).join('\n');
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `darkroom-test-logs-${Date.now()}.txt`;
+            a.click();
+        }
+
+        // Initialize Socket.io
+        function initSocket() {
+            socket = io(SERVER_URL, {
+                transports: ['websocket', 'polling']
+            });
+
+            socket.on('connect', () => {
+                log('✅ Connected to server', 'success');
+                document.getElementById('connection-status').className = 'status success';
+                document.getElementById('connection-status').textContent = '✅ Connected';
+                loadRooms();
+            });
+
+            socket.on('disconnect', () => {
+                log('❌ Disconnected from server', 'error');
+                document.getElementById('connection-status').className = 'status error';
+                document.getElementById('connection-status').textContent = '❌ Disconnected';
+            });
+
+            socket.on('room-created', (data) => {
+                log(`🏠 Room created: ${data.id} - ${data.name}`, 'success');
+                loadRooms();
+            });
+
+            socket.on('room-joined', (data) => {
+                if (data.success) {
+                    log(`✅ Successfully joined room: ${data.roomId}`, 'success');
+                    document.getElementById('join-status').innerHTML = 
+                        `<div class="status success">✅ Joined ${data.roomId} (${data.userCount} users)</div>`;
+                } else {
+                    log(`❌ Failed to join room: ${data.error}`, 'error');
+                }
+            });
+
+            socket.on('room-history', (messages) => {
+                log(`📚 Received ${messages.length} messages from history`, 'info');
+                displayMessages(messages);
+            });
+
+            socket.on('receive-message', (data) => {
+                log(`📨 New message: [${data.alias}] ${data.message.substring(0, 30)}...`, 'info');
+                addMessage(data);
+            });
+
+            socket.on('user-count-update', (data) => {
+                log(`👥 User count updated: ${data.count} users in ${data.roomId}`, 'info');
+            });
+        }
+
+        // Create Room
+        async function createRoom() {
+            const name = document.getElementById('room-name').value.trim();
+            const alias = document.getElementById('room-alias').value.trim() || 'Tester1';
+
+            if (!name) {
+                alert('Please enter a room name');
+                return;
+            }
+
+            log(`🏗️ Creating room: ${name}`, 'info');
+
+            try {
+                const response = await fetch(`${SERVER_URL}/api/v1/darkroom/create-group`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name,
+                        description: `Test room created at ${new Date().toLocaleTimeString()}`,
+                        createdBy: alias,
+                        userName: alias,
+                        tags: ['test']
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    log(`✅ Room created successfully: ${result.room.id}`, 'success');
+                    document.getElementById('create-status').innerHTML = 
+                        `<div class="status success">✅ Room created: ${result.room.id} - ${result.room.name}</div>`;
+                    document.getElementById('room-name').value = '';
+                    loadRooms();
+                } else {
+                    log(`❌ Failed to create room: ${result.error}`, 'error');
+                    document.getElementById('create-status').innerHTML = 
+                        `<div class="status error">❌ ${result.error}</div>`;
+                }
+            } catch (error) {
+                log(`❌ Error creating room: ${error.message}`, 'error');
+                document.getElementById('create-status').innerHTML = 
+                    `<div class="status error">❌ ${error.message}</div>`;
+            }
+        }
+
+        // Load Rooms
+        async function loadRooms() {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/v1/darkroom/rooms`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    const select = document.getElementById('room-select');
+                    select.innerHTML = '<option value="">Select a room...</option>';
+                    
+                    result.data.forEach(room => {
+                        const option = document.createElement('option');
+                        option.value = room.id;
+                        option.textContent = `${room.id} - ${room.name}`;
+                        select.appendChild(option);
+                    });
+
+                    log(`📋 Loaded ${result.data.length} rooms`, 'info');
+                }
+            } catch (error) {
+                log(`❌ Error loading rooms: ${error.message}`, 'error');
+            }
+        }
+
+        // Join Room
+        function joinRoom() {
+            const roomId = document.getElementById('room-select').value;
+            const alias = document.getElementById('room-alias').value.trim() || 'Tester1';
+
+            if (!roomId) {
+                alert('Please select a room');
+                return;
+            }
+
+            log(`🔗 Joining room: ${roomId} as ${alias}`, 'info');
+
+            currentRoom = roomId;
+            socket.emit('join-room', { groupId: roomId, alias });
+
+            document.getElementById('message-text').disabled = false;
+            document.getElementById('send-btn').disabled = false;
+            document.getElementById('current-room-info').innerHTML = 
+                `<div class="status info">📍 Current Room: ${roomId} (alias: ${alias})</div>`;
+        }
+
+        // Send Message
+        function sendMessage() {
+            const message = document.getElementById('message-text').value.trim();
+            const alias = document.getElementById('room-alias').value.trim() || 'Tester1';
+
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
+
+            if (!currentRoom) {
+                alert('Please join a room first');
+                return;
+            }
+
+            log(`📤 Sending message to ${currentRoom}`, 'info');
+
+            socket.emit('send-message', {
+                groupId: currentRoom,
+                alias,
+                message,
+                time: new Date().toISOString()
+            });
+
+            document.getElementById('message-text').value = '';
+            document.getElementById('send-status').innerHTML = 
+                `<div class="status success">✅ Message sent</div>`;
+        }
+
+        // Refresh Messages
+        async function refreshMessages() {
+            if (!currentRoom) {
+                alert('Please join a room first');
+                return;
+            }
+
+            log(`🔄 Refreshing messages from database for ${currentRoom}`, 'info');
+
+            try {
+                const response = await fetch(`${SERVER_URL}/api/v1/darkroom/rooms/${currentRoom}/messages`);
+                const result = await response.json();
+
+                if (result.success && result.messages) {
+                    log(`✅ Loaded ${result.messages.length} messages from database`, 'success');
+                    displayMessages(result.messages);
+                }
+            } catch (error) {
+                log(`❌ Error loading messages: ${error.message}`, 'error');
+            }
+        }
+
+        // Display Messages
+        function displayMessages(messages) {
+            const container = document.getElementById('messages-container');
+            container.innerHTML = '';
+
+            if (messages.length === 0) {
+                container.innerHTML = '<div class="log info">No messages in this room</div>';
+                return;
+            }
+
+            messages.forEach(msg => {
+                addMessage(msg);
+            });
+        }
+
+        // Add Message to Display
+        function addMessage(msg) {
+            const container = document.getElementById('messages-container');
+            const div = document.createElement('div');
+            div.className = 'message';
+            div.innerHTML = `
+                <div class="alias">${msg.alias}</div>
+                <div>${msg.message}</div>
+                <div class="time">${new Date(msg.time || msg.timestamp).toLocaleTimeString()}</div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Clear Display
+        function clearDisplay() {
+            document.getElementById('messages-container').innerHTML = 
+                '<div class="log info">Display cleared</div>';
+        }
+
+        // Initialize on page load
+        window.onload = () => {
+            log('🚀 Initializing Dark Room Test Suite', 'info');
+            initSocket();
+        };
+
+        // Allow Enter key to send messages
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('message-text').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+config:
+  target: "http://localhost:8002"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+scenarios:
+  - name: "Health + Announcements fetch"
+    flow:
+      - get:
+          url: "/"
+      - get:
+          url: "/api/v1/announcements"
+

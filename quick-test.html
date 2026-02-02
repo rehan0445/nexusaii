@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Quick Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0a0e1a;
+            color: #fff;
+        }
+        .test-card {
+            background: #1a1f2e;
+            border: 2px solid #2a3f5f;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #10b981; color: white; }
+        .error { background: #ef4444; color: white; }
+        .pending { background: #f59e0b; color: white; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover { background: #2563eb; }
+        #results { margin-top: 20px; }
+        .result-item { 
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 4px solid #3b82f6;
+            background: #0f1419;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Nexus Quick Test</h1>
+    <p>Run these tests to verify your setup:</p>
+
+    <div class="test-card">
+        <h3>1. Backend API Test</h3>
+        <p>Check if backend server is responding</p>
+        <button onclick="testBackend()">Test Backend (Port 8002)</button>
+        <div id="backend-status"></div>
+    </div>
+
+    <div class="test-card">
+        <h3>2. Frontend Test</h3>
+        <p>Check if frontend is accessible</p>
+        <button onclick="testFrontend()">Test Frontend (Port 3000)</button>
+        <div id="frontend-status"></div>
+    </div>
+
+    <div class="test-card">
+        <h3>3. Network Access Test</h3>
+        <p>Check if accessible from network IP</p>
+        <button onclick="testNetwork()">Test Network (192.168.1.36)</button>
+        <div id="network-status"></div>
+    </div>
+
+    <div class="test-card">
+        <h3>4. Supabase Connection</h3>
+        <p>Check if database is accessible</p>
+        <button onclick="testSupabase()">Test Supabase</button>
+        <div id="supabase-status"></div>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const API_URL = 'http://192.168.1.36:8002';
+        const FRONTEND_URL = 'http://192.168.1.36:3000';
+
+        async function testBackend() {
+            const statusDiv = document.getElementById('backend-status');
+            statusDiv.innerHTML = '<span class="status pending">Testing...</span>';
+            
+            try {
+                const response = await fetch('http://localhost:8002', {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                const data = await response.json();
+                
+                if (data.status === 'running') {
+                    statusDiv.innerHTML = `
+                        <span class="status success">✅ Backend is running!</span>
+                        <div class="result-item">Message: ${data.message}</div>
+                        <div class="result-item">Timestamp: ${data.timestamp}</div>
+                    `;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <span class="status error">❌ Backend not responding</span>
+                    <div class="result-item">Error: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function testFrontend() {
+            const statusDiv = document.getElementById('frontend-status');
+            statusDiv.innerHTML = '<span class="status pending">Testing...</span>';
+            
+            try {
+                const response = await fetch('http://localhost:3000', {
+                    method: 'GET',
+                    mode: 'no-cors'
+                });
+                statusDiv.innerHTML = '<span class="status success">✅ Frontend is accessible!</span>';
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <span class="status error">❌ Frontend not accessible</span>
+                    <div class="result-item">Error: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function testNetwork() {
+            const statusDiv = document.getElementById('network-status');
+            statusDiv.innerHTML = '<span class="status pending">Testing...</span>';
+            
+            try {
+                const response = await fetch(`${API_URL}`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                const data = await response.json();
+                
+                statusDiv.innerHTML = `
+                    <span class="status success">✅ Network access working!</span>
+                    <div class="result-item">Your phone can connect to: ${FRONTEND_URL}</div>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <span class="status error">❌ Network access blocked</span>
+                    <div class="result-item">Error: ${error.message}</div>
+                    <div class="result-item">Make sure CORS is configured in server/.env</div>
+                `;
+            }
+        }
+
+        async function testSupabase() {
+            const statusDiv = document.getElementById('supabase-status');
+            statusDiv.innerHTML = '<span class="status pending">Testing...</span>';
+            
+            try {
+                const response = await fetch(`http://localhost:8002/api/v1/darkroom/rooms`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.innerHTML = `
+                        <span class="status success">✅ Supabase connected!</span>
+                        <div class="result-item">Database is accessible</div>
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <span class="status error">❌ Supabase connection failed</span>
+                    <div class="result-item">Error: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Auto-test on load
+        window.onload = () => {
+            setTimeout(testBackend, 500);
+        };
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confession Socket.IO Test</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: monospace;
+            background: #000;
+            color: #0f0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        input, button {
+            background: #333;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 4px;
+        }
+        button {
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0f0;
+            color: #000;
+        }
+        .log {
+            background: #111;
+            border: 1px solid #333;
+            padding: 10px;
+            margin: 10px 0;
+            height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .message {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Confession Socket.IO Test</h1>
+
+        <div>
+            <input type="text" id="confessionId" placeholder="Confession ID" value="test-confession-123">
+            <button onclick="joinConfession()">Join Confession</button>
+            <button onclick="leaveConfession()">Leave Confession</button>
+        </div>
+
+        <div>
+            <textarea id="confessionContent" placeholder="Confession content..." rows="3" style="width: 400px;"></textarea>
+            <button onclick="createConfession()">Create Confession</button>
+        </div>
+
+        <div>
+            <input type="text" id="replyContent" placeholder="Reply content..." style="width: 300px;">
+            <button onclick="addReply()">Add Reply</button>
+        </div>
+
+        <div>
+            <button onclick="voteUp()">Vote Up</button>
+            <button onclick="voteDown()">Vote Down</button>
+        </div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        const serverUrl = 'http://localhost:8002';
+        let socket = null;
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(messageDiv);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function connectSocket() {
+            if (socket) {
+                socket.disconnect();
+            }
+
+            socket = io(serverUrl, {
+                transports: ['websocket', 'polling'],
+                timeout: 8000
+            });
+
+            socket.on('connect', () => {
+                log('✅ Connected to server');
+            });
+
+            socket.on('disconnect', () => {
+                log('❌ Disconnected from server');
+            });
+
+            socket.on('confession-joined', (data) => {
+                if (data.success) {
+                    log(`✅ Successfully joined confession room: ${data.confessionId}`);
+                } else {
+                    log(`❌ Failed to join confession room: ${data.confessionId} - ${data.error}`);
+                }
+            });
+
+            socket.on('new-confession', (confession) => {
+                log(`📨 New confession received: ${confession.content.substring(0, 50)}...`);
+            });
+
+            socket.on('new-comment', (comment) => {
+                log(`📨 New comment received: ${comment.content.substring(0, 50)}...`);
+            });
+
+            socket.on('vote-update', (data) => {
+                log(`📊 Vote update received: ${data.score} votes for confession ${data.id}`);
+            });
+
+            socket.on('comment-vote-update', (data) => {
+                log(`📊 Comment vote update received: ${data.score} votes for comment ${data.id}`);
+            });
+
+            socket.on('poll-update', (data) => {
+                log(`📊 Poll update received for confession ${data.id}`);
+            });
+
+            socket.on('confession-updated', (data) => {
+                log(`📝 Confession updated: ${data.replies} replies for confession ${data.id}`);
+            });
+        }
+
+        function joinConfession() {
+            if (!socket) connectSocket();
+
+            const confessionId = document.getElementById('confessionId').value;
+            if (confessionId) {
+                log(`🔗 Joining confession room: ${confessionId}`);
+                socket.emit('join-confession', confessionId);
+            }
+        }
+
+        function leaveConfession() {
+            if (socket) {
+                const confessionId = document.getElementById('confessionId').value;
+                socket.emit('leave-confession', confessionId);
+                log(`🔌 Left confession room: ${confessionId}`);
+            }
+        }
+
+        async function createConfession() {
+            const content = document.getElementById('confessionContent').value;
+            if (!content.trim()) {
+                log('❌ Please enter confession content');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${serverUrl}/api/confessions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        content: content.trim(),
+                        alias: 'TestUser',
+                        sessionId: 'test-session'
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    log(`✅ Confession created: ${result.data.id}`);
+                    document.getElementById('confessionContent').value = '';
+                } else {
+                    log(`❌ Failed to create confession: ${result.message}`);
+                }
+            } catch (error) {
+                log(`❌ Error creating confession: ${error.message}`);
+            }
+        }
+
+        async function addReply() {
+            const confessionId = document.getElementById('confessionId').value;
+            const content = document.getElementById('replyContent').value;
+
+            if (!confessionId || !content.trim()) {
+                log('❌ Please enter confession ID and reply content');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${serverUrl}/api/confessions/${confessionId}/reply`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        content: content.trim(),
+                        alias: 'TestUser',
+                        sessionId: 'test-session'
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    log(`✅ Reply added: ${result.data.id}`);
+                    document.getElementById('replyContent').value = '';
+                } else {
+                    log(`❌ Failed to add reply: ${result.message}`);
+                }
+            } catch (error) {
+                log(`❌ Error adding reply: ${error.message}`);
+            }
+        }
+
+        async function voteUp() {
+            const confessionId = document.getElementById('confessionId').value;
+            if (!confessionId) {
+                log('❌ Please enter confession ID');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${serverUrl}/api/confessions/${confessionId}/vote`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ direction: 1 })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    log(`✅ Voted up: ${result.data.score} total votes`);
+                } else {
+                    log(`❌ Failed to vote: ${result.message}`);
+                }
+            } catch (error) {
+                log(`❌ Error voting: ${error.message}`);
+            }
+        }
+
+        async function voteDown() {
+            const confessionId = document.getElementById('confessionId').value;
+            if (!confessionId) {
+                log('❌ Please enter confession ID');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${serverUrl}/api/confessions/${confessionId}/vote`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ direction: -1 })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    log(`✅ Voted down: ${result.data.score} total votes`);
+                } else {
+                    log(`❌ Failed to vote: ${result.message}`);
+                }
+            } catch (error) {
+                log(`❌ Error voting: ${error.message}`);
+            }
+        }
+
+        // Auto-connect on page load
+        connectSocket();
+    </script>
+</body>
+</html>

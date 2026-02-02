@@ -1,0 +1,236 @@
+[
+  {
+    "id": "room-1",
+    "name": "General Discussion",
+    "description": "Talk about anything and everything",
+    "bio": "A welcoming space for general conversations and community building",
+    "category": "General",
+    "memberCount": 42,
+    "isPrivate": false,
+    "isOfficial": true,
+    "roomType": "palace",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "lastActivity": "2024-01-01T00:00:00.000Z",
+    "moderators": [
+      "admin"
+    ],
+    "tags": [
+      "general",
+      "discussion"
+    ],
+    "icon": "💬",
+    "profilePicture": null,
+    "createdBy": "admin"
+  },
+  {
+    "id": "room-1759122240204",
+    "name": "Test Persistent Room",
+    "description": "This room should persist after refresh",
+    "bio": "This room should persist after refresh",
+    "rules": [],
+    "category": "General",
+    "memberCount": 1,
+    "isPrivate": false,
+    "isOfficial": false,
+    "roomType": "palace",
+    "createdAt": "2025-09-29T05:04:00.204Z",
+    "lastActivity": "2025-09-29T05:04:00.204Z",
+    "moderators": [
+      "user_1"
+    ],
+    "tags": [],
+    "icon": "💬",
+    "profilePicture": null,
+    "createdBy": "user_1",
+    "maxCoAdmins": 3,
+    "defaultBanDuration": "1day",
+    "allowMemberRequests": true,
+    "allowAdminInvites": true,
+    "autoTransferOnInactivity": true,
+    "inactivityDays": 10
+  },
+  {
+    "id": "room-1759122309249",
+    "name": "sss",
+    "description": "ssss",
+    "bio": "ssss",
+    "rules": [
+      "ssss"
+    ],
+    "category": "General",
+    "memberCount": 1,
+    "isPrivate": true,
+    "isOfficial": false,
+    "roomType": "room",
+    "createdAt": "2025-09-29T05:05:09.249Z",
+    "lastActivity": "2025-09-29T05:05:09.249Z",
+    "moderators": [
+      "mock-user-id"
+    ],
+    "tags": [
+      "general"
+    ],
+    "icon": "💬",
+    "profilePicture": null,
+    "createdBy": "mock-user-id",
+    "maxCoAdmins": 3,
+    "defaultBanDuration": "1day",
+    "allowMemberRequests": true,
+    "allowAdminInvites": true,
+    "autoTransferOnInactivity": true,
+    "inactivityDays": 10
+  },
+  {
+    "id": "room-1759148274515",
+    "name": "flipflops",
+    "description": "aim to do nothing dammit",
+    "bio": "aim to do nothing dammit",
+    "rules": [
+      "no rules jo karna hai karo"
+    ],
+    "category": "Music",
+    "memberCount": 1,
+    "isPrivate": false,
+    "isOfficial": false,
+    "roomType": "palace",
+    "createdAt": "2025-09-29T12:17:54.515Z",
+    "lastActivity": "2025-09-29T12:17:54.515Z",
+    "moderators": [
+      "mock-user-id"
+    ],
+    "tags": [
+      "music"
+    ],
+    "icon": "🎵",
+    "profilePicture": null,
+    "createdBy": "mock-user-id",
+    "maxCoAdmins": 3,
+    "defaultBanDuration": "1day",
+    "allowMemberRequests": true,
+    "allowAdminInvites": true,
+    "autoTransferOnInactivity": true,
+    "inactivityDays": 10
+  },
+  {
+    "id": "room-1759157282711",
+    "name": "slayer",
+    "description": "aaa",
+    "bio": "aaa",
+    "rules": [
+      "aaaa"
+    ],
+    "category": "General",
+    "memberCount": 1,
+    "isPrivate": false,
+    "isOfficial": false,
+    "roomType": "room",
+    "createdAt": "2025-09-29T14:48:02.711Z",
+    "lastActivity": "2025-09-29T14:48:02.711Z",
+    "moderators": [
+      "user_1"
+    ],
+    "tags": [
+      "general"
+    ],
+    "icon": "💬",
+    "profilePicture": null,
+    "createdBy": "user_1",
+    "maxCoAdmins": 3,
+    "defaultBanDuration": "1day",
+    "allowMemberRequests": true,
+    "allowAdminInvites": true,
+    "autoTransferOnInactivity": true,
+    "inactivityDays": 10
+  },
+  {
+    "id": "room-1759157303251",
+    "name": "ddd",
+    "description": "dddd",
+    "bio": "dddd",
+    "rules": [
+      "dddddddd"
+    ],
+    "category": "General",
+    "memberCount": 1,
+    "isPrivate": false,
+    "isOfficial": false,
+    "roomType": "room",
+    "createdAt": "2025-09-29T14:48:23.251Z",
+    "lastActivity": "2025-09-29T14:48:23.251Z",
+    "moderators": [
+      "user_1"
+    ],
+    "tags": [
+      "general"
+    ],
+    "icon": "💬",
+    "profilePicture": null,
+    "createdBy": "user_1",
+    "maxCoAdmins": 3,
+    "defaultBanDuration": "1day",
+    "allowMemberRequests": true,
+    "allowAdminInvites": true,
+    "autoTransferOnInactivity": true,
+    "inactivityDays": 10
+  },
+  {
+    "id": "room-1759157323962",
+    "name": "slayerss",
+    "description": "sssss",
+    "bio": "sssss",
+    "rules": [],
+    "category": "Sports",
+    "memberCount": 1,
+    "isPrivate": false,
+    "isOfficial": false,
+    "roomType": "palace",
+    "createdAt": "2025-09-29T14:48:43.962Z",
+    "lastActivity": "2025-09-29T14:48:43.962Z",
+    "moderators": [
+      "user_1"
+    ],
+    "tags": [
+      "sports"
+    ],
+    "icon": "⚽",
+    "profilePicture": null,
+    "createdBy": "user_1",
+    "maxCoAdmins": 3,
+    "defaultBanDuration": "1day",
+    "allowMemberRequests": true,
+    "allowAdminInvites": true,
+    "autoTransferOnInactivity": true,
+    "inactivityDays": 10
+  },
+  {
+    "id": "room-1759293102953",
+    "name": "slayers",
+    "description": "qqqqqqqqq",
+    "bio": "qqqqqqqqq",
+    "rules": [
+      "qqqqqqqqqqqq"
+    ],
+    "category": "General",
+    "memberCount": 1,
+    "isPrivate": false,
+    "isOfficial": false,
+    "roomType": "room",
+    "createdAt": "2025-10-01T04:31:42.953Z",
+    "lastActivity": "2025-10-01T04:31:42.953Z",
+    "moderators": [
+      "user_1"
+    ],
+    "tags": [
+      "general"
+    ],
+    "icon": "💬",
+    "profilePicture": null,
+    "createdBy": "user_1",
+    "maxCoAdmins": 3,
+    "defaultBanDuration": "1day",
+    "allowMemberRequests": true,
+    "allowAdminInvites": true,
+    "autoTransferOnInactivity": true,
+    "inactivityDays": 10
+  }
+]

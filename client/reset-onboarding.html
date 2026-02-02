@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Nexus Onboarding</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0a0e1a;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        button {
+            background: #eab308;
+            color: black;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 8px;
+        }
+        button:hover {
+            background: #fbbf24;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            display: none;
+        }
+        .info {
+            margin: 16px 0;
+            padding: 12px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Nexus Debug Tool</h1>
+        <div class="info">
+            <strong>Current Status:</strong><br>
+            hasSeenOnboarding: <span id="onboardingStatus">-</span><br>
+            authToken: <span id="authStatus">-</span>
+        </div>
+        
+        <button onclick="resetOnboarding()">Clear Onboarding Flag</button>
+        <button onclick="clearAuth()">Clear Auth Token</button>
+        <button onclick="clearAll()">Clear Everything</button>
+        <button onclick="goToApp()">Go to App</button>
+        
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        async function updateStatus() {
+            const hasOnboarding = localStorage.getItem('hasSeenOnboarding');
+            const hasAuth = localStorage.getItem('authToken');
+            
+            document.getElementById('onboardingStatus').textContent = hasOnboarding || 'Not set';
+            document.getElementById('authStatus').textContent = hasAuth ? 'Set' : 'Not set';
+            
+            // Check if there's an active session
+            try {
+                const res = await fetch('/api/auth/profile', { credentials: 'include' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data?.data?.user) {
+                        document.getElementById('authStatus').textContent = 'Set (Active Session)';
+                    }
+                }
+            } catch (e) {
+                // No active session
+            }
+        }
+
+        function showMessage(msg) {
+            const status = document.getElementById('status');
+            status.textContent = msg;
+            status.style.display = 'block';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+
+        async function resetOnboarding() {
+            localStorage.removeItem('hasSeenOnboarding');
+            showMessage('✅ Onboarding flag cleared!');
+            await updateStatus();
+        }
+
+        async function clearAuth() {
+            // Clear localStorage
+            localStorage.removeItem('authToken');
+            
+            // Logout from backend to clear session cookies
+            try {
+                await fetch('/api/auth/logout', { 
+                    method: 'POST',
+                    credentials: 'include' 
+                });
+            } catch (e) {
+                console.log('Logout error:', e);
+            }
+            
+            showMessage('✅ Auth token and session cleared!');
+            await updateStatus();
+        }
+
+        async function clearAll() {
+            // Clear localStorage
+            localStorage.clear();
+            
+            // Logout from backend to clear session cookies
+            try {
+                await fetch('/api/auth/logout', { 
+                    method: 'POST',
+                    credentials: 'include' 
+                });
+            } catch (e) {
+                console.log('Logout error:', e);
+            }
+            
+            showMessage('✅ Everything cleared (localStorage + session)!');
+            await updateStatus();
+        }
+
+        function goToApp() {
+            window.location.href = '/';
+        }
+
+        // Update status on load
+        updateStatus();
+    </script>
+</body>
+</html>
+

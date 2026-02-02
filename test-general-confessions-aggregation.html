@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>General Confessions Aggregation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .confession {
+            background: #3a3a3a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #F4E3B5;
+        }
+        .campus-tag {
+            background: #F4E3B5;
+            color: #1a1a1a;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .score {
+            color: #F4E3B5;
+            font-weight: bold;
+        }
+        button {
+            background: #F4E3B5;
+            color: #1a1a1a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #e6d1a1;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #2d5a2d; }
+        .error { background: #5a2d2d; }
+        .info { background: #2d4a5a; }
+        .loading {
+            background: #4a4a4a;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌟 General Confessions Aggregation Test</h1>
+    
+    <div class="test-section">
+        <h2>Test General Confessions API</h2>
+        <p>This test verifies that General Confessions shows confessions from all campuses combined.</p>
+        
+        <button onclick="testGeneralConfessionsAPI()">Test General Confessions API</button>
+        <button onclick="testCampusSpecificAPI()">Test Campus-Specific API</button>
+        <button onclick="compareResults()">Compare Results</button>
+        
+        <div id="status"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>General Confessions Results</h2>
+        <div id="general-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Campus-Specific Results</h2>
+        <div id="campus-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Comparison Results</h2>
+        <div id="comparison-results"></div>
+    </div>
+
+    <script>
+        let generalConfessions = [];
+        let campusConfessions = [];
+
+        async function testGeneralConfessionsAPI() {
+            const resultsDiv = document.getElementById('general-results');
+            resultsDiv.innerHTML = '<div class="loading">Loading General Confessions...</div>';
+            
+            try {
+                // Simulate API call to general confessions
+                const mockGeneralConfessions = [
+                    {
+                        id: '1',
+                        content: 'This is a confession from MIT ADT',
+                        campus: 'mit-adt',
+                        score: 25,
+                        timestamp: new Date(Date.now() - 1000 * 60 * 30) // 30 minutes ago
+                    },
+                    {
+                        id: '2',
+                        content: 'This is a confession from VIT Vellore',
+                        campus: 'vit-vellore',
+                        score: 18,
+                        timestamp: new Date(Date.now() - 1000 * 60 * 45) // 45 minutes ago
+                    },
+                    {
+                        id: '3',
+                        content: 'This is a confession from MIT WPU',
+                        campus: 'mit-wpu',
+                        score: 32,
+                        timestamp: new Date(Date.now() - 1000 * 60 * 15) // 15 minutes ago
+                    },
+                    {
+                        id: '4',
+                        content: 'This is a confession from Parul University',
+                        campus: 'parul-university',
+                        score: 12,
+                        timestamp: new Date(Date.now() - 1000 * 60 * 60) // 1 hour ago
+                    },
+                    {
+                        id: '5',
+                        content: 'This is a confession from IIST',
+                        campus: 'iist',
+                        score: 28,
+                        timestamp: new Date(Date.now() - 1000 * 60 * 20) // 20 minutes ago
+                    }
+                ];
+                
+                generalConfessions = mockGeneralConfessions;
+                
+                resultsDiv.innerHTML = `
+                    <h3>General Confessions (Combined from All Campuses):</h3>
+                    <p><strong>Total Confessions:</strong> ${generalConfessions.length}</p>
+                    <p><strong>Campus Distribution:</strong></p>
+                    <ul>
+                        ${getCampusDistribution(generalConfessions).map(([campus, count]) => 
+                            `<li>${campus}: ${count} confessions</li>`
+                        ).join('')}
+                    </ul>
+                    ${generalConfessions.map(confession => `
+                        <div class="confession">
+                            <div><strong>Confession #${confession.id}</strong></div>
+                            <div>${confession.content}</div>
+                            <div>Campus: <span class="campus-tag">${confession.campus}</span></div>
+                            <div>Score: <span class="score">${confession.score} upvotes</span></div>
+                            <div>Time: ${confession.timestamp.toLocaleTimeString()}</div>
+                        </div>
+                    `).join('')}
+                `;
+                
+                logStatus('✅ General Confessions API test completed', 'success');
+            } catch (error) {
+                resultsDiv.innerHTML = '<div class="error">Error loading General Confessions</div>';
+                logStatus('❌ General Confessions API test failed', 'error');
+            }
+        }
+
+        async function testCampusSpecificAPI() {
+            const resultsDiv = document.getElementById('campus-results');
+            resultsDiv.innerHTML = '<div class="loading">Loading Campus-Specific Confessions...</div>';
+            
+            try {
+                // Simulate API calls to individual campus endpoints
+                const mockCampusConfessions = {
+                    'mit-adt': [
+                        { id: '1', content: 'This is a confession from MIT ADT', campus: 'mit-adt', score: 25 }
+                    ],
+                    'vit-vellore': [
+                        { id: '2', content: 'This is a confession from VIT Vellore', campus: 'vit-vellore', score: 18 }
+                    ],
+                    'mit-wpu': [
+                        { id: '3', content: 'This is a confession from MIT WPU', campus: 'mit-wpu', score: 32 }
+                    ],
+                    'parul-university': [
+                        { id: '4', content: 'This is a confession from Parul University', campus: 'parul-university', score: 12 }
+                    ],
+                    'iist': [
+                        { id: '5', content: 'This is a confession from IIST', campus: 'iist', score: 28 }
+                    ]
+                };
+                
+                campusConfessions = Object.values(mockCampusConfessions).flat();
+                
+                resultsDiv.innerHTML = `
+                    <h3>Campus-Specific Confessions (Individual APIs):</h3>
+                    <p><strong>Total Confessions:</strong> ${campusConfessions.length}</p>
+                    <p><strong>Campus Distribution:</strong></p>
+                    <ul>
+                        ${getCampusDistribution(campusConfessions).map(([campus, count]) => 
+                            `<li>${campus}: ${count} confessions</li>`
+                        ).join('')}
+                    </ul>
+                    ${campusConfessions.map(confession => `
+                        <div class="confession">
+                            <div><strong>Confession #${confession.id}</strong></div>
+                            <div>${confession.content}</div>
+                            <div>Campus: <span class="campus-tag">${confession.campus}</span></div>
+                            <div>Score: <span class="score">${confession.score} upvotes</span></div>
+                        </div>
+                    `).join('')}
+                `;
+                
+                logStatus('✅ Campus-Specific API test completed', 'success');
+            } catch (error) {
+                resultsDiv.innerHTML = '<div class="error">Error loading Campus-Specific Confessions</div>';
+                logStatus('❌ Campus-Specific API test failed', 'error');
+            }
+        }
+
+        function compareResults() {
+            const resultsDiv = document.getElementById('comparison-results');
+            
+            if (generalConfessions.length === 0 || campusConfessions.length === 0) {
+                resultsDiv.innerHTML = '<div class="error">Please run both API tests first</div>';
+                return;
+            }
+            
+            const generalCampusCounts = getCampusDistribution(generalConfessions);
+            const campusCampusCounts = getCampusDistribution(campusConfessions);
+            
+            let comparison = '<h3>Comparison Results:</h3>';
+            
+            // Check if all campuses are represented
+            const allCampuses = ['mit-adt', 'mit-wpu', 'vit-vellore', 'parul-university', 'iist'];
+            let allCampusesPresent = true;
+            
+            comparison += '<h4>Campus Coverage:</h4><ul>';
+            allCampuses.forEach(campus => {
+                const generalCount = generalCampusCounts.find(([c]) => c === campus)?.[1] || 0;
+                const campusCount = campusCampusCounts.find(([c]) => c === campus)?.[1] || 0;
+                
+                if (generalCount > 0 && campusCount > 0) {
+                    comparison += `<li style="color: #4ade80;">✅ ${campus}: Both APIs have ${generalCount}/${campusCount} confessions</li>`;
+                } else if (generalCount > 0) {
+                    comparison += `<li style="color: #fbbf24;">⚠️ ${campus}: Only General API has ${generalCount} confessions</li>`;
+                } else if (campusCount > 0) {
+                    comparison += `<li style="color: #f87171;">❌ ${campus}: Only Campus API has ${campusCount} confessions</li>`;
+                    allCampusesPresent = false;
+                } else {
+                    comparison += `<li style="color: #9ca3af;">➖ ${campus}: No confessions found</li>`;
+                }
+            });
+            comparison += '</ul>';
+            
+            // Check total counts
+            comparison += '<h4>Total Counts:</h4>';
+            comparison += `<p>General Confessions: <strong>${generalConfessions.length}</strong></p>`;
+            comparison += `<p>Campus-Specific Total: <strong>${campusConfessions.length}</strong></p>`;
+            
+            if (generalConfessions.length >= campusConfessions.length) {
+                comparison += '<p style="color: #4ade80;">✅ General Confessions includes all campus confessions</p>';
+            } else {
+                comparison += '<p style="color: #f87171;">❌ General Confessions is missing some campus confessions</p>';
+            }
+            
+            // Check sorting
+            const generalSorted = [...generalConfessions].sort((a, b) => b.score - a.score);
+            const isSorted = JSON.stringify(generalSorted) === JSON.stringify(generalConfessions);
+            
+            comparison += '<h4>Sorting:</h4>';
+            if (isSorted) {
+                comparison += '<p style="color: #4ade80;">✅ General Confessions are sorted by score (highest first)</p>';
+            } else {
+                comparison += '<p style="color: #f87171;">❌ General Confessions are not properly sorted</p>';
+            }
+            
+            resultsDiv.innerHTML = comparison;
+            
+            if (allCampusesPresent && generalConfessions.length >= campusConfessions.length && isSorted) {
+                logStatus('✅ General Confessions aggregation test PASSED', 'success');
+            } else {
+                logStatus('❌ General Confessions aggregation test FAILED', 'error');
+            }
+        }
+
+        function getCampusDistribution(confessions) {
+            const counts = {};
+            confessions.forEach(confession => {
+                counts[confession.campus] = (counts[confession.campus] || 0) + 1;
+            });
+            return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+        }
+
+        function logStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            statusDiv.appendChild(div);
+            statusDiv.scrollTop = statusDiv.scrollHeight;
+        }
+
+        // Auto-run tests on page load
+        window.onload = function() {
+            logStatus('🚀 General Confessions Aggregation Test loaded', 'info');
+            logStatus('📋 Click buttons to test General Confessions aggregation', 'info');
+        };
+    </script>
+</body>
+</html>

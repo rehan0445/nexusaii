@@ -1,0 +1,42 @@
+{
+  "name": "nexus-ai-fullstack",
+  "version": "1.0.0",
+  "description": "Full-stack AI chat application with React frontend and Express backend",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build": "cd client && npm ci --include=dev && cd ../server && npm ci && cd .. && cd client && npm run build",
+    "start": "cd server && npm start",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "install:dev": "npm install && cd client && npm install && cd ../server && npm install && cd ../server && npm install nodemon --save-dev",
+    "clean": "rm -rf node_modules client/node_modules server/node_modules",
+    "disable-firebase": "node disable-firebase.js",
+    "restore-firebase": "node restore-firebase.js",
+    "verify-users": "node verify-existing-users.js"
+  },
+  "keywords": [
+    "ai",
+    "chat",
+    "react",
+    "express",
+    "fullstack",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "@types/uuid": "^11.0.0",
+    "all": "^0.0.0",
+    "axios": "^1.11.0",
+    "dotenv": "^16.3.1",
+    "socket.io-client": "^4.8.1",
+    "uuid": "^13.0.0"
+  }
+}

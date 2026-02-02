@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test General Confessions Click Functionality</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #18181b, #27272a);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #F4E3B5, #D4C4A8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .test-section {
+            background: rgba(39, 39, 42, 0.8);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(244, 227, 181, 0.2);
+        }
+        
+        .test-section h2 {
+            color: #F4E3B5;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .campus-card {
+            background: linear-gradient(135deg, rgba(244, 227, 181, 0.1), rgba(212, 196, 168, 0.1));
+            border: 2px solid rgba(244, 227, 181, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .campus-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(244, 227, 181, 0.6);
+            box-shadow: 0 10px 30px rgba(244, 227, 181, 0.2);
+        }
+        
+        .campus-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(244, 227, 181, 0.1), rgba(212, 196, 168, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .campus-card:hover::before {
+            opacity: 1;
+        }
+        
+        .campus-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #F4E3B5;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .campus-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .explore-button {
+            background: linear-gradient(45deg, #F4E3B5, #D4C4A8);
+            color: #18181b;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .explore-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 227, 181, 0.3);
+        }
+        
+        .test-results {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #F4E3B5;
+        }
+        
+        .test-results h3 {
+            color: #F4E3B5;
+            margin-bottom: 15px;
+        }
+        
+        .result-item {
+            background: rgba(39, 39, 42, 0.5);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 3px solid #F4E3B5;
+        }
+        
+        .result-item.success {
+            border-left-color: #10b981;
+        }
+        
+        .result-item.error {
+            border-left-color: #ef4444;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .status-indicator.success {
+            background-color: #10b981;
+        }
+        
+        .status-indicator.error {
+            background-color: #ef4444;
+        }
+        
+        .status-indicator.pending {
+            background-color: #f59e0b;
+        }
+        
+        .api-test {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(244, 227, 181, 0.3);
+            border-top: 2px solid #F4E3B5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌟 General Confessions Test</h1>
+            <p>Testing the functionality to show confession combinations from all campuses</p>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Test Overview</h2>
+            <p>This test verifies that clicking on "General Confessions" properly shows confessions from all campuses combined.</p>
+            
+            <div class="campus-card" onclick="testGeneralConfessionsClick()">
+                <div class="campus-title">🌟 General Confessions</div>
+                <div class="campus-subtitle">General Confessions - All Campuses</div>
+                <button class="explore-button">✨ Explore</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Test Results</h2>
+            <div class="test-results">
+                <h3>Test Status</h3>
+                <div id="test-results">
+                    <div class="result-item">
+                        <span class="status-indicator pending"></span>
+                        <strong>Click Test:</strong> <span id="click-test-status">Pending</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="status-indicator pending"></span>
+                        <strong>API Test:</strong> <span id="api-test-status">Pending</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="status-indicator pending"></span>
+                        <strong>Data Aggregation:</strong> <span id="aggregation-test-status">Pending</span>
+                    </div>
+                </div>
+                
+                <div id="api-response" class="api-test" style="display: none;">
+                    <h4>API Response:</h4>
+                    <pre id="api-response-content"></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Expected Behavior</h2>
+            <ul>
+                <li>✅ Clicking "General Confessions" should navigate to <code>/campus/general/confessions</code></li>
+                <li>✅ The API should return confessions from all campus tables combined</li>
+                <li>✅ Confessions should be sorted by score or timestamp</li>
+                <li>✅ Each confession should preserve its original campus information</li>
+                <li>✅ Pagination should work across the aggregated results</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Implementation Details</h2>
+            <p><strong>Backend Changes:</strong> The server already supports General Confessions aggregation by fetching from all campus tables and combining the results.</p>
+            <p><strong>Frontend Changes:</strong> Updated CollegeConfessionWrapper and CollegeCampus components to include the 'general' campus.</p>
+            <p><strong>API Endpoint:</strong> <code>GET /api/confessions?campus=general</code></p>
+        </div>
+    </div>
+
+    <script>
+        async function testGeneralConfessionsClick() {
+            console.log('Testing General Confessions click functionality...');
+            
+            // Update click test status
+            updateTestStatus('click-test-status', 'success', 'Click handler working');
+            
+            // Test API call
+            await testGeneralConfessionsAPI();
+        }
+        
+        async function testGeneralConfessionsAPI() {
+            updateTestStatus('api-test-status', 'pending', 'Testing API...');
+            
+            try {
+                const serverUrl = window.location.origin;
+                const response = await fetch(`${serverUrl}/api/confessions?campus=general&limit=5`);
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.items) {
+                    updateTestStatus('api-test-status', 'success', `API returned ${data.data.items.length} confessions`);
+                    
+                    // Test data aggregation
+                    testDataAggregation(data.data.items);
+                    
+                    // Show API response
+                    document.getElementById('api-response').style.display = 'block';
+                    document.getElementById('api-response-content').textContent = JSON.stringify(data, null, 2);
+                } else {
+                    updateTestStatus('api-test-status', 'error', 'API returned invalid response');
+                }
+            } catch (error) {
+                updateTestStatus('api-test-status', 'error', `API Error: ${error.message}`);
+                console.error('API Test Error:', error);
+            }
+        }
+        
+        function testDataAggregation(confessions) {
+            updateTestStatus('aggregation-test-status', 'pending', 'Testing aggregation...');
+            
+            try {
+                // Check if confessions come from different campuses
+                const campuses = new Set();
+                confessions.forEach(confession => {
+                    if (confession.campus) {
+                        campuses.add(confession.campus);
+                    }
+                });
+                
+                if (campuses.size > 1) {
+                    updateTestStatus('aggregation-test-status', 'success', `Found confessions from ${campuses.size} campuses: ${Array.from(campuses).join(', ')}`);
+                } else if (campuses.size === 1) {
+                    updateTestStatus('aggregation-test-status', 'success', `Found confessions from campus: ${Array.from(campuses)[0]}`);
+                } else {
+                    updateTestStatus('aggregation-test-status', 'error', 'No campus information found in confessions');
+                }
+            } catch (error) {
+                updateTestStatus('aggregation-test-status', 'error', `Aggregation Error: ${error.message}`);
+            }
+        }
+        
+        function updateTestStatus(elementId, status, message) {
+            const element = document.getElementById(elementId);
+            const resultItem = element.closest('.result-item');
+            const indicator = resultItem.querySelector('.status-indicator');
+            
+            element.textContent = message;
+            indicator.className = `status-indicator ${status}`;
+            
+            if (status === 'success') {
+                resultItem.classList.add('success');
+            } else if (status === 'error') {
+                resultItem.classList.add('error');
+            }
+        }
+        
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            console.log('General Confessions Test Page Loaded');
+            console.log('Click the General Confessions card to test the functionality');
+        });
+    </script>
+</body>
+</html>

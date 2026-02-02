@@ -1,0 +1,93 @@
+═══════════════════════════════════════════════════════════════
+🚨 MANUAL FIX: Create .env files manually (since I can't create them)
+═══════════════════════════════════════════════════════════════
+
+The "Invalid API key" error means the Supabase anon key isn't being loaded properly.
+
+═══════════════════════════════════════════════════════════════
+📝 STEP 1: CREATE CLIENT .ENV FILE
+═══════════════════════════════════════════════════════════════
+
+Create a new file at: D:\nexus_rehan\aadrikaa\client\.env.local
+
+Copy and paste this EXACT content:
+
+```
+VITE_SUPABASE_URL=https://dswuotsdaltsomyqqykn.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzd3VvdHNkYWx0c29teXFxeWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzODM4MjYsImV4cCI6MjA3NDk1OTgyNn0.lIK72gGfcT-3kJN4HhxGQ8hhPvkJgZCUBkX0WBb-4Qc
+VITE_SERVER_URL=http://localhost:8002
+```
+
+═══════════════════════════════════════════════════════════════
+📝 STEP 2: CREATE SERVER .ENV FILE
+═══════════════════════════════════════════════════════════════
+
+Create a new file at: D:\nexus_rehan\aadrikaa\server\.env
+
+Copy and paste this EXACT content:
+
+```
+SUPABASE_URL=https://dswuotsdaltsomyqqykn.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzd3VvdHNkYWx0c29teXFxeWtuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTM4MzgyNiwiZXhwIjoyMDc0OTU5ODI2fQ.BVCW6hzW6DCY9NFG-Vc4aiLk470A5_0eCVrfjjUxldw
+JWT_SECRET=your-random-secret-key-change-in-production-abc123xyz789
+PORT=8002
+NODE_ENV=development
+```
+
+═══════════════════════════════════════════════════════════════
+⚡ STEP 3: RESTART EVERYTHING
+═══════════════════════════════════════════════════════════════
+
+1. Stop both servers (Ctrl+C in both terminals)
+
+2. Clear Vite cache:
+   cd D:\nexus_rehan\aadrikaa\client
+   Remove-Item -Recurse -Force node_modules\.vite
+
+3. Restart servers:
+
+   Terminal 1 (Backend):
+   cd D:\nexus_rehan\aadrikaa\server
+   npm start
+
+   Terminal 2 (Frontend):
+   cd D:\nexus_rehan\aadrikaa\client
+   npm run dev
+
+═══════════════════════════════════════════════════════════════
+🔍 STEP 4: VERIFY FIX WORKED
+═══════════════════════════════════════════════════════════════
+
+1. Open browser console (F12)
+2. Check for these messages:
+   ✅ "No warnings about missing keys"
+   ❌ If you still see "VITE_SUPABASE_ANON_KEY is not defined" → files weren't created properly
+
+3. Try login - should work now!
+
+═══════════════════════════════════════════════════════════════
+🐛 IF STILL NOT WORKING
+═══════════════════════════════════════════════════════════════
+
+1. Hard refresh browser: Ctrl + Shift + R
+2. Check file exists:
+   - D:\nexus_rehan\aadrikaa\client\.env.local
+   - D:\nexus_rehan\aadrikaa\server\.env
+
+3. Verify content is exact (no extra spaces/quotes)
+
+4. Check browser console for:
+   import.meta.env.VITE_SUPABASE_ANON_KEY
+
+═══════════════════════════════════════════════════════════════
+✅ SUCCESS SIGNS
+═══════════════════════════════════════════════════════════════
+
+After restart, you should see in browser console:
+- No "Invalid API key" error
+- Login page loads properly
+- Can enter email/password
+- Login succeeds
+
+═══════════════════════════════════════════════════════════════
+

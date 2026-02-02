@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Google Tag Manager -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7CPN2Y2QPW"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      // Initialize GA4 with User-ID support
+      // Note: user_id will be set dynamically after login via AuthContext
+      // This ensures NO PII (email, name, phone) is ever sent to GA
+      gtag('config', 'G-7CPN2Y2QPW', {
+        // user_id will be set after authentication (hashed email only)
+        // Do NOT set user_id here - it will be set by gaTracking.ts after login
+      });
+    </script>
+    <!-- End Google Tag Manager -->
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <!-- CSP temporarily disabled for Railway debugging -->
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http:; font-src 'self' data:; connect-src 'self' http://localhost:8002 ws://localhost:8002 http://127.0.0.1:8002 ws://127.0.0.1:8002 http://0.0.0.0:8002 ws://0.0.0.0:8002 http://localhost:3000 ws://localhost:3000 http://127.0.0.1:3000 ws://127.0.0.1:3000 http://192.168.1.35:8000 http://192.168.1.35:8002 ws://192.168.1.35:8002 ws://192.168.1.35:8000 http://192.168.*.*:8000 http://192.168.*.*:8002 ws://192.168.*.*:8000 ws://192.168.*.*:8002 http://10.87.73.163:8000 ws://10.87.73.163:8000 http://10.87.73.163:8002 ws://10.87.73.163:8002 http://10.*.*.*:8000 http://10.*.*.*:8002 http://10.*.*.*:3000 ws://10.*.*.*:8000 ws://10.*.*.*:8002 ws://10.*.*.*:3000 https://nexusai.com https://www.nexusai.com https://*.supabase.co wss://*.supabase.co https://*.railway.app wss://*.railway.app https://*.up.railway.app wss://*.up.railway.app; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none';" /> -->
+    <title>Nexuschat.in - Chat with Humans & AI</title>
+    <!-- Self-hosted/system fonts only to comply with strict CSP -->
+    <style>
+      :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

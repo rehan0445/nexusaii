@@ -1,0 +1,49 @@
+{
+  "name": "nexusbackend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "dev": "nodemon app.js",
+    "start": "node app.js",
+    "start:cluster": "node cluster.js",
+    "start:prod": "NODE_ENV=production node cluster.js",
+    "darkroom": "node start-darkroom.js",
+    "dev:darkroom": "nodemon start-darkroom.js",
+    "migrate": "node scripts/run_migrations.js",
+    "test": "node --test || vitest run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.62.0",
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.50.0",
+    "argon2": "^0.41.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "dotenv-safe": "^9.1.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.1",
+    "node-cron": "^4.2.1",
+    "node-fetch": "^3.3.2",
+    "openai": "^6.8.1",
+    "pg": "^8.16.3",
+    "socket.io": "^4.8.1",
+    "speakeasy": "^2.0.0",
+    "uuid": "^11.1.0",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "fast-check": "^3.18.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^7.0.0",
+    "vitest": "^2.1.3"
+  }
+}

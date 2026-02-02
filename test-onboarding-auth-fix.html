@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onboarding Auth Fix Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    .section {
+      background: #2a2a2a;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      border: 1px solid #3a3a3a;
+    }
+    h1 { color: #F4E3B5; }
+    h2 { color: #4CAF50; margin-top: 0; }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    button:hover { background: #45a049; }
+    button:disabled { background: #666; cursor: not-allowed; }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      background: #1a1a1a;
+      border: 1px solid #3a3a3a;
+      color: #fff;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .log {
+      background: #1a1a1a;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #3a3a3a;
+    }
+    .log-entry {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 3px solid #666;
+      padding-left: 10px;
+    }
+    .log-entry.success { border-color: #4CAF50; color: #4CAF50; }
+    .log-entry.error { border-color: #f44336; color: #f44336; }
+    .log-entry.info { border-color: #2196F3; color: #2196F3; }
+    .log-entry.warning { border-color: #ff9800; color: #ff9800; }
+    .status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-left: 10px;
+    }
+    .status.pass { background: #4CAF50; }
+    .status.fail { background: #f44336; }
+    .status.pending { background: #ff9800; }
+  </style>
+</head>
+<body>
+  <h1>🔐 Onboarding Auth Fix - Test Suite</h1>
+  
+  <div class="section">
+    <h2>1️⃣ Setup - Login First</h2>
+    <p>Enter credentials to authenticate (this simulates the login flow):</p>
+    <input type="email" id="email" placeholder="Email" value="test@example.com">
+    <input type="password" id="password" placeholder="Password" value="password123">
+    <button onclick="testLogin()">🔐 Login</button>
+    <button onclick="testSignup()">✍️ Signup (New User)</button>
+  </div>
+
+  <div class="section">
+    <h2>2️⃣ Session Verification</h2>
+    <button onclick="checkSession()">🔍 Check Supabase Session</button>
+    <button onclick="checkAccessToken()">🎫 Verify Access Token</button>
+    <button onclick="clearSession()">🗑️ Clear Session (Test Expired)</button>
+  </div>
+
+  <div class="section">
+    <h2>3️⃣ Onboarding Profile Creation Test</h2>
+    <p>Test the fixed onboarding profile creation flow:</p>
+    <input type="text" id="username" placeholder="Username" value="test_user_123">
+    <input type="text" id="name" placeholder="Full Name" value="Test User">
+    <button onclick="testProfileCreation()">✅ Test Profile Creation (With Fix)</button>
+    <button onclick="testProfileCreationOld()">❌ Test Old Method (Without Token)</button>
+  </div>
+
+  <div class="section">
+    <h2>4️⃣ Test Results</h2>
+    <div id="results">
+      <p>Run tests to see results...</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📊 Logs</h2>
+    <button onclick="clearLogs()">Clear Logs</button>
+    <div id="logs" class="log"></div>
+  </div>
+
+  <script>
+    // Configure Supabase (replace with your actual credentials)
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    const API_URL = 'http://localhost:5000'; // Your backend URL
+
+    let supabase;
+    
+    // Try to load from environment or show error
+    if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+      log('⚠️ Please configure SUPABASE_URL and SUPABASE_ANON_KEY in this file', 'warning');
+    } else {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storage: window.localStorage,
+          storageKey: 'nexus-auth-test',
+        },
+      });
+      log('✅ Supabase client initialized', 'success');
+    }
+
+    function log(message, type = 'info') {
+      const logsDiv = document.getElementById('logs');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logsDiv.appendChild(entry);
+      logsDiv.scrollTop = logsDiv.scrollHeight;
+      console.log(message);
+    }
+
+    function clearLogs() {
+      document.getElementById('logs').innerHTML = '';
+    }
+
+    function updateResult(testName, status, details) {
+      const resultsDiv = document.getElementById('results');
+      const result = document.createElement('div');
+      result.innerHTML = `
+        <strong>${testName}</strong>
+        <span class="status ${status}">${status.toUpperCase()}</span>
+        <div style="margin-left: 20px; color: #aaa; font-size: 13px;">${details}</div>
+      `;
+      resultsDiv.appendChild(result);
+    }
+
+    async function testLogin() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      if (!supabase) {
+        log('❌ Supabase not configured', 'error');
+        return;
+      }
+
+      try {
+        log('🔐 Attempting login...', 'info');
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          log(`❌ Login failed: ${error.message}`, 'error');
+          updateResult('Login Test', 'fail', error.message);
+          return;
+        }
+
+        if (data.user) {
+          log(`✅ Login successful: ${data.user.email}`, 'success');
+          log(`   User ID: ${data.user.id}`, 'info');
+          log(`   Access Token: ${data.session.access_token.substring(0, 20)}...`, 'info');
+          updateResult('Login Test', 'pass', `User: ${data.user.email}`);
+        }
+      } catch (err) {
+        log(`❌ Login error: ${err.message}`, 'error');
+        updateResult('Login Test', 'fail', err.message);
+      }
+    }
+
+    async function testSignup() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const name = document.getElementById('name').value;
+
+      if (!supabase) {
+        log('❌ Supabase not configured', 'error');
+        return;
+      }
+
+      try {
+        log('✍️ Attempting signup...', 'info');
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { name, full_name: name }
+          }
+        });
+
+        if (error) {
+          log(`❌ Signup failed: ${error.message}`, 'error');
+          updateResult('Signup Test', 'fail', error.message);
+          return;
+        }
+
+        if (data.user) {
+          log(`✅ Signup successful: ${data.user.email}`, 'success');
+          log(`   User ID: ${data.user.id}`, 'info');
+          if (data.session) {
+            log(`   Session created`, 'success');
+            updateResult('Signup Test', 'pass', `User: ${data.user.email}, Session: Yes`);
+          } else {
+            log(`   ⚠️ Email confirmation required`, 'warning');
+            updateResult('Signup Test', 'pending', 'Email confirmation required');
+          }
+        }
+      } catch (err) {
+        log(`❌ Signup error: ${err.message}`, 'error');
+        updateResult('Signup Test', 'fail', err.message);
+      }
+    }
+
+    async function checkSession() {
+      if (!supabase) {
+        log('❌ Supabase not configured', 'error');
+        return;
+      }
+
+      try {
+        log('🔍 Checking Supabase session...', 'info');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          log(`❌ Session check error: ${error.message}`, 'error');
+          updateResult('Session Check', 'fail', error.message);
+          return;
+        }
+
+        if (!session) {
+          log('❌ No session found - user not logged in', 'error');
+          updateResult('Session Check', 'fail', 'No active session');
+          return;
+        }
+
+        log('✅ Session found!', 'success');
+        log(`   User ID: ${session.user.id}`, 'info');
+        log(`   Email: ${session.user.email}`, 'info');
+        log(`   Expires: ${new Date(session.expires_at * 1000).toLocaleString()}`, 'info');
+        log(`   Access Token: ${session.access_token.substring(0, 30)}...`, 'info');
+        updateResult('Session Check', 'pass', `User: ${session.user.email}, Token exists: Yes`);
+      } catch (err) {
+        log(`❌ Session check error: ${err.message}`, 'error');
+        updateResult('Session Check', 'fail', err.message);
+      }
+    }
+
+    async function checkAccessToken() {
+      if (!supabase) {
+        log('❌ Supabase not configured', 'error');
+        return;
+      }
+
+      try {
+        log('🎫 Verifying access token...', 'info');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error || !session) {
+          log('❌ No session/token found', 'error');
+          updateResult('Token Verification', 'fail', 'No session');
+          return;
+        }
+
+        const token = session.access_token;
+        log(`✅ Access token exists: ${token.substring(0, 30)}...`, 'success');
+        
+        // Try to validate the token
+        const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+        
+        if (userError || !user) {
+          log('❌ Token validation failed', 'error');
+          updateResult('Token Verification', 'fail', 'Invalid token');
+          return;
+        }
+
+        log('✅ Token is valid!', 'success');
+        log(`   Token user: ${user.email}`, 'info');
+        updateResult('Token Verification', 'pass', `Valid token for ${user.email}`);
+      } catch (err) {
+        log(`❌ Token check error: ${err.message}`, 'error');
+        updateResult('Token Verification', 'fail', err.message);
+      }
+    }
+
+    async function clearSession() {
+      if (!supabase) {
+        log('❌ Supabase not configured', 'error');
+        return;
+      }
+
+      try {
+        log('🗑️ Clearing session...', 'info');
+        await supabase.auth.signOut();
+        log('✅ Session cleared', 'success');
+        updateResult('Clear Session', 'pass', 'Session cleared successfully');
+      } catch (err) {
+        log(`❌ Clear session error: ${err.message}`, 'error');
+        updateResult('Clear Session', 'fail', err.message);
+      }
+    }
+
+    async function testProfileCreation() {
+      if (!supabase) {
+        log('❌ Supabase not configured', 'error');
+        return;
+      }
+
+      try {
+        log('🔐 Testing FIXED profile creation (with token)...', 'info');
+        
+        // Step 1: Get session and token (THE FIX)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !session) {
+          log('❌ No valid session found', 'error');
+          updateResult('Profile Creation (Fixed)', 'fail', 'No session');
+          return;
+        }
+
+        const accessToken = session.access_token;
+        log(`✅ Access token retrieved: ${accessToken.substring(0, 30)}...`, 'success');
+
+        // Step 2: Prepare form data
+        const username = document.getElementById('username').value;
+        const name = document.getElementById('name').value;
+        
+        const formData = new FormData();
+        formData.append('uid', session.user.id);
+        formData.append('name', name);
+        formData.append('username', username);
+        formData.append('email', session.user.email);
+        formData.append('bio', 'Test bio');
+        formData.append('location', 'Test location');
+        formData.append('phno', '');
+        formData.append('interests', JSON.stringify([]));
+
+        log('📤 Sending profile creation request WITH Authorization header...', 'info');
+
+        // Step 3: Make API call WITH token (THE FIX)
+        const response = await fetch(`${API_URL}/api/v1/chat/create-profile`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`, // ✅ THE FIX
+          },
+          body: formData,
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          log(`❌ Profile creation failed: ${data.message}`, 'error');
+          log(`   Status: ${response.status}`, 'error');
+          updateResult('Profile Creation (Fixed)', 'fail', `${response.status}: ${data.message}`);
+          return;
+        }
+
+        log('✅ Profile created successfully!', 'success');
+        log(`   Response: ${JSON.stringify(data)}`, 'info');
+        updateResult('Profile Creation (Fixed)', 'pass', 'Profile created with token');
+      } catch (err) {
+        log(`❌ Profile creation error: ${err.message}`, 'error');
+        updateResult('Profile Creation (Fixed)', 'fail', err.message);
+      }
+    }
+
+    async function testProfileCreationOld() {
+      if (!supabase) {
+        log('❌ Supabase not configured', 'error');
+        return;
+      }
+
+      try {
+        log('❌ Testing OLD profile creation (without token)...', 'info');
+        
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !session) {
+          log('❌ No valid session found', 'error');
+          updateResult('Profile Creation (Old)', 'fail', 'No session');
+          return;
+        }
+
+        const username = document.getElementById('username').value;
+        const name = document.getElementById('name').value;
+        
+        const formData = new FormData();
+        formData.append('uid', session.user.id);
+        formData.append('name', name);
+        formData.append('username', username);
+        formData.append('email', session.user.email);
+        formData.append('bio', 'Test bio');
+        formData.append('location', 'Test location');
+        formData.append('phno', '');
+        formData.append('interests', JSON.stringify([]));
+
+        log('📤 Sending profile creation request WITHOUT Authorization header...', 'warning');
+
+        // Old method - NO Authorization header
+        const response = await fetch(`${API_URL}/api/v1/chat/create-profile`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include' // Only cookies, no token
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          log(`❌ Expected failure: ${data.message}`, 'error');
+          log(`   Status: ${response.status}`, 'error');
+          if (data.message === 'Access token required') {
+            log('✅ Correctly received "Access token required" error', 'success');
+            updateResult('Profile Creation (Old)', 'pass', 'Correctly fails without token');
+          } else {
+            updateResult('Profile Creation (Old)', 'fail', `Unexpected error: ${data.message}`);
+          }
+          return;
+        }
+
+        log('⚠️ Unexpected success without token!', 'warning');
+        updateResult('Profile Creation (Old)', 'fail', 'Should have failed but succeeded');
+      } catch (err) {
+        log(`❌ Profile creation error: ${err.message}`, 'error');
+        updateResult('Profile Creation (Old)', 'fail', err.message);
+      }
+    }
+
+    // Auto-check session on load
+    window.addEventListener('load', () => {
+      if (supabase) {
+        setTimeout(checkSession, 1000);
+      }
+    });
+  </script>
+</body>
+</html>
+
