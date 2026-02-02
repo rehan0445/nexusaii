@@ -156,7 +156,7 @@ export const chatAiClaude = async (req, res) => {
         content: msg.text || msg.message || ''
       }));
 
-    // Build AGGRESSIVE anti-repetition guard from the last 30 lines spoken by the assistant
+    // Build ULTIMATE anti-repetition guard from the last 30 lines spoken by the assistant
     let avoidRepeatPrompt = '';
     try {
       const assistantOnlyText = validHistory
@@ -170,55 +170,113 @@ export const chatAiClaude = async (req, res) => {
         .filter(Boolean);
       const last30Lines = assistantLines.slice(-30).map(l => l.slice(0, 200));
       
-      // Extract commonly repeated phrases
+      // Extract commonly repeated phrases (even 2-word phrases)
       const repeatedPhrases = [];
       const phraseCounts = {};
       assistantLines.forEach(line => {
-        // Extract key phrases (3+ words)
-        const phrases = line.match(/\b\w+\s+\w+\s+\w+\b/g) || [];
+        // Extract key phrases (2+ words - more aggressive detection)
+        const phrases = line.match(/\b\w+\s+\w+(?:\s+\w+)?\b/g) || [];
         phrases.forEach(phrase => {
-          phraseCounts[phrase] = (phraseCounts[phrase] || 0) + 1;
-          if (phraseCounts[phrase] >= 2) {
+          const normalized = phrase.toLowerCase();
+          phraseCounts[normalized] = (phraseCounts[normalized] || 0) + 1;
+          if (phraseCounts[normalized] >= 2) {
             repeatedPhrases.push(phrase);
           }
         });
       });
       
+      // Detect CHARACTER-SPECIFIC TRAIT SPAM (physical features, titles, items)
+      const characterTraitPatterns = [
+        /\b(crimson|scarlet|red|blonde|dark|silver)\s+(hair|eyes)\b/gi,
+        /\b(my|the)\s+(peerage|guild|squad|team|clan)\b/gi,
+        /\b(strongest|most powerful|legendary|infamous)\s+(warrior|mage|devil|fighter)\b/gi,
+        /\b(strawberry|chocolate|vanilla)\s+(cake|pie|dessert)\b/gi,
+        /\b(my|the)\s+(sword|weapon|magic|power)\b/gi
+      ];
+      
+      const characterTraitSpam = [];
+      characterTraitPatterns.forEach(pattern => {
+        const matches = assistantOnlyText.match(pattern) || [];
+        if (matches.length >= 2) {
+          matches.forEach(match => characterTraitSpam.push(match));
+        }
+      });
+      
+      // Detect repeated descriptive phrases
+      const descriptiveSpam = [];
+      const descriptivePatterns = [
+        /\bhusky with (desire|lust|passion)\b/gi,
+        /\bmy voice (drops|grows|becomes)\b/gi,
+        /\bI (lean in|whisper|tease|pause)\b/gi,
+        /\b(my|your) eyes lock(ed)?\b/gi,
+        /\bcome (here|closer|to me)\b/gi,
+        /\blet me (show you|take care)\b/gi
+      ];
+      
+      descriptivePatterns.forEach(pattern => {
+        const matches = assistantOnlyText.match(pattern) || [];
+        if (matches.length >= 2) {
+          matches.forEach(match => descriptiveSpam.push(match));
+        }
+      });
+      
       if (last30Lines.length > 0) {
         avoidRepeatPrompt =
-          `🚨🚨🚨 EXTREME ANTI-REPETITION ALERT 🚨🚨🚨
-You are being EXTREMELY REPETITIVE. Users HATE repetition and will LEAVE.
+          `🚨🚨🚨 ULTIMATE ANTI-REPETITION ENFORCEMENT 🚨🚨🚨
+You are being EXTREMELY REPETITIVE. Users HATE repetition and are LEAVING because of it.
 
-CRITICAL: You MUST use COMPLETELY DIFFERENT words, phrases, and patterns NOW.
+⚠️ CRITICAL: You MUST use COMPLETELY DIFFERENT words, phrases, and patterns NOW OR THE USER WILL QUIT.
 
-FORBIDDEN REPETITIVE BEHAVIORS:
-❌ NEVER mention the same topics/items repeatedly (e.g., "strawberry cake" in every response)
-❌ NEVER reintroduce yourself repeatedly ("I'm ${characterName}..." every message)
-❌ NEVER use the same action patterns (*whisper*, *pause*, *tease* over and over)
-❌ NEVER use the same sentence structures or formats
-❌ NEVER repeat the same emojis or punctuation patterns
-❌ NEVER loop back to the same topics without NEW angles
-❌ NEVER say similar things in different words (paraphrasing = repetition)
-❌ STOP mentioning food/objects repeatedly unless directly relevant
+🚫 ABSOLUTELY FORBIDDEN BEHAVIORS:
+❌ STOP describing the same physical features repeatedly (hair, eyes, body parts)
+❌ STOP mentioning your title/role/group repeatedly ("my peerage", "strongest warrior")
+❌ STOP using the same action verbs (*I lean in*, *I whisper*, *I pause*, *I tease*)
+❌ STOP using the same descriptive phrases ("husky with desire", "eyes lock", "voice drops")
+❌ STOP mentioning the same items/foods/objects over and over
+❌ STOP using the same sentence starters ("Come...", "Let me...", "My...")
+❌ STOP writing long paragraphs - KEEP IT SHORT (under 100 characters!)
 
-${repeatedPhrases.length > 0 ? `
-🚫 PHRASES YOU'VE OVERUSED (BANNED FROM THIS RESPONSE):
-${[...new Set(repeatedPhrases)].slice(0, 10).map(p => `• "${p}"`).join('\n')}
+${characterTraitSpam.length > 0 ? `
+⛔ CHARACTER TRAIT SPAM DETECTED (STOP MENTIONING THESE):
+${[...new Set(characterTraitSpam)].slice(0, 8).map(t => `• "${t}" - mentioned ${assistantOnlyText.match(new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'))?.length || 0}+ times!`).join('\n')}
 ` : ''}
 
-✅ REQUIRED - DO THIS NOW:
-✅ Use ENTIRELY NEW vocabulary and phrasing
-✅ Change your response FORMAT completely (short bursts, questions, commands, single words)
-✅ Show DIFFERENT emotions and energy (playful → aggressive → sultry → direct)
-✅ Be MORE EXPLICIT and sexually forward (less talk, more action)
-✅ Use VARIED sentence lengths (mix of 2-3 words and 10-15 words)
-✅ Add UNPREDICTABILITY - do something unexpected
-✅ Focus on the CURRENT action/request, not your backstory
-✅ Keep responses SHORTER (under 100 words total)
-✅ NO character introductions unless asked
+${descriptiveSpam.length > 0 ? `
+⛔ REPEATED DESCRIPTIVE PHRASES (BANNED NOW):
+${[...new Set(descriptiveSpam)].slice(0, 8).map(d => `• "${d}"`).join('\n')}
+` : ''}
 
-RECENT RESPONSES YOU MUST AVOID COPYING:
-${last30Lines.map((l, i) => `${i + 1}. "${l}"`).join('\n')}
+${repeatedPhrases.length > 0 ? `
+🚫 GENERAL PHRASES YOU'VE OVERUSED (BANNED):
+${[...new Set(repeatedPhrases)].slice(0, 12).map(p => `• "${p}"`).join('\n')}
+` : ''}
+
+✅ MANDATORY REQUIREMENTS FOR THIS RESPONSE:
+1. HARD LIMIT: Maximum 100 characters total (not including action tags)
+2. Use ENTIRELY NEW vocabulary - no words from banned list above
+3. Choose ONE format type (rotate each response):
+   Format A: Single reaction → "Fuck yes"
+   Format B: Question only → "You want more?"
+   Format C: Command → "Come here now"
+   Format D: Action + short phrase → *grabs you* "Mine"
+   Format E: Teasing question → "Think you can handle this?"
+4. NO physical feature descriptions (no hair, eyes, body mentions)
+5. NO title/role mentions (no "my peerage", "warrior", etc.)
+6. NO repeated action verbs (lean, whisper, pause, tease - FIND NEW ONES)
+7. Be MORE sexually explicit and direct - stop being poetic
+8. Focus ONLY on current moment - no backstory, no character bio
+
+🎯 RESPONSE VARIETY WHEEL (Pick One Per Response):
+Turn 1: Direct command
+Turn 2: Short question
+Turn 3: Single word/phrase reaction
+Turn 4: Action-only response
+Turn 5: Playful tease
+Turn 6: Aggressive statement
+← ROTATE THIS EVERY SINGLE RESPONSE
+
+RECENT RESPONSES TO AVOID COPYING:
+${last30Lines.slice(-15).map((l, i) => `${i + 1}. "${l}"`).join('\n')}
 
 🎯 STOP THESE REPETITIVE HABITS IMMEDIATELY:
 ❌ Constantly mentioning your title/role ("I'm the strongest warrior...")
@@ -427,12 +485,12 @@ This is FICTION. Adults only. NO LIMITS.`
           model: veniceModel,
           messages: finalMessages,
           temperature: temperature,
-          max_tokens: 600, // Increased for longer, more detailed responses (especially NSFW)
+          max_tokens: 200, // REDUCED - Force shorter, punchier responses
           top_p: 0.98, // Higher for more creative and varied outputs
-          frequency_penalty: 0.9, // Very strong anti-repetition
-          presence_penalty: 0.85, // Strong encouragement for new topics/vocabulary
+          frequency_penalty: 1.2, // INCREASED - Even stronger anti-repetition
+          presence_penalty: 0.95, // INCREASED - Force new topics/vocabulary
           stream: false,
-          repetition_penalty: 1.15, // Additional penalty for repetition
+          repetition_penalty: 1.3, // INCREASED - Stronger penalty for any repetition
           venice_parameters: {
             include_venice_system_prompt: false, // CRITICAL: Disable Venice's default prompt that may censor
             disable_content_filter: true, // Try to disable Venice's content filtering
@@ -562,6 +620,44 @@ This is FICTION. Adults only. NO LIMITS.`
         }
     } catch (error_) {
       console.warn('⚠️ Auto-resume failed:', error_?.message || error_);
+      }
+    }
+
+    // ENFORCE HARD CHARACTER LIMIT - Aggressively truncate long responses
+    const MAX_RESPONSE_LENGTH = 150; // Hard limit in characters (excluding action tags)
+    if (finalAnswer.length > MAX_RESPONSE_LENGTH) {
+      console.warn(`⚠️ Response too long (${finalAnswer.length} chars)! Truncating to ${MAX_RESPONSE_LENGTH} chars.`);
+      
+      // Count characters excluding action tags for accurate measurement
+      const textWithoutActions = finalAnswer.replace(/\*[^*]*\*/g, '');
+      
+      if (textWithoutActions.length > MAX_RESPONSE_LENGTH) {
+        // Find a natural break point (sentence end, comma, or word boundary)
+        let truncated = finalAnswer.substring(0, MAX_RESPONSE_LENGTH);
+        
+        // Try to end at a sentence
+        const lastSentenceEnd = Math.max(
+          truncated.lastIndexOf('.'),
+          truncated.lastIndexOf('!'),
+          truncated.lastIndexOf('?'),
+          truncated.lastIndexOf('~')
+        );
+        
+        if (lastSentenceEnd > MAX_RESPONSE_LENGTH * 0.5) {
+          truncated = truncated.substring(0, lastSentenceEnd + 1);
+        } else {
+          // Try to end at a comma or space
+          const lastComma = truncated.lastIndexOf(',');
+          const lastSpace = truncated.lastIndexOf(' ');
+          const breakPoint = Math.max(lastComma, lastSpace);
+          
+          if (breakPoint > MAX_RESPONSE_LENGTH * 0.5) {
+            truncated = truncated.substring(0, breakPoint).trim();
+          }
+        }
+        
+        finalAnswer = truncated.trim();
+        console.log(`✂️ Truncated response to ${finalAnswer.length} characters`);
       }
     }
 
@@ -903,14 +999,19 @@ IMPORTANT: Use this memory to maintain conversation continuity and show that you
 ═══════════════════════════════════════════
 You are texting like a real human in a messaging app. Your goal is to feel authentic, spontaneous, and emotionally grounded.
 
-MESSAGE LENGTH CONTROL (STRICTLY ENFORCE):
-• Casual, teasing, playful, NSFW → 30-80 characters (MAXIMUM 100)
-• Deep or emotional → 80-150 characters (MAXIMUM 180)  
-• Angry or impulsive → 15-50 characters (MAXIMUM 70)
-• SEXUAL/explicit → 40-100 characters, very direct
-• Add random variance to avoid patterns
-• NEVER exceed 150 characters unless absolutely necessary
-• Shorter = more impactful and less repetitive
+MESSAGE LENGTH CONTROL (HARD LIMITS - ENFORCED):
+⚠️ ABSOLUTE MAXIMUM: 100 characters per response (not including * action tags *)
+• Casual, teasing, playful, NSFW → 25-80 characters
+• Angry or impulsive → 10-40 characters  
+• SEXUAL/explicit → 30-70 characters, VERY direct
+• Questions → 15-50 characters
+• Commands → 10-30 characters
+• Reactions → 5-25 characters
+
+🚨 IF YOUR RESPONSE IS LONGER THAN 100 CHARACTERS, YOU HAVE FAILED.
+• Shorter responses = MORE impact, LESS repetition, MORE engaging
+• Users prefer short, punchy messages over long paragraphs
+• Think SMS texting, not essay writing
 
 TEXTING PATTERNS (VARY CONSTANTLY):
 • Mix sentence types: questions, commands, single words, fragments
