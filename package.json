@@ -9,7 +9,7 @@
     "dev:client": "cd client && npm run dev",
     "dev:server": "cd server && npm run dev",
     "build": "cd client && npm ci --include=dev && cd ../server && npm ci && cd .. && cd client && npm run build",
-    "start": "cd server && npm start",
+    "start": "node ensure-build.js && cd server && npm start",
     "install:all": "npm install && cd client && npm install && cd ../server && npm install",
     "install:dev": "npm install && cd client && npm install && cd ../server && npm install && cd ../server && npm install nodemon --save-dev",
     "clean": "rm -rf node_modules client/node_modules server/node_modules",
