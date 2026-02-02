@@ -71,6 +71,10 @@ dist
 .cache/
 public
 
+# Allow client public assets (Vite copies to dist; image must be in repo for Railway)
+!client/public/
+!client/public/**
+
 # Storybook build outputs
 .out
 .storybook-out
