@@ -194,7 +194,7 @@ function App() {
   const location = useLocation();
   const hideBottomBar = React.useMemo(() => {
     const p = location.pathname;
-    return p === '/login' || p === '/register' || p === '/auth/callback' || p === '/terms' || p === '/privacy' || p.startsWith('/onboarding');
+    return p === '/' || p === '/login' || p === '/register' || p === '/auth/callback' || p === '/terms' || p === '/privacy' || p.startsWith('/onboarding');
   }, [location.pathname]);
   return (
     <SettingsProvider>
