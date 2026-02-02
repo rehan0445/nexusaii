@@ -193,59 +193,6 @@ export default function AboutUs() {
           </div>
         </section>
 
-        {/* === Our Advisor & Mentor === */}
-        <section className="space-y-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center text-white">
-            Our Advisor & Mentor
-          </h2>
-          <div className="bg-[#1a1a2e]/60 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm">
-            <div className="md:flex">
-              <div className="md:w-2/5 aspect-[4/3] md:aspect-auto">
-                <img
-                  src="/assets/shrikant-gunjar.png"
-                  alt="Shrikant Gunjar"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-6 md:p-8 md:w-3/5 flex flex-col justify-center">
-                <h3 className="text-2xl font-bold text-white mb-1">Shrikant Gunjar</h3>
-                <div className="space-y-1 mb-4">
-                  <p className="text-[#A855F7] text-sm font-medium">Vice Principal – MIT ADT, Pune</p>
-                  <p className="text-[#A855F7] text-sm font-medium">Chairperson – Indo-Japan Business Council</p>
-                </div>
-                <p className="text-white/70 leading-relaxed">
-                  Shrikant Gunjar provides vital guidance with experience in business development and supports us as a trusted advisor. He offers insights that shape our strategic direction and help us deliver value to our community.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* === About Founder === */}
-        <section className="space-y-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center text-white">
-            About the Founder
-          </h2>
-          <div className="bg-[#1a1a2e]/60 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-sm">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#A855F7] to-[#9333EA] flex items-center justify-center text-3xl font-bold text-white mb-4">
-                R
-              </div>
-              <h3 className="text-2xl font-bold text-white">Rehan Surani</h3>
-              <p className="text-[#A855F7] text-sm font-medium mb-4">Founder & Developer</p>
-              <p className="text-white/70 leading-relaxed max-w-xl">
-                A third-year engineering student from a tier-2 college who believes the best solutions come from truly understanding people's pain. After failing in 2 major startups taught him resilience, he built Nexus—a safe space where{' '}
-                <span className="text-white font-medium">40,000+ students</span> can finally be honest without fear.
-              </p>
-              <p className="text-white/70 leading-relaxed mt-4 max-w-xl">
-                Our aim is to create an emotional anonymous ecosystem with{' '}
-                <span className="text-[#A855F7]">Nexus Phase 2</span> and{' '}
-                <span className="text-[#A855F7]">Phase 3</span> in the following years.
-              </p>
-            </div>
-          </div>
-        </section>
-
         {/* === Contact Us === */}
         <section className="space-y-6">
           <h2 className="text-2xl sm:text-3xl font-bold text-center text-white">
