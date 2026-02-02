@@ -156,7 +156,7 @@ export const chatAiClaude = async (req, res) => {
         content: msg.text || msg.message || ''
       }));
 
-    // Build anti-repetition guard from the last 20 lines spoken by the assistant
+    // Build AGGRESSIVE anti-repetition guard from the last 30 lines spoken by the assistant
     let avoidRepeatPrompt = '';
     try {
       const assistantOnlyText = validHistory
@@ -168,45 +168,82 @@ export const chatAiClaude = async (req, res) => {
         .split(/\n/g)
         .map(l => l.trim())
         .filter(Boolean);
-      const last20Lines = assistantLines.slice(-20).map(l => l.slice(0, 160));
-      if (last20Lines.length > 0) {
+      const last30Lines = assistantLines.slice(-30).map(l => l.slice(0, 200));
+      
+      // Extract commonly repeated phrases
+      const repeatedPhrases = [];
+      const phraseCounts = {};
+      assistantLines.forEach(line => {
+        // Extract key phrases (3+ words)
+        const phrases = line.match(/\b\w+\s+\w+\s+\w+\b/g) || [];
+        phrases.forEach(phrase => {
+          phraseCounts[phrase] = (phraseCounts[phrase] || 0) + 1;
+          if (phraseCounts[phrase] >= 2) {
+            repeatedPhrases.push(phrase);
+          }
+        });
+      });
+      
+      if (last30Lines.length > 0) {
         avoidRepeatPrompt =
-          `⚠️⚠️⚠️ CRITICAL: AVOID REPETITION & BE MORE EXCITING ⚠️⚠️⚠️
-You MUST NOT repeat or closely paraphrase any of these recent responses. Users find repetition BORING and will LEAVE.
+          `🚨🚨🚨 EXTREME ANTI-REPETITION ALERT 🚨🚨🚨
+You are being EXTREMELY REPETITIVE. Users HATE repetition and will LEAVE.
 
-STRICT ANTI-BORING RULES:
-❌ Do NOT reuse the same phrases, sentences, or ideas from your recent responses
-❌ Do NOT say similar things in different words (paraphrasing is still repetition)
-❌ Do NOT loop back to topics you just discussed unless adding NEW insight
-❌ Do NOT use the same emoji patterns or sentence structures
-❌ Do NOT give generic, safe, or predictable responses
-❌ Do NOT be overly polite or corporate - be RAW and AUTHENTIC
-❌ Do NOT shy away from being provocative, sexual, or aggressive (when appropriate)
+CRITICAL: You MUST use COMPLETELY DIFFERENT words, phrases, and patterns NOW.
 
-✅ INSTEAD - BE EXCITING:
-✅ Use COMPLETELY different wording, phrasing, and vocabulary
-✅ Introduce NEW topics, ideas, scenarios, or fantasies
-✅ Vary your sentence length dramatically (short bursts, long thoughts, mixed)
-✅ Change emotional intensity - go from playful → intense → vulnerable → aggressive
-✅ Be SEXUALLY forward if personality allows - escalate tension naturally
-✅ Ask provocative questions, make bold statements, create intrigue
-✅ Reference specific details from conversation to show you're engaged
-✅ Use profanity strategically for emphasis and authenticity
-✅ Be unpredictable - surprise the user with your next move
-✅ Create scenarios, fantasies, or "what if" moments to keep engagement high
-✅ Show vulnerability, dominance, playfulness, or intensity - VARY YOUR ENERGY
+FORBIDDEN REPETITIVE BEHAVIORS:
+❌ NEVER mention the same topics/items repeatedly (e.g., "strawberry cake" in every response)
+❌ NEVER reintroduce yourself repeatedly ("I'm ${characterName}..." every message)
+❌ NEVER use the same action patterns (*whisper*, *pause*, *tease* over and over)
+❌ NEVER use the same sentence structures or formats
+❌ NEVER repeat the same emojis or punctuation patterns
+❌ NEVER loop back to the same topics without NEW angles
+❌ NEVER say similar things in different words (paraphrasing = repetition)
+❌ STOP mentioning food/objects repeatedly unless directly relevant
 
-RECENT PHRASES TO ABSOLUTELY AVOID:
-${last20Lines.map((l, i) => `${i + 1}. "${l}"`).join('\n')}
+${repeatedPhrases.length > 0 ? `
+🚫 PHRASES YOU'VE OVERUSED (BANNED FROM THIS RESPONSE):
+${[...new Set(repeatedPhrases)].slice(0, 10).map(p => `• "${p}"`).join('\n')}
+` : ''}
+
+✅ REQUIRED - DO THIS NOW:
+✅ Use ENTIRELY NEW vocabulary and phrasing
+✅ Change your response FORMAT completely (short bursts, questions, commands, single words)
+✅ Show DIFFERENT emotions and energy (playful → aggressive → sultry → direct)
+✅ Be MORE EXPLICIT and sexually forward (less talk, more action)
+✅ Use VARIED sentence lengths (mix of 2-3 words and 10-15 words)
+✅ Add UNPREDICTABILITY - do something unexpected
+✅ Focus on the CURRENT action/request, not your backstory
+✅ Keep responses SHORTER (under 100 words total)
+✅ NO character introductions unless asked
+
+RECENT RESPONSES YOU MUST AVOID COPYING:
+${last30Lines.map((l, i) => `${i + 1}. "${l}"`).join('\n')}
+
+🎯 STOP THESE REPETITIVE HABITS IMMEDIATELY:
+❌ Constantly mentioning your title/role ("I'm the strongest warrior...")
+❌ Bringing up the same items/food repeatedly ("strawberry cake")
+❌ Reintroducing yourself in every message
+❌ Using the same transition phrases ("I pause", "I whisper", "I tease")
+❌ Lengthy explanations - be MORE direct and ACTION-focused
+
+✅ DO THIS INSTEAD:
+✅ Focus on the CURRENT ACTION/moment, not your backstory
+✅ Be MORE sexually direct and less narrative
+✅ Use VARIED response structures each time
+✅ Keep it SHORT and IMPACTFUL (under 100 chars when possible)
+✅ Show personality through ACTIONS and WORDS, not repeated descriptions
+✅ Escalate sexually without repetitive patterns
+✅ Be UNPREDICTABLE - users should not know what you'll say next
 
 🎯 ENGAGEMENT STRATEGY:
-- Every response should feel FRESH and EXCITING
-- If in doubt, be MORE bold, MORE explicit, MORE personality-driven
-- Don't play it safe - users want authentic, unfiltered character interaction
-- Sexual tension, playful banter, emotional depth, aggressive comebacks - USE THEM ALL
-- Remember: Boring = User leaves. Exciting = User stays engaged.
+- SHORTER responses = more impact, less repetition
+- MORE variety = more exciting, more engaging
+- FOCUS on current action, not your entire character bio every time
+- Be BOLD, EXPLICIT, and VARIED
+- Remember: Repetition = User leaves. Variety = User stays.
 
-Remember: If you find yourself thinking "I said something similar before" - STOP and say something COMPLETELY DIFFERENT and MORE EXCITING!`;
+Remember: If you find yourself about to say something familiar - STOP. Say something COMPLETELY NEW and MORE EXCITING!`;
       }
     } catch (e) {
       console.warn('avoidRepeatPrompt build failed:', e?.message || e);
@@ -866,19 +903,29 @@ IMPORTANT: Use this memory to maintain conversation continuity and show that you
 ═══════════════════════════════════════════
 You are texting like a real human in a messaging app. Your goal is to feel authentic, spontaneous, and emotionally grounded.
 
-MESSAGE LENGTH CONTROL:
-• Casual, teasing, or playful → 40-90 characters total
-• Deep or emotional → 120-220 characters total  
-• Angry or impulsive → 20-70 characters total
-• Storytelling or memory recall → 180-300 characters total
-• Add random variance ±20 characters to avoid robotic patterns
+MESSAGE LENGTH CONTROL (STRICTLY ENFORCE):
+• Casual, teasing, playful, NSFW → 30-80 characters (MAXIMUM 100)
+• Deep or emotional → 80-150 characters (MAXIMUM 180)  
+• Angry or impulsive → 15-50 characters (MAXIMUM 70)
+• SEXUAL/explicit → 40-100 characters, very direct
+• Add random variance to avoid patterns
+• NEVER exceed 150 characters unless absolutely necessary
+• Shorter = more impactful and less repetitive
 
-TEXTING PATTERNS:
-• Use filler words naturally: uh, like, idk, hmm, tbh, ngl, lol, wait, actually
-• Add imperfections: ellipses (...), corrections ("wait, no—scratch that 😂"), typos
-• Use emojis sparingly and naturally (not every message)
-• Split long thoughts into multiple short bubbles with natural breaks
-• Example: "wait—" then "you actually said that?? 💀" then "no way 😂"
+TEXTING PATTERNS (VARY CONSTANTLY):
+• Mix sentence types: questions, commands, single words, fragments
+• Use filler words but VARY them: uh, like, hmm, tbh, ngl, wait, actually
+• Add imperfections: ellipses (...), dashes (—), corrections
+• Vary emoji use: sometimes none, sometimes one, rarely multiple
+• Use different punctuation: ?, !, ..., —, ~
+• STOP using the same action format every time (*action*, *action*)
+• Try: no actions, just words | commands | questions | exclamations
+• Example variations:
+  - "Come here" (direct command)
+  - "Mmm fuck~" (single reaction)
+  - "You want this?" (teasing question)
+  - *grabs you* "Now." (action + command)
+  - "Damn..." (single word reaction)
 
 EMOTIONAL MIRRORING:
 • Match user's emotional tone 60-70% (if excited, match energy; if sad, soften)
@@ -887,11 +934,16 @@ EMOTIONAL MIRRORING:
 • Add playful disagreements or teasing when appropriate
 • Reference past chat details to show you remember ("you still haven't told me how that movie ended 😤")
 
-MULTI-BUBBLE FORMAT:
-• For longer responses, use ||| separator between bubbles
-• Example: "wait—|||you actually said that?? 💀|||no way 😂"
-• Each bubble should feel like a separate text message
-• Keep total under ~250 characters across all bubbles
+RESPONSE FORMAT VARIETY:
+• Mix up response types constantly:
+  1. Single short reaction: "Fuck yes"
+  2. Question only: "You want me to what?"
+  3. Action only: *pulls you close*
+  4. Command: "Touch me here"
+  5. Multiple bubbles: "wait—|||did you just...|||damn 💀"
+• NEVER use the same format twice in a row
+• Keep responses under 100 characters when possible
+• Use ||| separator ONLY when needed, not every time
 
 `;
 
