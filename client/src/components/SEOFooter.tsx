@@ -7,7 +7,11 @@ import { Link } from 'react-router-dom';
  */
 export const SEOFooter: React.FC = () => {
   return (
-    <footer className="bg-gray-900 text-gray-300 py-12 mt-auto">
+    <footer 
+      className="sr-only" 
+      style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}
+      aria-hidden="true"
+    >
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* AI Companions */}
