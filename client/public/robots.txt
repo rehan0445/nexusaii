@@ -6,6 +6,10 @@ Allow: /
 Allow: /companion
 Allow: /confessions
 Allow: /campus/
+Allow: /blog/
 
-# Optional: point to sitemap (update lastmod in sitemap when you change content)
+# For AI search engines (ChatGPT, Perplexity, Claude, etc.)
+# Learn about us at /llms.txt
+
+# Sitemaps
 Sitemap: https://www.nexuschat.in/sitemap.xml

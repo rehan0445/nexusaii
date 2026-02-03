@@ -24,6 +24,9 @@ import { DesktopLayoutProvider } from "./contexts/DesktopLayoutContext";
 import useAndroidBackHandler from "./hooks/useAndroidBackHandler";
 import NexusChats from "./components/NexusChats";
 import { useSwipeGesture } from "./hooks/useSwipeGesture";
+import SEO from "./components/SEO";
+import SEOFooter from "./components/SEOFooter";
+import Breadcrumbs from "./components/Breadcrumbs";
 
 // Primary features - loaded immediately for best UX
 import ProfileRoot from "./pages/ProfileRoot";
@@ -51,6 +54,16 @@ const CharacterProfile = React.lazy(() => import("./pages/CharacterProfile"));
 const CharacterReelsFeed = React.lazy(() => import("./pages/CharacterReelsFeed"));
 const CreatorCharactersPage = React.lazy(() => import("./pages/CreatorCharactersPage"));
 const MyChats = React.lazy(() => import("./pages/MyChats"));
+// SEO Blog pages - hidden from nav but accessible for organic search
+const Blog = React.lazy(() => import("./pages/Blog"));
+const BlogPost = React.lazy(() => import("./pages/BlogPost"));
+// Persona landing pages for long-tail SEO (Programmatic Template)
+const PersonaTemplate = React.lazy(() => import("./pages/personas/PersonaTemplate"));
+const DominatingAIGirlfriend = React.lazy(() => import("./pages/personas/DominatingAIGirlfriend"));
+// Venting landing page (white-hat SEO bridge)
+const VentingAnonymously = React.lazy(() => import("./pages/VentingAnonymously"));
+// Safety & Ethics page (E-E-A-T trust signal)
+const SafetyEthics = React.lazy(() => import("./pages/SafetyEthics"));
 import { PhoenixInbox } from "./components/PhoenixInbox";
 import { PhoenixBookmarks } from "./components/PhoenixBookmarks";
 import { WriteConfession } from "./pages/WriteConfession";
@@ -136,6 +149,7 @@ const APP_ROUTES = (
     <Route path="/ref/:code" element={<ReferralRedirect />} />
     <Route path="/terms" element={<TermsAndConditions />} />
     <Route path="/privacy" element={<PrivacyPolicy />} />
+    <Route path="/safety-ethics" element={<SafetyEthics />} />
     <Route path="/user-info" element={<UserInfoForm />} />
     <Route path="/setup-profile" element={<SetupProfile />} />
     <Route path="/onboarding/intro" element={<IntroNexus />} />
@@ -187,6 +201,12 @@ const APP_ROUTES = (
     <Route path="/settings/activity/likes" element={<ActivityLikes />} />
     <Route path="/connect" element={<NexusConnect />} />
     <Route path="/nexus-connect" element={<NexusConnect />} />
+    <Route path="/blog" element={<Blog />} />
+    <Route path="/blog/:slug" element={<BlogPost />} />
+    <Route path="/personas/dominating-ai-girlfriend" element={<DominatingAIGirlfriend />} />
+    <Route path="/personas/:slug" element={<PersonaTemplate />} />
+    <Route path="/venting-anonymously" element={<VentingAnonymously />} />
+    <Route path="/how-to-vent-anonymously" element={<VentingAnonymously />} />
   </>
 );
 
@@ -211,10 +231,14 @@ function App() {
                   <TabNavigatorProvider>
                   <AndroidBackBridge />
                   <SwipeGestureHandler />
+                  <SEO />
                   <NexusChats />
                   <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
                   {hideBottomBar ? (
-                    <Routes>{APP_ROUTES}</Routes>
+                    <div className="flex flex-col min-h-screen">
+                      <Routes>{APP_ROUTES}</Routes>
+                      <SEOFooter />
+                    </div>
                   ) : (
                     <>
                       {/* Desktop: 3-column layout - only at lg (1024px+) */}
@@ -222,7 +246,9 @@ function App() {
                         <DesktopSidebar />
                         <DesktopRightSidebar />
                         <DesktopMainContent>
+                          <Breadcrumbs />
                           <Routes>{APP_ROUTES}</Routes>
+                          <SEOFooter />
                         </DesktopMainContent>
                       </DesktopLayoutProvider>
                       <div className="lg:hidden">

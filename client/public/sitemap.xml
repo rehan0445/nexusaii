@@ -1,27 +1,262 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
+  <!-- Homepage -->
   <url>
     <loc>https://www.nexuschat.in</loc>
-    <lastmod>2025-02-02</lastmod>
-    <changefreq>weekly</changefreq>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.nexuschat.in" />
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://www.nexuschat.in" />
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://www.nexuschat.in" />
+    <xhtml:link rel="alternate" hreflang="en-IN" href="https://www.nexuschat.in" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.nexuschat.in" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://www.nexuschat.in" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.nexuschat.in" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.nexuschat.in" />
   </url>
+
+  <!-- AI Companions - CRITICAL for AI girlfriend/boyfriend keywords -->
   <url>
     <loc>https://www.nexuschat.in/companion</loc>
-    <lastmod>2025-02-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.nexuschat.in/confessions</loc>
-    <lastmod>2025-02-02</lastmod>
+    <lastmod>2026-02-03</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.nexuschat.in/companion" />
   </url>
+
+  <!-- Confessions - CRITICAL for college/school confession keywords -->
   <url>
     <loc>https://www.nexuschat.in/campus/general/confessions</loc>
-    <lastmod>2025-02-02</lastmod>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.nexuschat.in/campus/general/confessions" />
+  </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/confessions</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Write Confession - Important for user engagement -->
+  <url>
+    <loc>https://www.nexuschat.in/write-confession</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Character Pages -->
+  <url>
+    <loc>https://www.nexuschat.in/reels</loc>
+    <lastmod>2026-02-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/create-buddy</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Dark Room & Hangout -->
+  <url>
+    <loc>https://www.nexuschat.in/arena/darkroom</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/arena/hangout</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Vibe / Groups -->
+  <url>
+    <loc>https://www.nexuschat.in/vibe</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Auth Pages -->
+  <url>
+    <loc>https://www.nexuschat.in/register</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/login</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- About & Legal -->
+  <url>
+    <loc>https://www.nexuschat.in/about-us</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/terms</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/privacy</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- Trust Signals (E-E-A-T) -->
+  <url>
+    <loc>https://www.nexuschat.in/safety-ethics</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- SEO Blog - HIGH VALUE for keyword rankings -->
+  <url>
+    <loc>https://www.nexuschat.in/blog</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Blog Posts - Individual articles targeting specific keywords -->
+  <url>
+    <loc>https://www.nexuschat.in/blog/best-ai-girlfriend-apps-free</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/blog/college-confessions-guide</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/blog/ai-girlfriend-vs-ai-boyfriend-guide</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/blog/dark-romance-ai-complete-guide</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/blog/anonymous-confession-apps-2026</loc>
+    <lastmod>2026-02-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/blog/ai-waifu-guide-anime-ai-girlfriend</loc>
+    <lastmod>2026-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/blog/dominating-ai-characters-guide</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/blog/school-confessions-guide-anonymous-student-secrets</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Persona Landing Pages - Long-tail SEO (20+ programmatic pages) -->
+  <url>
+    <loc>https://www.nexuschat.in/personas/dominating-ai-girlfriend</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.nexuschat.in/personas/yandere-ai-girlfriend</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.nexuschat.in/personas/tsundere-ai-girlfriend</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.nexuschat.in/personas/submissive-ai-boyfriend</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.nexuschat.in/personas/dominating-ai-boyfriend</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.nexuschat.in/personas/anime-ai-waifu</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.nexuschat.in/personas/gothic-ai-girlfriend</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Venting Landing Page - White-hat SEO Bridge -->
+  <url>
+    <loc>https://www.nexuschat.in/venting-anonymously</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.nexuschat.in/how-to-vent-anonymously</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
 </urlset>
