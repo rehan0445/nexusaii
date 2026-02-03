@@ -284,6 +284,15 @@ export const getBulkViewCounts = async (req, res) => {
       counts[row.character_id] = display;
     });
 
+    // #region agent log
+    try {
+      const fs = await import('fs');
+      const logPath = 'd:\\projectRs\\pheonix\\.cursor\\debug.log';
+      const line = JSON.stringify({ location: 'viewsController.js:getBulkViewCounts', message: 'Bulk view counts', data: { requestedIds: characterIds.length, rowsReturned: (rows || []).length, sampleRequestedIds: characterIds.slice(0, 3) }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'H3' }) + '\n';
+      fs.appendFileSync(logPath, line);
+    } catch (_) {}
+    // #endregion
+
     return res.status(200).json({
       success: true,
       data: { counts },

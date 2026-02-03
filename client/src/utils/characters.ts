@@ -300,6 +300,18 @@ export const loadCharacters = async (): Promise<Record<string, Character>> => {
       console.warn("⚠️ Characters needing manual tag check (auto-set to semi-realistic):", unmatched);
     }
 
+    // Exclude Indian cricketers (sportsmen) from companion list
+    const INDIAN_CRICKETER_SLUGS = new Set([
+      "sachin-tendulkar", "ms-dhoni", "virat-kohli", "kapil-dev", "rahul-dravid",
+      "sourav-ganguly", "anil-kumble", "virender-sehwag", "yuvraj-singh", "zahir-khan",
+      "harbhajan-singh", "gautam-gambhir", "mohammad-azharuddin", "vvs-laxman", "rohit-sharma",
+    ]);
+    INDIAN_CRICKETER_SLUGS.forEach((slug) => {
+      if (characters[slug]) {
+        delete characters[slug];
+      }
+    });
+
     // Cache the results for faster future loads
     characterCache = characters;
     cacheTimestamp = Date.now();

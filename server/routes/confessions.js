@@ -1128,7 +1128,19 @@ router.get("/", async (req, res) => {
     });
     
     // Apply pagination
-    let items = allConfessions.slice(rangeFrom, rangeTo + 1).map((row) => normalizeConfession(row));
+    const slice = allConfessions.slice(rangeFrom, rangeTo + 1);
+    let items = slice.map((row) => normalizeConfession(row));
+    // #region agent log
+    if (slice.length > 0) {
+      const row = slice[0];
+      try {
+        const fs = await import('fs');
+        const logPath = 'd:\\projectRs\\pheonix\\.cursor\\debug.log';
+        const line = JSON.stringify({ location: 'confessions.js:GET /', message: 'First confession raw row', data: { id: row.id, total_views: row.total_views, view_count: row.view_count, fake_views: row.fake_views, score: row.score, total_upvotes: row.total_upvotes, fake_upvotes: row.fake_upvotes }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'H2b' }) + '\n';
+        fs.appendFileSync(logPath, line);
+      } catch (_) {}
+    }
+    // #endregion
     console.log(`[GENERAL CONFESSIONS] Found ${allConfessions.length} total confessions, returning ${items.length}`);
 
     // Fetch user votes for these confessions

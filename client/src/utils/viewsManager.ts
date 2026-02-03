@@ -187,7 +187,11 @@ export const getViewCountsForCharacters = async (characterIds: string[]): Promis
       params: { ids: idsParam },
     });
     if (response.data?.success && response.data?.data?.counts) {
-      return response.data.data.counts as Record<string, number>;
+      const counts = response.data.data.counts as Record<string, number>;
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/2d5b2a38-5e31-419c-8a60-677ae4bc8660',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'viewsManager.ts:getViewCountsForCharacters',message:'Bulk counts returned',data:{requestedIds:characterIds.length,returnedKeys:Object.keys(counts).length,sampleIds:characterIds.slice(0,3)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+      // #endregion
+      return counts;
     }
   } catch (error) {
     console.error('❌ Failed to fetch bulk view counts:', error);
@@ -257,7 +261,7 @@ export const useCharacterViews = (
     
     const fetchViewsFromBackend = async () => {
       try {
-        // Fetch real view counts from backend
+        // Fetch real view counts from backend (leaderboard = top 500 only)
         const rankedCharacters = await getRankedCharacters(500); // Get top 500 characters
         
         if (rankedCharacters && rankedCharacters.length > 0) {
@@ -268,10 +272,15 @@ export const useCharacterViews = (
           });
           
           console.log('✅ Fetched view counts from backend:', Object.keys(viewsFromBackend).length, 'characters');
-          setViews(viewsFromBackend);
-          
-          // Update localStorage with backend data
-          saveViews({ views: viewsFromBackend, lastUpdated: Date.now() });
+          // #region agent log
+          fetch('http://127.0.0.1:7243/ingest/2d5b2a38-5e31-419c-8a60-677ae4bc8660',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'viewsManager.ts:useCharacterViews',message:'Leaderboard setViews',data:{leaderboardKeys:Object.keys(viewsFromBackend).length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+          // #endregion
+          // MERGE leaderboard into existing state so we don't overwrite bulk counts for non-trending characters
+          setViews(prev => {
+            const next = { ...prev, ...viewsFromBackend };
+            saveViews({ views: next, lastUpdated: Date.now() });
+            return next;
+          });
         } else {
           // Fallback to localStorage or initial data
           const storedViews = getAllViews();

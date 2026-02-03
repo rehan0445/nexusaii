@@ -500,10 +500,33 @@ function AiChat() {
   const touchStartYRef = useRef<number | null>(null);
   const isPullingRef = useRef(false);
 
-  // Shuffle all characters once per mount for 'All Companions'
+  // 'All Companions': diverse mix from Star Wars, Waifu, Marvel, Hubby, Dark Romance — then shuffle
+  const DIVERSITY_CATEGORIES = [
+    { key: 'star wars', tagMatch: (t: string) => /star\s*wars/i.test(t), perCategory: 5 },
+    { key: 'waifu', tagMatch: (t: string) => t.toLowerCase() === 'waifu', perCategory: 5 },
+    { key: 'marvel', tagMatch: (t: string) => /marvel/i.test(t), perCategory: 5 },
+    { key: 'hubby', tagMatch: (t: string) => t.toLowerCase() === 'hubby', perCategory: 5 },
+    { key: 'dark romance', tagMatch: (t: string) => /dark\s*romance/i.test(t), perCategory: 5 },
+  ];
   const shuffledAllCharacters = useMemo(() => {
-    return Object.entries(characters).sort(() => Math.random() - 0.5);
-  }, [characters]);
+    // "All": only characters with views over 1000
+    const entries = Object.entries(characters).filter(([slug]) => (views[slug] ?? 0) > 1000);
+    const usedSlugs = new Set<string>();
+    const result: [string, any][] = [];
+
+    for (const { tagMatch, perCategory } of DIVERSITY_CATEGORIES) {
+      const fromCategory = entries
+        .filter(([slug, char]) => !usedSlugs.has(slug) && char.tags?.some((t: string) => tagMatch(t)))
+        .sort(() => Math.random() - 0.5)
+        .slice(0, perCategory);
+      fromCategory.forEach(([slug]) => usedSlugs.add(slug));
+      result.push(...fromCategory);
+    }
+
+    const remaining = entries.filter(([slug]) => !usedSlugs.has(slug)).sort(() => Math.random() - 0.5);
+    result.push(...remaining);
+    return result.sort(() => Math.random() - 0.5);
+  }, [characters, views]);
 
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {
@@ -720,6 +743,9 @@ function AiChat() {
     let cancelled = false;
     getViewCountsForCharacters(slugs).then((counts) => {
       if (!cancelled && Object.keys(counts).length > 0) {
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/2d5b2a38-5e31-419c-8a60-677ae4bc8660',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AiChat.tsx:useEffect-bulk-views',message:'Merging bulk counts into views',data:{slugsCount:slugs.length,countsKeys:Object.keys(counts).length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
         setViews((prev) => ({ ...prev, ...counts }));
       }
     });

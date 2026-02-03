@@ -5,7 +5,7 @@ import { useCharacterContext } from '../contexts/CharacterContext';
 import { useBookmarks } from '../contexts/BookmarksContext';
 import { CharacterLeaderboard } from './CharacterLeaderboard';
 import { CommunityMilestone } from './CommunityMilestone';
-import { getRankedCharacters } from '../utils/viewsManager';
+import { getRankedCharacters, getViewCountsForCharacters } from '../utils/viewsManager';
 import { getFaceCenterFromUrl, type FaceCenter } from '../utils/carouselFaceFocus';
 
 interface Character {
@@ -47,17 +47,29 @@ export function PhoenixCharactersPage() {
   const requestedFaceIds = useRef<Set<string>>(new Set());
   const navigate = useNavigate();
 
-  // Fetch view counts for cards (top 100 from leaderboard)
+  // Fetch view counts: leaderboard (top 100) + bulk for ALL characters so non-trending show views
   useEffect(() => {
     let cancelled = false;
     getRankedCharacters(100).then((ranked) => {
       if (cancelled) return;
       const map: Record<string, number> = {};
       ranked.forEach((r) => { map[r.id] = r.views; });
-      setViewsBySlug(map);
+      setViewsBySlug(prev => ({ ...prev, ...map }));
     }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    const ids = Object.keys(charactersMap);
+    if (ids.length === 0) return;
+    let cancelled = false;
+    getViewCountsForCharacters(ids).then((counts) => {
+      if (!cancelled && Object.keys(counts).length > 0) {
+        setViewsBySlug(prev => ({ ...prev, ...counts }));
+      }
+    });
+    return () => { cancelled = true; };
+  }, [charactersMap]);
 
   // Convert characters map to array
   const characters = useMemo(() => {
@@ -97,21 +109,50 @@ export function PhoenixCharactersPage() {
   const filteredCharacters = useMemo(() => {
     let filtered = characters.filter(char => {
       // Check if character matches the selected tag
-      // Tags are normalized to lowercase in the character data
-      const matchesTag = !activeTag || 
+      const matchesTag = !activeTag ||
         char.tags?.some(tag => tag.toLowerCase() === activeTag.toLowerCase()) ||
         char.tags?.some(tag => tag.toLowerCase().includes(activeTag.toLowerCase())) ||
         char.category?.toLowerCase() === activeTag.toLowerCase();
-      
-      const matchesSearch = !searchQuery || 
+
+      const matchesSearch = !searchQuery ||
         char.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         char.description?.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesTag && matchesSearch;
     });
 
-    // Apply view filters
     return filtered;
   }, [characters, activeTag, searchQuery]);
+
+  // When "All" (no tag): show diverse mix from Star Wars, Waifu, Marvel, Hubby, Dark Romance, then shuffle
+  const DIVERSITY_CATEGORIES: { tagMatch: (t: string) => boolean; perCategory: number }[] = [
+    { tagMatch: (t) => /star\s*wars/i.test(t), perCategory: 5 },
+    { tagMatch: (t) => t.toLowerCase() === 'waifu', perCategory: 5 },
+    { tagMatch: (t) => /marvel/i.test(t), perCategory: 5 },
+    { tagMatch: (t) => t.toLowerCase() === 'hubby', perCategory: 5 },
+    { tagMatch: (t) => /dark\s*romance/i.test(t), perCategory: 5 },
+  ];
+
+  const displayCharacters = useMemo(() => {
+    if (activeTag || searchQuery) {
+      return filteredCharacters;
+    }
+    // "All": only characters with views over 1000
+    const list = filteredCharacters.filter((char) => (viewsBySlug[char.id] ?? 0) > 1000);
+    const usedIds = new Set<string>();
+    const result: typeof list = [];
+
+    for (const { tagMatch, perCategory } of DIVERSITY_CATEGORIES) {
+      const fromCategory = list
+        .filter((char) => !usedIds.has(char.id) && char.tags?.some((t) => tagMatch(t)))
+        .sort(() => Math.random() - 0.5)
+        .slice(0, perCategory);
+      fromCategory.forEach((c) => usedIds.add(c.id));
+      result.push(...fromCategory);
+    }
+    const remaining = list.filter((c) => !usedIds.has(c.id)).sort(() => Math.random() - 0.5);
+    result.push(...remaining);
+    return result.sort(() => Math.random() - 0.5);
+  }, [filteredCharacters, activeTag, searchQuery, viewsBySlug]);
 
   // Reset spotlight when tag/carousel data changes
   useEffect(() => {
@@ -430,12 +471,12 @@ export function PhoenixCharactersPage() {
 
       {/* Character Grid - 5x5 on desktop (lg), 2 cols on mobile */}
       <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4 pb-24">
-        {filteredCharacters.length === 0 ? (
+        {displayCharacters.length === 0 ? (
           <div className="col-span-2 lg:col-span-5 bg-[#1A1A1A] rounded-xl p-12 text-center">
             <p className="text-[#A1A1AA]">No characters found.</p>
           </div>
         ) : (
-          filteredCharacters.map((character) => (
+          displayCharacters.map((character) => (
             <div
               key={character.id}
               onClick={() => navigate(`/chat/${character.id}`)}
