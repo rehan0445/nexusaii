@@ -187,7 +187,8 @@ const CORS_ALLOWLIST = parseCsv(process.env.CORS_ALLOWLIST ||
   'http://localhost:5174,http://127.0.0.1:5174,' +
   'http://192.168.1.35:3000,http://192.168.1.35:5173,' +
   'http://10.88.60.163:3000,http://10.88.60.163:5173,' +
-  'http://10.87.73.163:3000,http://10.87.73.163:5173'
+  'http://10.87.73.163:3000,http://10.87.73.163:5173,' +
+  'https://nexuschat.in,https://www.nexuschat.in'
 );
 const CORS_METHODS = ['GET','POST','PUT','DELETE','OPTIONS'];
 const ALLOW_ALL_ORIGINS = process.env.NODE_ENV !== 'production' || process.env.ALLOW_ALL_ORIGINS === 'true';
@@ -220,6 +221,11 @@ app.use(cors({
 
     if (CORS_ALLOWLIST.includes(origin)) {
       logCorsOnce(`🌐 CORS: Allowed origin: ${origin}`, origin);
+      // #region agent log
+      if (origin && (origin.includes('nexuschat.in'))) {
+        fetch('http://127.0.0.1:7243/ingest/2d5b2a38-5e31-419c-8a60-677ae4bc8660',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:cors',message:'CORS allowed',data:{origin},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'cors-allow'})}).catch(()=>{});
+      }
+      // #endregion
       return callback(null, true);
     }
 
@@ -243,6 +249,11 @@ app.use(cors({
     }
 
     console.error('🚫 CORS: Blocked origin:', origin);
+    // #region agent log
+    if (origin && (origin.includes('nexuschat.in'))) {
+      fetch('http://127.0.0.1:7243/ingest/2d5b2a38-5e31-419c-8a60-677ae4bc8660',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:cors',message:'CORS blocked',data:{origin},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'cors-block'})}).catch(()=>{});
+    }
+    // #endregion
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -1812,6 +1823,19 @@ app.use(express.static(clientDistPath, {
 app.use((err, req, res, next) => {
   logError(err, req);
   try { captureError(err, req); } catch {}
+  // #region agent log
+  const isCors = err && (err.message || '').toLowerCase().includes('cors');
+  const isStatic = /\.(js|css)$/i.test(req.path || '');
+  if (isCors || isStatic) {
+    import('fs').then((fs) => {
+      try {
+        const logPath = 'd:\\projectRs\\pheonix\\.cursor\\debug.log';
+        const line = JSON.stringify({ location: 'app.js:error-handler', message: '500 sent', data: { path: req.path, origin: req.get('origin'), isCors, isStatic, errMessage: (err && err.message) || '' }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: '500-cause' }) + '\n';
+        fs.appendFileSync(logPath, line);
+      } catch (_) {}
+    }).catch(() => {});
+  }
+  // #endregion
   res.status(500).json({ 
     error: "Something went wrong!",
     message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
