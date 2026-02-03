@@ -851,8 +851,12 @@ function CharacterChat() {
   };
 
   const submitMessage = async (text: string) => {
-    if (!text.trim() || isLoading || !effectiveUserId) return;
-    
+    if (!text.trim() || isLoading) return;
+    if (!effectiveUserId) {
+      console.warn('Send blocked: no session (guest may not be loaded or expired)');
+      alert('Session not ready. Please wait a moment and try again, or refresh the page. If you\'re exploring as a guest, start from the home page.');
+      return;
+    }
     setMessage("");
     
     // Parse user message for *Text* format thoughts

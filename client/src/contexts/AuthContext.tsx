@@ -75,7 +75,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userLoggedin, setUserLoggedin] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [guestUserId, setGuestUserId] = useState<string | null>(null);
+  // Initialize from localStorage so guests have effectiveUserId before checkSession() completes
+  const [guestUserId, setGuestUserId] = useState<string | null>(() => getGuestUserId());
   const effectiveUserId = currentUser?.uid ?? guestUserId ?? null;
 
   // Map Supabase user to our User type
