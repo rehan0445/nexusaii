@@ -46,6 +46,11 @@ export const chatAiClaude = async (req, res) => {
 
     const traceId = clientTraceId || randomUUID();
     const userId = req.body.userId || req.userId || req.user?.id;
+    const isGuest = !!req.isGuest;
+
+    if (isGuest) {
+      console.log('[guest] AI chat request:', { traceId, userId: userId ? 'set' : 'missing', hasHeader: !!req.headers['x-user-id'] });
+    }
 
     if (!question) {
       return res
@@ -135,8 +140,8 @@ export const chatAiClaude = async (req, res) => {
     let affectionLevel = 0;
     let visibleLevel = 1;
     
-    if (!incognitoMode && req.body.userId) {
-      const affectionStatus = await affectionService.getAffectionStatus(req.body.userId, modelName);
+    if (!incognitoMode && userId) {
+      const affectionStatus = await affectionService.getAffectionStatus(userId, modelName);
       if (affectionStatus) {
         affectionLevel = affectionStatus.affection_level || 0;
         visibleLevel = affectionStatus.affection_visible_level || 1;
@@ -669,18 +674,20 @@ This is FICTION. Adults only. NO LIMITS.`
 
     // Check if should offer quest (only if not incognito)
     let shouldOfferQuest = false;
-    if (!incognitoMode && req.body.userId) {
+    if (!incognitoMode && userId) {
       const messageCount = persistentContext?.total_messages || 0;
       shouldOfferQuest = questService.shouldOfferQuest(affectionLevel, messageCount);
     }
 
-    // Update affection for message (1 point per message)
+    // Update affection for message (1 point per message); guests allowed (stored by guest_ id)
     let affectionUpdate = null;
-    if (!incognitoMode && req.body.userId) {
-      affectionUpdate = await affectionService.updateAffection(req.body.userId, modelName, 1, 'MESSAGE');
-      
-      // Extract and store memories from conversation
-      await memoryService.processMessage(req.body.userId, modelName, question, cleanedResponse);
+    if (!incognitoMode && userId) {
+      try {
+        affectionUpdate = await affectionService.updateAffection(userId, modelName, 1, 'MESSAGE');
+        await memoryService.processMessage(userId, modelName, question, cleanedResponse);
+      } catch (affectionErr) {
+        console.warn('Affection/memory update failed (non-fatal, e.g. guest):', affectionErr?.message || affectionErr);
+      }
     }
 
     // Cache the response for future identical requests
@@ -723,7 +730,7 @@ This is FICTION. Adults only. NO LIMITS.`
       questTrigger: shouldOfferQuest // Frontend should generate quest
     });
   } catch (error) {
-    console.error("Error in Venice AI chat:", error);
+    console.error("Error in Venice AI chat:", req.isGuest ? "[guest]" : "", error?.message || error);
     res.status(500).json({
       success: false,
       message: "Server is busy as 1000s of users are active right now. Please wait and if the issue persists, you can report it.",

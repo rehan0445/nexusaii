@@ -2,6 +2,60 @@ import { supabase } from "../config/supabase.js";
 import { v4 as uuidv4 } from "uuid";
 import { scanBuffer } from "../utils/avScanner.js";
 
+/**
+ * GET /api/v1/profile/:uid - Get display name for user or guest.
+ * For guest_xxx returns the name they used in guest session (from guest_sessions).
+ * For registered users returns profile from userProfileData.
+ * Used so feed and companion can show/store the name they used (guest or user).
+ */
+export const getProfileOrGuestByUid = async (req, res) => {
+  try {
+    const uid = req.params?.uid;
+    if (!uid || typeof uid !== 'string') {
+      return res.status(400).json({ success: false, message: 'uid required' });
+    }
+    if (uid.startsWith('guest_')) {
+      const { data: guestRow, error } = await supabase
+        .from('guest_sessions')
+        .select('name')
+        .eq('session_id', uid)
+        .single();
+      if (error || !guestRow) {
+        return res.status(200).json({
+          success: true,
+          data: { displayName: 'Guest', username: 'Guest' },
+        });
+      }
+      const name = guestRow.name || 'Guest';
+      return res.status(200).json({
+        success: true,
+        data: { displayName: name, username: name },
+      });
+    }
+    const { data, error } = await supabase
+      .from('userProfileData')
+      .select('name, username')
+      .eq('id', uid)
+      .single();
+    if (error || !data) {
+      return res.status(200).json({
+        success: true,
+        data: { displayName: null, username: null },
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      data: {
+        displayName: data.name || data.username,
+        username: data.username || data.name,
+      },
+    });
+  } catch (err) {
+    console.error('getProfileOrGuestByUid error:', err);
+    return res.status(500).json({ success: false, message: err?.message || 'Server error' });
+  }
+};
+
 export const getProfileInfo = async (req, res) => {
   const { uid } = req.body;
   const { data, error } = await supabase

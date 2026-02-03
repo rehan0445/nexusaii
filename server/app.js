@@ -28,6 +28,7 @@ import companionContextRouter from "./routes/companionContext.js";
 import questsRouter from "./routes/quests.js";
 import affectionRouter from "./routes/affection.js";
 import guestRouter from "./routes/guest.js";
+import { getProfileOrGuestByUid } from "./controllers/profileController.js";
 import { categorizeGroupChat, getCategoryIcon, getCategoryColor } from "./utils/groupChatCategorization.js";
 import { DarkroomService } from "./services/darkroomService.js";
 // import { HangoutRoomsService } from "./services/hangoutRoomsService.js"; // DISABLED - Coming Soon
@@ -1767,6 +1768,8 @@ app.use("/api/confessions", confessionsRouter);
 app.use("/api/nexus-chats", nexusChatsRouter);
 app.use("/api/v1/chat/companion", companionChatRouter);
 app.use("/api/guest", guestRouter);
+// Profile/guest display name (for companion & feed - use name they used in guest session)
+app.get("/api/v1/profile/:uid", getProfileOrGuestByUid);
 
 // Validate Venice environment on startup
 import { validateEnvironmentOnStartup } from './utils/environmentCheck.js';

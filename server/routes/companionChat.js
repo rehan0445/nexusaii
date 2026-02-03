@@ -153,9 +153,12 @@ router.post('/store-message', optionalAuth, async (req, res) => {
   }
 });
 
-// Store incognito message
-router.post('/store-incognito', requireAuth, async (req, res) => {
+// Store incognito message (optionalAuth: guest or user - feed/companion work for both)
+router.post('/store-incognito', optionalAuth, async (req, res) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required (send x-user-id for guest)' });
+    }
     const { user_profile_name, character_id, message_type, content, user_thoughts } = req.body;
 
     if (!user_profile_name || !character_id || !message_type || !content) {

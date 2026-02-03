@@ -28,7 +28,7 @@ export function WriteConfession() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const postType = searchParams.get('type') as 'username' | 'alias' | null;
-  const { currentUser } = useAuth();
+  const { currentUser, effectiveUserId } = useAuth();
   
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,6 +73,32 @@ export function WriteConfession() {
     document.addEventListener('selectionchange', handleSelectionChange);
     return () => document.removeEventListener('selectionchange', handleSelectionChange);
   }, []);
+
+  // When guest posts with alias, use the name they used in guest session (for feed/storage)
+  useEffect(() => {
+    if (postType !== 'alias' || !effectiveUserId?.startsWith('guest_') || alias) return;
+    const fetchGuestName = async () => {
+      try {
+        const serverUrl = getServerUrl();
+        const res = await fetch(`${serverUrl}/api/v1/profile/${effectiveUserId}`);
+        const json = await res.json();
+        const d = json?.data ?? json;
+        const name = d?.username || d?.displayName;
+        if (name) {
+          setAlias(prev => prev ? { ...prev, name } : { name, emoji: '👤', color: 'from-gray-500 to-gray-600' });
+        }
+      } catch {
+        const raw = localStorage.getItem('guest_session');
+        if (raw) {
+          try {
+            const data = JSON.parse(raw);
+            if (data?.name) setAlias(prev => prev ? { ...prev, name: data.name } : { name: data.name, emoji: '👤', color: 'from-gray-500 to-gray-600' });
+          } catch {}
+        }
+      }
+    };
+    fetchGuestName();
+  }, [postType, effectiveUserId, alias]);
 
   // Redirect if no post type selected or if username selected but not logged in
   useEffect(() => {

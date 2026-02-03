@@ -124,12 +124,13 @@ export const deleteAllChatsForUser = async (req, res) => {
 
 // POST /api/v1/chat/ai/get-character-chat
 export const getCharacterChat = async (req, res) => {
-  const { user_id, character_id } = req.body;
+  const user_id = req.body.user_id || req.userId;
+  const character_id = req.body.character_id;
 
   if (!user_id || !character_id) {
     return res.status(400).json({
       success: false,
-      message: "User ID and Character ID are required",
+      message: "User ID and Character ID are required (send x-user-id for guest)",
     });
   }
 

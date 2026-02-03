@@ -1,0 +1,11 @@
+# Nexus - allow search engines and AI crawlers
+User-agent: *
+Allow: /
+
+# Key pages for SEO
+Allow: /companion
+Allow: /confessions
+Allow: /campus/
+
+# Optional: point to sitemap (update lastmod in sitemap when you change content)
+Sitemap: https://www.nexuschat.in/sitemap.xml

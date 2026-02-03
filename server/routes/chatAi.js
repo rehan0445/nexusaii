@@ -20,7 +20,14 @@ const chatAiRouter = Router();
 // In production, allow guest via x-user-id: guest_xxx (optionalAuth) so guests can chat
 const isDev = process.env.NODE_ENV === 'development';
 const chatAuthMiddleware = isDev ? (req, res, next) => {
-  console.log('⚠️ Development mode: Skipping auth for chat endpoints');
+  const guestHeader = req.headers['x-user-id'];
+  if (guestHeader && String(guestHeader).startsWith('guest_')) {
+    req.userId = String(guestHeader);
+    req.isGuest = true;
+    req.user = { id: req.userId, provider: 'guest' };
+  } else if (req.body?.userId) {
+    req.userId = req.body.userId;
+  }
   next();
 } : optionalAuth;
 
@@ -29,7 +36,8 @@ chatAiRouter.post("/claude", chatAuthMiddleware, chatAiClaude); // Venice AI
 chatAiRouter.post("/bulk-gemini", chatAuthMiddleware, chatAiBulkGemini);
 chatAiRouter.post("/save-chat", requireAuth, saveChat);
 chatAiRouter.post("/get-saved-chat", requireAuth, getSavedChat);
-chatAiRouter.post("/get-character-chat", requireAuth, getCharacterChat);
+// optionalAuth so guests can load chat (e.g. fallback when companion/history used)
+chatAiRouter.post("/get-character-chat", optionalAuth, getCharacterChat);
 chatAiRouter.post("/update-chat", requireAuth, updateChat);
 chatAiRouter.post("/delete-chat", requireAuth, deleteSingleChat);
 chatAiRouter.post("/delete-all-chats", requireAuth, deleteAllChatsForUser);

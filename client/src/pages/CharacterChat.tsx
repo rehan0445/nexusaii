@@ -902,7 +902,8 @@ function CharacterChat() {
           let profileName = "Guest";
           try {
             const profileResponse = await axios.get(`/api/v1/profile/${effectiveUserId}`);
-            profileName = profileResponse.data?.username || profileResponse.data?.displayName || profileName;
+            const d = profileResponse.data?.data || profileResponse.data;
+            profileName = d?.username || d?.displayName || profileName;
           } catch {
             try {
               const g = typeof window !== 'undefined' && localStorage.getItem('guest_session');
@@ -917,7 +918,7 @@ function CharacterChat() {
             message_type: "user",
             content: cleanText,
             user_thoughts: userThoughts
-          });
+          }, { withCredentials: true, headers: effectiveUserId ? { 'x-user-id': effectiveUserId } : {} });
           console.log("✅ Incognito message stored");
         }
       }
@@ -1148,14 +1149,15 @@ function CharacterChat() {
           // Store AI messages in incognito table
           if (effectiveUserId && characterId) {
             const profileResponse = await axios.get(`/api/v1/profile/${effectiveUserId}`);
-            const profileName = profileResponse.data?.username || profileResponse.data?.displayName || currentUser?.displayName || "Anonymous";
+            const d = profileResponse.data?.data || profileResponse.data;
+            const profileName = d?.username || d?.displayName || currentUser?.displayName || "Anonymous";
             
             await axios.post("/api/v1/chat/companion/store-incognito", {
               user_profile_name: profileName,
               character_id: characterId,
               message_type: aiMessage.message_type,
               content: aiMessage.speech || aiMessage.text
-            });
+            }, { withCredentials: true, headers: effectiveUserId ? { 'x-user-id': effectiveUserId } : {} });
           }
         }
       }
