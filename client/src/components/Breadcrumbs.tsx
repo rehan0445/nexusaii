@@ -94,8 +94,9 @@ export const Breadcrumbs: React.FC = () => {
 
   return (
     <nav
-      className="flex items-center gap-2 text-sm text-gray-600 px-4 py-3 bg-white/50 backdrop-blur-sm border-b overflow-x-auto"
+      className="sr-only"
       aria-label="Breadcrumb"
+      style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}
     >
       {breadcrumbs.map((crumb, index) => (
         <React.Fragment key={index}>
