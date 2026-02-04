@@ -34,12 +34,12 @@ const generateWebPageSchema = (title: string, description: string, url: string) 
 });
 
 export const SEO_CONFIG: Record<string, SEOMetadata> = {
-  // HOME PAGE - Primary landing page
+  // HOME PAGE - Primary landing page (title matches index.html / brand)
   '/': {
-    title: 'Nexus – AI Girlfriend, AI Boyfriend, College Confessions & Dark Romance Chat',
-    description: 'Free AI girlfriend & boyfriend chat with unrestricted roleplay. Share college confessions & school secrets anonymously. AI waifu, hubby, anime characters. Dark romance AI sexting with dominating & submissive personas.',
-    keywords: 'ai girlfriend, ai boyfriend, ai companion, college confessions, school confessions, anonymous confessions, ai waifu, ai hubby, dark romance ai, ai sexting, sexting ai, dominating ai, submissive ai, ai anime character, ai roleplay, unrestricted ai chat',
-    ogTitle: 'Nexus – Free AI Girlfriend, College Confessions & Dark Romance',
+    title: 'Nexus : Anonymous - venting & roleplay',
+    description: 'Anonymous venting, confessions & AI roleplay companions. Safe space for college students to share feelings and connect without judgment. Free platform.',
+    keywords: 'ai girlfriend, ai boyfriend, ai companion, college confessions, school confessions, anonymous confessions, anonymous venting, ai roleplay, dark romance ai, ai waifu, ai hubby, dominating ai, submissive ai, unrestricted ai chat',
+    ogTitle: 'Nexus : Anonymous - venting & roleplay',
     ogDescription: 'Chat with AI girlfriends, AI boyfriends & anime characters. Share college confessions anonymously. Dark romance AI with dominating & submissive personas.',
     ogImage: DEFAULT_IMAGE,
     canonical: BASE_URL,
