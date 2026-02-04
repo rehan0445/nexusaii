@@ -35,7 +35,7 @@ const UserInfoForm = () => {
 
   useEffect(() => {
     if (!uid) {
-      navigate("/register");
+      navigate("/");
     }
   }, [uid, navigate]);
 

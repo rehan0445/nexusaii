@@ -18,8 +18,7 @@ export const Breadcrumbs: React.FC = () => {
   // Don't show breadcrumbs on home page or auth pages
   if (
     pathnames.length === 0 ||
-    location.pathname === '/login' ||
-    location.pathname === '/register' ||
+    location.pathname === '/' ||
     location.pathname === '/terms' ||
     location.pathname === '/privacy'
   ) {

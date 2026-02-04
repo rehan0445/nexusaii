@@ -24,6 +24,8 @@ interface AuthContextType {
   currentUser: User | null;
   /** When guest session is active (no Supabase user), this is the guest session id (e.g. guest_xxx). Use for companion chat and confessions. */
   guestUserId: string | null;
+  /** Display name from guest onboarding form (name they entered). Use across app when user is guest. */
+  guestDisplayName: string | null;
   /** Logged-in user id, or guest session id when guest. Use for API x-user-id so guests can chat and post. */
   effectiveUserId: string | null;
   userLoggedin: boolean;
@@ -36,6 +38,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   currentUser: null,
   guestUserId: null,
+  guestDisplayName: null,
   effectiveUserId: null,
   userLoggedin: false,
   loading: true,
@@ -53,30 +56,43 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-function getGuestUserId(): string | null {
-  if (typeof window === 'undefined') return null;
+function getGuestSession(): { sessionId: string | null; displayName: string | null } {
+  if (typeof window === 'undefined') return { sessionId: null, displayName: null };
   try {
     const hasGuest = localStorage.getItem('hasGuestSession') === 'true';
     const raw = localStorage.getItem('guest_session');
-    if (!hasGuest || !raw) return null;
+    if (!hasGuest || !raw) return { sessionId: null, displayName: null };
     const data = JSON.parse(raw);
     const sessionId = data?.sessionId;
-    if (!sessionId || typeof sessionId !== 'string') return null;
-    const start = data?.sessionStartTimestamp ? new Date(data.sessionStartTimestamp).getTime() : 0;
-    const elapsed = Date.now() - start;
-    if (elapsed > 30 * 60 * 1000) return null; // 30 min
-    return sessionId;
+    if (!sessionId || typeof sessionId !== 'string') return { sessionId: null, displayName: null };
+    const fullAccess = localStorage.getItem('fullAccessSession') === 'true' || data?.fullAccess === true;
+    if (!fullAccess) {
+      const start = data?.sessionStartTimestamp ? new Date(data.sessionStartTimestamp).getTime() : 0;
+      const elapsed = Date.now() - start;
+      if (elapsed > 30 * 60 * 1000) return { sessionId: null, displayName: null }; // 30 min for legacy sessions
+    }
+    const displayName = typeof data?.name === 'string' && data.name.trim() ? data.name.trim() : null;
+    return { sessionId, displayName };
   } catch {
-    return null;
+    return { sessionId: null, displayName: null };
   }
+}
+
+function getGuestUserId(): string | null {
+  return getGuestSession().sessionId;
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userLoggedin, setUserLoggedin] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-  // Initialize from localStorage so guests have effectiveUserId before checkSession() completes
-  const [guestUserId, setGuestUserId] = useState<string | null>(() => getGuestUserId());
+  // Initialize from localStorage so guests have effectiveUserId and name before checkSession() completes
+  const [guestSession, setGuestSession] = useState<{ sessionId: string; displayName: string | null } | null>(() => {
+    const s = getGuestSession();
+    return s.sessionId ? { sessionId: s.sessionId, displayName: s.displayName } : null;
+  });
+  const guestUserId = guestSession?.sessionId ?? null;
+  const guestDisplayName = guestSession?.displayName ?? null;
   const effectiveUserId = currentUser?.uid ?? guestUserId ?? null;
 
   // Map Supabase user to our User type
@@ -108,7 +124,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const user = mapUser(session.user);
         setCurrentUser(user);
         setUserLoggedin(true);
-        setGuestUserId(null);
+        setGuestSession(null);
         // Set GA4 User-ID when session is restored (e.g., on page refresh)
         // Delay to ensure session is fully established before fetching hash
         setTimeout(() => {
@@ -127,7 +143,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } else {
         setCurrentUser(null);
         setUserLoggedin(false);
-        setGuestUserId(getGuestUserId());
+        const s = getGuestSession();
+        setGuestSession(s.sessionId ? { sessionId: s.sessionId, displayName: s.displayName } : null);
       }
       
       setLoading(false);
@@ -173,8 +190,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           
           // Only redirect if no Supabase session AND no guest session AND not on a public path
           if (!session && !hasValidGuestSession && !isPublicPath) {
-            console.log('⚠️ No session found (and no guest session), redirecting to login');
-            window.location.href = '/login';
+            console.log('⚠️ No session found (and no guest session), redirecting to home');
+            window.location.href = '/';
             return;
           }
           
@@ -282,6 +299,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Don't redirect on temporary session null states (TOKEN_REFRESHED, etc.)
         setCurrentUser(null);
         setUserLoggedin(false);
+        setGuestSession(null);
         
         // Clear GA User-ID on logout
         try {
@@ -310,8 +328,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const hasValidGuestSession = hasGuestSession && guestSession;
         
         if (!isPublicPath && !hasValidGuestSession) {
-          console.log('⚠️ User signed out, redirecting to login');
-          window.location.href = '/login';
+          console.log('⚠️ User signed out, redirecting to home');
+          window.location.href = '/';
         }
       } else {
         // For other events without session (TOKEN_REFRESHED, etc.), just update state
@@ -344,9 +362,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Sign out from Supabase
       await signOut();
 
-      // Clear auth state
+      // Clear auth state and guest/full-access session
       setCurrentUser(null);
       setUserLoggedin(false);
+      setGuestSession(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('guest_session');
+        localStorage.removeItem('guest_session_start');
+        localStorage.removeItem('hasGuestSession');
+        localStorage.removeItem('fullAccessSession');
+      }
 
       // Disconnect all socket connections
       try {
@@ -357,6 +382,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       console.log('✅ Logged out successfully');
+      // Show onboarding form again
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     } catch (error) {
       console.error('❌ Error during logout:', error);
       throw error;
@@ -366,6 +395,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextType = {
     currentUser,
     guestUserId,
+    guestDisplayName,
     effectiveUserId,
     userLoggedin,
     loading,

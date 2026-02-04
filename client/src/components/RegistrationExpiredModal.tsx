@@ -24,7 +24,7 @@ const RegistrationExpiredModal: React.FC<RegistrationExpiredModalProps> = ({
     localStorage.removeItem('hasGuestSession');
     
     // Navigate to registration
-    navigate('/register', { replace: true });
+    navigate('/', { replace: true });
   };
 
   return (

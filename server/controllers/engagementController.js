@@ -1,5 +1,8 @@
 import { supabase } from "../config/supabase.js";
 
+// Max rows to return for "all" / "most liked" / "most viewed" (show everything in storage)
+const ALL_CONFESSIONS_LIMIT = 2000;
+
 // Helper function to normalize confession data
 // IMPORTANT: Returns combined metrics (fake + real) for display
 // Never expose fake_views or fake_upvotes to frontend
@@ -109,7 +112,7 @@ export const getTrendingConfessions = async (req, res) => {
   console.log(`[TRENDING] Query params:`, req.query);
 
   try {
-    const limit = Math.min(Number.parseInt(req.query.limit || "20", 10), 100);
+    const limit = Math.min(Number.parseInt(req.query.limit || "2000", 10), ALL_CONFESSIONS_LIMIT);
     const daysLookback = req.query.daysLookback 
       ? Number.parseInt(req.query.daysLookback, 10) 
       : null;
@@ -201,7 +204,8 @@ export const getTrendingConfessions = async (req, res) => {
     // Try fallback even on exception
     try {
       console.log(`[TRENDING] ⚠️  Attempting fallback after exception...`);
-      const fallbackData = await getConfessionsFallback(20, 'score', false);
+      const fallbackLimit = Math.min(500, ALL_CONFESSIONS_LIMIT);
+      const fallbackData = await getConfessionsFallback(fallbackLimit, 'score', false);
       const dataWithEngagement = fallbackData.map((confession) => {
         const commentCount = confession.replies || 0;
         const engagementScore = (confession.score || 0) * 1 + commentCount * 3;
@@ -211,7 +215,7 @@ export const getTrendingConfessions = async (req, res) => {
 
       return res.json({
         success: true,
-        data: dataWithEngagement.slice(0, 20),
+        data: dataWithEngagement,
         count: dataWithEngagement.length,
         fallback: true,
         error: error.message
@@ -239,7 +243,7 @@ export const getFreshConfessions = async (req, res) => {
   console.log(`[FRESH] Query params:`, req.query);
 
   try {
-    const limit = Math.min(Number.parseInt(req.query.limit || "20", 10), 100);
+    const limit = Math.min(Number.parseInt(req.query.limit || "20", 10), ALL_CONFESSIONS_LIMIT);
 
     console.log(`[FRESH] Calling RPC: get_fresh_confessions_with_metrics with limit=${limit}`);
 
@@ -342,7 +346,7 @@ export const getTopRatedConfessions = async (req, res) => {
   console.log(`[TOP] Query params:`, req.query);
 
   try {
-    const limit = Math.min(Number.parseInt(req.query.limit || "20", 10), 100);
+    const limit = Math.min(Number.parseInt(req.query.limit || "2000", 10), ALL_CONFESSIONS_LIMIT);
 
     console.log(`[TOP] Calling RPC: get_top_rated_confessions_with_metrics with limit=${limit}`);
 
@@ -413,7 +417,7 @@ export const getTopRatedConfessions = async (req, res) => {
     // Try fallback even on exception
     try {
       console.log(`[TOP] ⚠️  Attempting fallback after exception...`);
-      const fallbackData = await getConfessionsFallback(20, 'score', false);
+      const fallbackData = await getConfessionsFallback(Math.min(500, ALL_CONFESSIONS_LIMIT), 'score', false);
 
       return res.json({
         success: true,
@@ -435,12 +439,10 @@ export const getTopRatedConfessions = async (req, res) => {
 };
 
 /**
- * Get all confessions (sorted by combined view count: fake + real)
+ * Get all confessions from storage (Supabase confessions table).
  * GET /api/confessions/all
- * 
- * This endpoint uses an RPC function that JOINs confessions with fake_metrics
- * to return combined totals sorted by total_views (fake + real) descending.
- * Supports pagination via cursor parameter.
+ * Returns every confession in the table (up to ALL_CONFESSIONS_LIMIT), sorted by created_at desc.
+ * No selective filtering - default feed shows all confessions available in storage.
  */
 export const getAllConfessions = async (req, res) => {
   const startTime = Date.now();
@@ -449,116 +451,54 @@ export const getAllConfessions = async (req, res) => {
   console.log(`[ALL] Query params:`, JSON.stringify(req.query, null, 2));
 
   try {
-    const limit = Math.min(Number.parseInt(req.query.limit || "30", 10), 100);
+    const limit = Math.min(Number.parseInt(req.query.limit || String(ALL_CONFESSIONS_LIMIT), 10), ALL_CONFESSIONS_LIMIT);
     const cursor = Number.parseInt(req.query.cursor || "0", 10);
 
-    console.log(`[ALL] 📋 Calling RPC: get_confessions_with_combined_metrics(limit=${limit}, offset=${cursor})`);
-    console.log(`[ALL] 📋 Query details: limit=${limit}, cursor=${cursor}, sorted by total_views DESC (fake + real)`);
+    // Primary: direct table query so we return ALL confessions in storage (no RPC/join selectivity)
+    console.log(`[ALL] 📋 Fetching all confessions from table (limit=${limit}, offset=${cursor})`);
+    const { data: directData, error: directError } = await supabase
+      .from('confessions')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(cursor, cursor + limit - 1);
 
-    // Use RPC function to get confessions with combined fake + real metrics
-    // Sorted by total_views (fake_views + real_views) descending
-    const { data, error } = await supabase.rpc('get_confessions_with_combined_metrics', {
-      p_limit: limit,
-      p_offset: cursor
-    });
-    
-    // Get total count for pagination
-    const { data: countData } = await supabase.rpc('get_confessions_total_count');
-    const count = countData || 0;
+    if (!directError && Array.isArray(directData)) {
+      const normalizedData = directData.map((row) => normalizeConfession(row)).filter(Boolean);
+      const hasMore = directData.length === limit;
+      const nextCursor = hasMore ? cursor + directData.length : null;
 
-    // Detailed error logging
-    if (error) {
-      console.error(`[ALL] ❌ Query Error Details:`);
-      console.error(`[ALL]   - Code: ${error.code || 'N/A'}`);
-      console.error(`[ALL]   - Message: ${error.message}`);
-      console.error(`[ALL]   - Details: ${error.details || 'N/A'}`);
-      console.error(`[ALL]   - Hint: ${error.hint || 'N/A'}`);
-      console.error(`[ALL]   - Full Error Object:`, JSON.stringify(error, null, 2));
-
-      // Fallback to aggregated query from all tables
-      console.log(`[ALL] ⚠️  Falling back to aggregated table queries...`);
-      const fallbackData = await getConfessionsFallback(limit, 'created_at', false);
-
-      console.log(`[ALL] ✅ Fallback returned ${fallbackData.length} confessions`);
+      console.log(`[ALL] ✅ Direct query returned ${normalizedData.length} confessions`);
       console.log(`[ALL] Completed in ${Date.now() - startTime}ms`);
 
       return res.json({
         success: true,
-        data: fallbackData,
-        count: fallbackData.length,
-        fallback: true,
-        originalError: error.message
+        data: normalizedData,
+        count: normalizedData.length,
+        totalCount: cursor + normalizedData.length,
+        hasMore,
+        nextCursor,
+        fallback: false
       });
     }
 
-    // Check if data is empty
-    const dataLength = data?.length || 0;
-    console.log(`[ALL] ✅ Query Success - Received ${dataLength} confessions`);
-    
-    if (dataLength === 0) {
-      console.warn(`[ALL] ⚠️  WARNING: Query returned 0 confessions from 'confessions' table`);
-      console.warn(`[ALL] ⚠️  This could mean:`);
-      console.warn(`[ALL]     1. The table is empty`);
-      console.warn(`[ALL]     2. RLS policies are blocking access`);
-      console.warn(`[ALL]     3. Data should be in the 'confessions' table`);
-      console.warn(`[ALL] ⚠️  Attempting fallback to aggregated tables...`);
-      
-      const fallbackData = await getConfessionsFallback(limit, 'created_at', false);
-      console.log(`[ALL] ✅ Fallback returned ${fallbackData.length} confessions from aggregated tables`);
-      
-      return res.json({
-        success: true,
-        data: fallbackData,
-        count: fallbackData.length,
-        fallback: true,
-        warning: 'Main table returned empty, using aggregated tables'
-      });
+    if (directError) {
+      console.warn(`[ALL] ⚠️ Direct query error:`, directError.message);
     }
 
-    // Log sample data for debugging (including combined metrics)
-    if (dataLength > 0) {
-      console.log(`[ALL] 📊 Sample confession (first item):`, {
-        id: data[0]?.id,
-        content_preview: data[0]?.content?.substring(0, 50) + '...',
-        created_at: data[0]?.created_at,
-        real_views: data[0]?.view_count,
-        fake_views: data[0]?.fake_views,
-        total_views: data[0]?.total_views,
-        real_score: data[0]?.score,
-        fake_upvotes: data[0]?.fake_upvotes,
-        total_upvotes: data[0]?.total_upvotes,
-        has_alias: !!data[0]?.alias
-      });
-    }
-
-    // Normalize the data - this will use combined metrics for display
-    // IMPORTANT: fake_views and fake_upvotes are stripped out, only totals are exposed
-    const normalizedData = (data || []).map((confession) => {
-      const normalized = normalizeConfession(confession);
-      if (!normalized) {
-        console.warn(`[ALL] ⚠️  Failed to normalize confession:`, confession?.id || 'unknown');
-      }
-      return normalized;
-    }).filter(Boolean);
-
-    // Calculate pagination info
-    const totalCount = count || 0;
-    const hasMore = cursor + dataLength < totalCount;
-    const nextCursor = hasMore ? cursor + dataLength : null;
-
-    console.log(`[ALL] ✅ Normalized ${normalizedData.length} confessions (${dataLength - normalizedData.length} failed normalization)`);
-    console.log(`[ALL] ✅ Total count: ${totalCount}, hasMore: ${hasMore}, nextCursor: ${nextCursor}`);
-    console.log(`[ALL] ✅ Returning ${normalizedData.length} confessions to client`);
+    // Fallback: use getConfessionsFallback (same table, no selectivity)
+    console.log(`[ALL] ⚠️ Using fallback (limit=${limit})`);
+    const fallbackData = await getConfessionsFallback(limit, 'created_at', false);
+    console.log(`[ALL] ✅ Fallback returned ${fallbackData.length} confessions`);
     console.log(`[ALL] Completed in ${Date.now() - startTime}ms`);
 
     return res.json({
       success: true,
-      data: normalizedData,
-      count: normalizedData.length,
-      totalCount,
-      hasMore,
-      nextCursor,
-      fallback: false
+      data: fallbackData,
+      count: fallbackData.length,
+      totalCount: fallbackData.length,
+      hasMore: false,
+      nextCursor: null,
+      fallback: true
     });
   } catch (error) {
     console.error(`[ALL] ❌ Exception in getAllConfessions:`);
@@ -570,7 +510,7 @@ export const getAllConfessions = async (req, res) => {
     // Try fallback even on exception
     try {
       console.log(`[ALL] ⚠️  Attempting fallback after exception...`);
-      const fallbackData = await getConfessionsFallback(20, 'created_at', false);
+      const fallbackData = await getConfessionsFallback(Math.min(500, ALL_CONFESSIONS_LIMIT), 'created_at', false);
 
       console.log(`[ALL] ✅ Fallback returned ${fallbackData.length} confessions`);
       return res.json({

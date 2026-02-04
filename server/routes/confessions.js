@@ -1073,7 +1073,7 @@ router.post(
 );
 
 router.get("/", async (req, res) => {
-  const limit = Math.min(Number.parseInt(req.query.limit || "20", 10), 100);
+  const limit = Math.min(Number.parseInt(req.query.limit || "100", 10), 1000);
   const cursor = req.query.cursor ? Number.parseInt(req.query.cursor, 10) : 0;
   const sortBy = req.query.sortBy || 'created_at'; // Default to created_at, can be 'score' for upvotes
   console.log(`[CONFESSION FETCH] sortBy: ${sortBy}`);

@@ -204,7 +204,7 @@ const MOOD_PRESETS: Mood[] = [
 
 function CharacterChat() {
   const { characterId } = useParams<{ characterId: string }>();
-  const { currentUser, effectiveUserId } = useAuth();
+  const { currentUser, effectiveUserId, guestDisplayName } = useAuth();
   const { characters, loading: loadingCharacters } = useCharacterContext();
   const navigate = useNavigate();
   const desktopLayout = useDesktopLayout();
@@ -1154,7 +1154,7 @@ function CharacterChat() {
           if (effectiveUserId && characterId) {
             const profileResponse = await axios.get(`/api/v1/profile/${effectiveUserId}`);
             const d = profileResponse.data?.data || profileResponse.data;
-            const profileName = d?.username || d?.displayName || currentUser?.displayName || "Anonymous";
+            const profileName = d?.username || d?.displayName || currentUser?.displayName || guestDisplayName || "Anonymous";
             
             await axios.post("/api/v1/chat/companion/store-incognito", {
               user_profile_name: profileName,

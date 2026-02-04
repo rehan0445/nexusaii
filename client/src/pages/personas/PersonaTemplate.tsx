@@ -195,7 +195,7 @@ const PersonaTemplate: React.FC = () => {
               Browse {persona.name} Characters
             </Link>
             <Link
-              to="/register"
+              to="/"
               className="bg-white/20 backdrop-blur-sm text-white px-8 py-4 rounded-full text-lg font-bold hover:bg-white/30 transition-all shadow-xl border-2 border-white"
             >
               Sign Up Free

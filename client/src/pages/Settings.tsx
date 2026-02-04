@@ -9,7 +9,6 @@ import settingsService from '../services/settingsService';
 import { useAuth } from '../contexts/AuthContext';
 import { FontSizeType } from '../utils/settings';
 import EditProfileModal from '../components/EditProfileModal';
-import { signOut } from '../lib/supabase';
 import { useResponsive } from '../hooks/useResponsive';
 
 // Toggle component
@@ -49,21 +48,18 @@ function SettingsPage() {
     setIncognitoMode,
   } = useSettings();
   
-  const { currentUser } = useAuth();
+  const { currentUser, guestDisplayName, logout } = useAuth();
+  const displayName = currentUser?.displayName ?? guestDisplayName ?? 'User';
   const { isDesktop, isMobile, isTablet } = useResponsive();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
-  // Logout function using Supabase
+  // Logout: clears session and redirects to onboarding form (name, age, gender)
   const handleLogout = async () => {
     try {
-      await signOut();
-      console.log('✅ Logged out successfully');
-      navigate('/login');
+      await logout();
     } catch (error) {
       console.error('Error logging out:', error);
-      // Even if logout fails, clear local storage and redirect
-      localStorage.clear();
-      navigate('/login');
+      window.location.href = '/';
     }
   };
 
@@ -79,8 +75,8 @@ function SettingsPage() {
     }
   }, [location.state, location.pathname, navigate]);
   const [profileData, setProfileData] = useState({
-    name: currentUser?.displayName || '',
-    username: `@${currentUser?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}`,
+    name: displayName || '',
+    username: `@${(displayName || 'user').toLowerCase().replace(/\s+/g, '')}`,
     bio: '',
     location: '',
     email: currentUser?.email || '',
@@ -360,7 +356,7 @@ function SettingsPage() {
                   <div className="absolute bottom-4 right-4">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gold to-orange-500 flex items-center justify-center border-4 border-zinc-800 shadow-lg">
                       <span className="text-2xl font-bold text-white">
-                        {currentUser?.displayName?.charAt(0) || 'U'}
+                        {displayName?.charAt(0) || 'U'}
                       </span>
                     </div>
                   </div>
@@ -368,8 +364,8 @@ function SettingsPage() {
 
                 {/* Profile Info */}
                 <div className="ml-24">
-                  <h4 className="text-xl font-bold text-white mb-1">{profileData.name || currentUser?.displayName || 'User'}</h4>
-                  <p className="text-zinc-400 text-sm mb-2">{profileData.username || `@${currentUser?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}`}</p>
+                  <h4 className="text-xl font-bold text-white mb-1">{profileData.name || displayName || 'User'}</h4>
+                  <p className="text-zinc-400 text-sm mb-2">{profileData.username || `@${(displayName || 'user').toLowerCase().replace(/\s+/g, '')}`}</p>
                   <p className="text-zinc-500 text-xs">Member since {new Date().toLocaleDateString('en-US', { 
                     year: 'numeric', 
                     month: 'long', 
@@ -443,7 +439,7 @@ function SettingsPage() {
                     <div>
                       <p className="text-zinc-400 text-sm mb-1">Account Type</p>
                       <p className="text-white font-medium">
-                        {currentUser?.isAnonymous ? 'Anonymous' : 'Standard'}
+                        {!currentUser && guestDisplayName ? 'Guest' : currentUser?.isAnonymous ? 'Anonymous' : 'Standard'}
                       </p>
                     </div>
                     <div>
@@ -491,7 +487,7 @@ function SettingsPage() {
                         // Create a data export object
                         const userData = {
                           profile: {
-                            name: profileData.name || currentUser?.displayName,
+                            name: profileData.name || displayName,
                             username: profileData.username,
                             email: currentUser?.email,
                             bio: profileData.bio,
@@ -532,8 +528,8 @@ function SettingsPage() {
                       onClick={() => {
                         // Create shareable profile data
                         const shareData = {
-                          title: `${profileData.name || currentUser?.displayName}'s Profile`,
-                          text: `Check out ${profileData.name || currentUser?.displayName}'s profile on Companion!`,
+                          title: `${profileData.name || displayName}'s Profile`,
+                          text: `Check out ${profileData.name || displayName}'s profile on Companion!`,
                           url: `${window.location.origin}/profile/${profileData.username || currentUser?.uid}`,
                         };
                         
@@ -751,7 +747,7 @@ function SettingsPage() {
                     // Create a data export object
                     const userData = {
                       profile: {
-                        name: profileData.name || currentUser?.displayName,
+                        name: profileData.name || displayName,
                         username: profileData.username,
                         email: currentUser?.email,
                         bio: profileData.bio,

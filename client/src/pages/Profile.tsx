@@ -26,7 +26,8 @@ interface ProfileData {
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, guestDisplayName, logout } = useAuth();
+  const displayName = currentUser?.displayName ?? guestDisplayName ?? 'Anonymous User';
   const { incognitoMode } = useSettings();
   
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -59,12 +60,14 @@ const Profile: React.FC = () => {
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        if (!currentUser) {
+        // Support both logged-in user and guest (effectiveUserId = currentUser.uid or guest session id)
+        if (!currentUser && !guestDisplayName) {
           setLoading(false);
           return;
         }
 
-        // Try backend profile
+        if (currentUser) {
+        // Try backend profile for logged-in user
         try {
           const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
           const res = await fetch(`${serverUrl}/api/v1/chat/get-profile-data`, {
@@ -97,7 +100,7 @@ const Profile: React.FC = () => {
           }
         } catch {}
 
-        // Fallback mock
+        // Fallback mock for logged-in user
         setProfileData({
           name: currentUser.displayName ?? 'Anonymous User',
           username: currentUser.email?.split('@')[0] ?? 'user',
@@ -108,6 +111,19 @@ const Profile: React.FC = () => {
           bannerImage: 'https://i.pinimg.com/1200x/9e/99/c9/9e99c92270b3926f7ef59b1f8f828999.jpg',
           interests: []
         });
+        } else {
+          // Guest: show minimal profile with name from onboarding form
+          setProfileData({
+            name: displayName,
+            username: `@${(displayName || 'user').toLowerCase().replace(/\s+/g, '')}`,
+            bio: '',
+            location: 'Digital World',
+            email: '',
+            profileImage: 'https://i.pinimg.com/736x/d9/7b/bb/d97bbb08017ac2309307f0822e63d082.jpg',
+            bannerImage: 'https://i.pinimg.com/1200x/9e/99/c9/9e99c92270b3926f7ef59b1f8f828999.jpg',
+            interests: []
+          });
+        }
       } catch (error) {
         console.error("Error fetching profile data:", error);
       } finally {
@@ -116,7 +132,7 @@ const Profile: React.FC = () => {
     };
 
     fetchProfileData();
-  }, [currentUser]);
+  }, [currentUser, guestDisplayName]);
 
 
   const handleShare = (platform: string) => {
@@ -472,11 +488,11 @@ const Profile: React.FC = () => {
                     onClick={async () => {
                       try {
                         await handleLogout();
-                        navigate('/login');
+                        navigate('/');
                       } catch (error) {
                         // Even if logout fails, still redirect to login
                         console.error('Logout error:', error);
-                        navigate('/login');
+                        navigate('/');
                       }
                     }}
                     className="w-full py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"

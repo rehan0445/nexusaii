@@ -133,7 +133,9 @@ export function ConfessionFeed({ activeView, onConfessionClick }: ConfessionFeed
 
       try {
         const sessionId = getSessionId();
-        const response = await apiFetch(`${getServerUrl()}${currentConfig.endpoint}?limit=20&sessionId=${sessionId}`);
+        // All, trending (most liked), top (most liked): request all confessions in storage (up to 2000)
+        const limit = (activeView === 'all' || activeView === 'trending' || activeView === 'top') ? 2000 : 20;
+        const response = await apiFetch(`${getServerUrl()}${currentConfig.endpoint}?limit=${limit}&sessionId=${sessionId}`);
         const result = await response.json();
 
         if (result.success && Array.isArray(result.data)) {

@@ -115,8 +115,7 @@ const SwipeGestureHandler: React.FC = () => {
   const location = useLocation();
 
   // Disable swipe on login/register/legal pages and auth callback
-  const shouldDisableSwipe = location.pathname === '/login' || 
-                              location.pathname === '/register' ||
+  const shouldDisableSwipe = location.pathname === '/' ||
                               location.pathname === '/auth/callback' ||
                               location.pathname === '/terms' ||
                               location.pathname === '/privacy' ||
@@ -143,8 +142,9 @@ const SwipeGestureHandler: React.FC = () => {
 // Route elements as a Fragment (Routes only accepts <Route> or <React.Fragment> as direct children)
 const APP_ROUTES = (
   <>
-    <Route path="/login" element={<Login />} />
-    <Route path="/register" element={<Register />} />
+    <Route path="/login" element={<Navigate to="/" replace />} />
+    <Route path="/register" element={<Navigate to="/" replace />} />
+    <Route path="/signup" element={<Navigate to="/" replace />} />
     <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/ref/:code" element={<ReferralRedirect />} />
     <Route path="/terms" element={<TermsAndConditions />} />
@@ -214,7 +214,7 @@ function App() {
   const location = useLocation();
   const hideBottomBar = React.useMemo(() => {
     const p = location.pathname;
-    return p === '/' || p === '/login' || p === '/register' || p === '/auth/callback' || p === '/terms' || p === '/privacy' || p.startsWith('/onboarding');
+    return p === '/' || p === '/auth/callback' || p === '/terms' || p === '/privacy' || p.startsWith('/onboarding');
   }, [location.pathname]);
   return (
     <SettingsProvider>

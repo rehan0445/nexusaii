@@ -60,30 +60,32 @@ const WelcomeScreen: React.FC = () => {
       if (hasGuestSession && guestSession) {
         try {
           const sessionData = JSON.parse(guestSession);
-          // Check if session is still valid (not expired and not registered)
           if (!sessionData.isRegistered) {
-            const sessionStart = new Date(sessionData.sessionStartTimestamp).getTime();
+            const fullAccess = localStorage.getItem('fullAccessSession') === 'true' || sessionData.fullAccess === true;
+            const sessionStart = new Date(sessionData.sessionStartTimestamp || 0).getTime();
             const now = Date.now();
             const elapsed = now - sessionStart;
             const thirtyMinutes = 30 * 60 * 1000;
-            
-            if (elapsed < thirtyMinutes) {
-              console.log('   → Guest session active, navigating to companion');
+            const oneYear = 365 * 24 * 60 * 60 * 1000;
+            const validDuration = fullAccess ? oneYear : thirtyMinutes;
+            if (elapsed < validDuration) {
+              console.log('   → Session active (full access), navigating to companion');
               navigate('/companion', { replace: true });
               setHasChecked(true);
               return;
-            } else {
-              console.log('   → Guest session expired, clearing and showing onboarding');
-              localStorage.removeItem('guest_session');
-              localStorage.removeItem('guest_session_start');
-              localStorage.removeItem('hasGuestSession');
             }
+            console.log('   → Session expired, clearing and showing onboarding');
+            localStorage.removeItem('guest_session');
+            localStorage.removeItem('guest_session_start');
+            localStorage.removeItem('hasGuestSession');
+            localStorage.removeItem('fullAccessSession');
           }
         } catch (e) {
           console.error('Error parsing guest session:', e);
           localStorage.removeItem('guest_session');
           localStorage.removeItem('guest_session_start');
           localStorage.removeItem('hasGuestSession');
+          localStorage.removeItem('fullAccessSession');
         }
       }
       
@@ -99,10 +101,9 @@ const WelcomeScreen: React.FC = () => {
         return;
       }
       
-      // Priority 4: Fallback - if somehow we get here, show login
-      // (This shouldn't normally happen with the above logic)
-      console.log('   → Fallback: navigating to login');
-      navigate('/login', { replace: true });
+      // Fallback: show onboarding (single entry = name, age, gender)
+      console.log('   → Fallback: showing onboarding');
+      setShowGuestOnboarding(true);
       
       setHasChecked(true);
     }, 100);

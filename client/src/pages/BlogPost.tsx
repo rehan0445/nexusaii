@@ -181,7 +181,7 @@ const BlogPost: React.FC = () => {
               Try AI Companions Free
             </Link>
             <Link
-              to="/register"
+              to="/"
               className="bg-purple-700 text-white px-8 py-3 rounded-full font-semibold hover:bg-purple-800 transition-colors border-2 border-white"
             >
               Sign Up Free

@@ -145,7 +145,7 @@ export const SEOFooter: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/register" className="hover:text-purple-400 transition-colors">
+                <Link to="/" className="hover:text-purple-400 transition-colors">
                   Sign Up Free
                 </Link>
               </li>

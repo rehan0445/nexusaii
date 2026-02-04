@@ -12,9 +12,9 @@ const IntroHangout: React.FC = () => {
     // Preserve referral code if present
     const referralCode = localStorage.getItem('pending_referral_code');
     if (referralCode) {
-      navigate(`/register?ref=${referralCode}`);
+      navigate(`/?ref=${referralCode}`);
     } else {
-      navigate('/register');
+      navigate('/');
     }
   };
 
@@ -25,7 +25,7 @@ const IntroHangout: React.FC = () => {
       subtitle="From conversations to companionship."
       index={5}
       total={5}
-      nextPath="/register"
+      nextPath="/"
       prevPath="/onboarding/darkroom"
       onNext={handleGetStarted}
       titleStyle={{ fontFamily: 'EB Garamond, serif' }}

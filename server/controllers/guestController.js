@@ -23,10 +23,10 @@ export const createGuestSession = async (req, res) => {
       });
     }
 
-    if (typeof age !== 'number' || age < 13 || age > 120) {
+    if (typeof age !== 'number' || age < 18 || age > 100) {
       return res.status(400).json({
         success: false,
-        message: 'Age must be between 13 and 120'
+        message: 'You must be 18 to 100 years old to use this app'
       });
     }
 
@@ -52,24 +52,46 @@ export const createGuestSession = async (req, res) => {
       });
     }
 
-    // Create guest session
+    // Create session: 18-100 gets full access (1 year expiry). Stored in guest_sessions.
     const sessionStartTimestamp = new Date().toISOString();
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 minutes from now
+    const oneYearMs = 365 * 24 * 60 * 60 * 1000;
+    const expiresAt = new Date(Date.now() + oneYearMs).toISOString();
 
-    const { data, error } = await supabase
+    const insertPayload = {
+      name: name.trim(),
+      age,
+      gender,
+      session_id: sessionId,
+      session_start_timestamp: sessionStartTimestamp,
+      expires_at: expiresAt,
+      is_registered: false,
+      full_access: true
+    };
+
+    let result = await supabase
       .from('guest_sessions')
-      .insert({
-        name: name.trim(),
-        age,
-        gender,
-        session_id: sessionId,
-        session_start_timestamp: sessionStartTimestamp,
-        expires_at: expiresAt,
-        is_registered: false
-      })
+      .insert(insertPayload)
       .select()
       .single();
 
+    if (result.error) {
+      const fallback = await supabase
+        .from('guest_sessions')
+        .insert({
+          name: name.trim(),
+          age,
+          gender,
+          session_id: sessionId,
+          session_start_timestamp: sessionStartTimestamp,
+          expires_at: expiresAt,
+          is_registered: false
+        })
+        .select()
+        .single();
+      if (!fallback.error) result = fallback;
+    }
+
+    const { data, error } = result;
     if (error) {
       console.error('Error creating guest session:', error);
       return res.status(500).json({
@@ -81,8 +103,8 @@ export const createGuestSession = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Guest session created successfully',
-      data
+      message: 'Welcome! You have full access.',
+      data: { ...data, full_access: true }
     });
   } catch (error) {
     console.error('Error in createGuestSession:', error);

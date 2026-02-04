@@ -146,7 +146,7 @@ const Login = () => {
           <p className="text-[#A1A1AA]">
             Don't have an account?{" "}
             <button
-              onClick={() => navigate("/register")}
+              onClick={() => navigate("/")}
               className="text-[#A855F7] hover:text-[#A855F7]/80 font-medium transition-colors"
             >
               Sign up

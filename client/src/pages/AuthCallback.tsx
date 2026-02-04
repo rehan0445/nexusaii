@@ -23,7 +23,7 @@ const AuthCallback: React.FC = () => {
           setStatus('error');
           
           // Redirect to login after 3 seconds
-          setTimeout(() => navigate('/login'), 3000);
+          setTimeout(() => navigate('/'), 3000);
           return;
         }
 
@@ -33,7 +33,7 @@ const AuthCallback: React.FC = () => {
           setStatus('error');
           
           // Redirect to login after 3 seconds
-          setTimeout(() => navigate('/login'), 3000);
+          setTimeout(() => navigate('/'), 3000);
           return;
         }
 
@@ -58,7 +58,7 @@ const AuthCallback: React.FC = () => {
         setStatus('error');
         
         // Redirect to login after 3 seconds
-        setTimeout(() => navigate('/login'), 3000);
+        setTimeout(() => navigate('/'), 3000);
       }
     };
 
@@ -143,10 +143,10 @@ const AuthCallback: React.FC = () => {
         {status === 'error' && (
           <div className="text-center mt-6">
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/')}
               className="text-softgold-500 hover:text-softgold-300 font-medium transition-colors"
             >
-              Go to Login Now
+              Go to Home
             </button>
           </div>
         )}

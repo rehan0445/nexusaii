@@ -174,7 +174,9 @@ export function PhoenixConfessionFeed({ onConfessionClick }: PhoenixConfessionFe
       try {
         const sessionId = getSessionId();
         const config = filterConfig[activeFilter];
-        const response = await apiFetch(`${getServerUrl()}${config.endpoint}?limit=20&sessionId=${sessionId}`);
+        // Default, most liked, most viewed: request all confessions in storage (up to 2000)
+        const limit = (activeFilter === 'default' || activeFilter === 'most-viewed' || activeFilter === 'most-liked') ? 2000 : 20;
+        const response = await apiFetch(`${getServerUrl()}${config.endpoint}?limit=${limit}&sessionId=${sessionId}`);
         const result = await response.json();
 
         if (result.success && Array.isArray(result.data)) {

@@ -156,7 +156,7 @@ const Onboarding: React.FC = () => {
       if (sessionError || !session) {
         console.error('❌ No valid session found:', sessionError);
         alert('Session expired. Please log in again.');
-        navigate('/login');
+        navigate('/');
         return;
       }
       

@@ -46,8 +46,9 @@ const GuestOnboardingForm: React.FC<GuestOnboardingFormProps> = ({ onComplete })
       return;
     }
 
-    if (!formData.age || parseInt(formData.age) < 13 || parseInt(formData.age) > 120) {
-      setError('Please enter a valid age (13-120)');
+    const ageNum = parseInt(formData.age, 10);
+    if (!formData.age || isNaN(ageNum) || ageNum < 18 || ageNum > 100) {
+      setError('You must be 18 to 100 years old to use this app.');
       return;
     }
 
@@ -63,18 +64,20 @@ const GuestOnboardingForm: React.FC<GuestOnboardingFormProps> = ({ onComplete })
       const sessionId = generateSessionId();
       const sessionStartTime = new Date().toISOString();
 
-      // Store in localStorage for client-side tracking
+      // Store in localStorage: full access (18-100), no separate login/register
       const guestSessionData = {
         sessionId,
         name: formData.name.trim(),
-        age: parseInt(formData.age),
+        age: ageNum,
         gender: formData.gender,
         sessionStartTimestamp: sessionStartTime,
-        isRegistered: false
+        isRegistered: false,
+        fullAccess: true
       };
 
       localStorage.setItem('guest_session', JSON.stringify(guestSessionData));
       localStorage.setItem('guest_session_start', sessionStartTime);
+      localStorage.setItem('fullAccessSession', 'true');
 
       // Create guest session in Supabase via backend API
       const serverUrl = API_CONFIG.getServerUrl();
@@ -86,7 +89,7 @@ const GuestOnboardingForm: React.FC<GuestOnboardingFormProps> = ({ onComplete })
         credentials: 'include',
         body: JSON.stringify({
           name: formData.name.trim(),
-          age: parseInt(formData.age),
+          age: ageNum,
           gender: formData.gender,
           sessionId
         })
@@ -99,9 +102,10 @@ const GuestOnboardingForm: React.FC<GuestOnboardingFormProps> = ({ onComplete })
 
       const data = await response.json();
 
-      // Mark that user has started guest session
+      // Full access: one entry (name, age, gender) = complete app access
       localStorage.setItem('hasGuestSession', 'true');
       localStorage.setItem('hasSeenOnboarding', 'true');
+      if (data.data?.full_access) localStorage.setItem('fullAccessSession', 'true');
 
       console.log('✅ Guest session created:', data);
 
@@ -250,8 +254,8 @@ const GuestOnboardingForm: React.FC<GuestOnboardingFormProps> = ({ onComplete })
                       onFocus={() => setFocusedField('age')}
                       onBlur={() => setFocusedField(null)}
                       placeholder="Enter your age"
-                      min="13"
-                      max="120"
+                      min="18"
+                      max="100"
                       className="w-full px-4 py-3.5 rounded-xl text-white placeholder-[#71717A] transition-all duration-300 ease-out"
                       style={{
                         background: 'rgba(10, 10, 10, 0.9)',
@@ -355,12 +359,6 @@ const GuestOnboardingForm: React.FC<GuestOnboardingFormProps> = ({ onComplete })
                     'Start Exploring'
                   )}
                 </button>
-
-                {/* Info Text */}
-                <p className="text-xs text-[#A1A1AA] text-center mt-4 leading-relaxed">
-                  You'll have <span className="text-[#A855F7]">30 minutes</span> to explore freely.
-                  <br />Complete registration anytime to continue.
-                </p>
               </form>
             </div>
           </div>

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Flame, Bookmark, HelpCircle, LogOut, Mic, Info } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useBookmarks } from '../contexts/BookmarksContext';
-import { signOut } from '../lib/supabase';
 import axios from 'axios';
 import { apiFetch } from '../lib/utils';
 
@@ -94,7 +93,8 @@ const saveHoursSpent = () => {
 
 export function PhoenixProfile() {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser, guestDisplayName, logout } = useAuth();
+  const displayName = currentUser?.displayName ?? guestDisplayName ?? 'Anonymous User';
   const [stats, setStats] = useState<ProfileStats>({
     confessions: 0,
     aiChats: 0,
@@ -135,12 +135,13 @@ export function PhoenixProfile() {
   useEffect(() => {
     fetchProfileStats();
     fetchUserProfile();
-  }, [currentUser]);
+  }, [currentUser, guestDisplayName]);
 
   const fetchUserProfile = async () => {
     try {
+      // Guest: use name from onboarding form
       if (!currentUser) {
-        setUsername('Anonymous User');
+        setUsername(guestDisplayName ?? 'Anonymous User');
         return;
       }
 
@@ -159,13 +160,11 @@ export function PhoenixProfile() {
         const name = row.name || currentUser.displayName || currentUser.email?.split('@')[0] || 'Anonymous User';
         setUsername(name);
       } else {
-        // Fallback to displayName or email
         setUsername(currentUser.displayName || currentUser.email?.split('@')[0] || 'Anonymous User');
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      // Fallback to displayName or email
-      setUsername(currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Anonymous User');
+      setUsername(displayName);
     }
   };
 
@@ -228,13 +227,10 @@ export function PhoenixProfile() {
 
   const handleLogout = async () => {
     try {
-      await signOut();
-      console.log('✅ Logged out successfully');
-      navigate('/login');
+      await logout();
     } catch (error) {
       console.error('Error logging out:', error);
-      localStorage.clear();
-      navigate('/login');
+      window.location.href = '/';
     }
   };
 

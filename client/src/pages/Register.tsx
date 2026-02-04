@@ -277,7 +277,7 @@ const Register: React.FC = () => {
             <button
               onClick={() => {
                 setShowEmailModal(false);
-                navigate("/login");
+                navigate("/");
               }}
               className="absolute top-4 right-4 text-[#A1A1AA] hover:text-white transition-colors"
             >
@@ -316,7 +316,7 @@ const Register: React.FC = () => {
             <button
               onClick={() => {
                 setShowEmailModal(false);
-                navigate("/login");
+                navigate("/");
               }}
               className="w-full bg-[#A855F7] hover:bg-[#9333EA] text-white font-bold py-3 px-4 rounded-lg transition-all duration-300"
             >
@@ -495,7 +495,7 @@ const Register: React.FC = () => {
           <p className="text-[#A1A1AA]">
             Already have an account?{" "}
             <button
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/")}
               className="text-[#A855F7] hover:text-[#A855F7]/80 font-medium transition-colors"
             >
               Sign in

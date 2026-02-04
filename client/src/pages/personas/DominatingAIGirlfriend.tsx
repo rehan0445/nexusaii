@@ -208,7 +208,7 @@ const DominatingAIGirlfriend: React.FC = () => {
               Browse Dominant AI Characters
             </Link>
             <Link
-              to="/register"
+              to="/"
               className="bg-red-700 text-white px-8 py-4 rounded-full text-lg font-bold hover:bg-red-800 transition-all shadow-xl border-2 border-white"
             >
               Sign Up Free

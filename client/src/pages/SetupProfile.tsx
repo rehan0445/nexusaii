@@ -31,7 +31,7 @@ function SetupProfile() {
 
   useEffect(() => {
     if (!currentUser) {
-      navigate('/login');
+      navigate('/');
     }
   }, [currentUser, navigate]);
 
