@@ -12,15 +12,8 @@ const PersonaTemplate: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const persona = slug ? getPersonaBySlug(slug) : undefined;
 
-  // Dynamic SEO for each persona
-  React.useEffect(() => {
-    if (persona) {
-      document.title = `${persona.name} Free – ${getGenderText(persona.gender)} Chat No Filter | Nexus`;
-    }
-  }, [persona]);
-
+  // Dynamic SEO for each persona (description/canonical only; site title is same on all pages)
   useSEO(persona ? {
-    title: `${persona.name} Free – ${getGenderText(persona.gender)} Chat No Filter | Nexus`,
     description: `Chat with ${persona.name.toLowerCase()} AI for free. ${persona.description} Unrestricted NSFW-friendly conversations.`,
     keywords: persona.keywords.join(', '),
     canonical: `https://www.nexuschat.in/personas/${persona.slug}`,

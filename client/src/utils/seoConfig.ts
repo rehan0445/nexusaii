@@ -19,6 +19,9 @@ export interface SEOMetadata {
 const BASE_URL = 'https://www.nexuschat.in';
 const DEFAULT_IMAGE = `${BASE_URL}/assets/nexus-logo.png`;
 
+/** Single title for all pages (browser tab + shares) */
+export const SITE_TITLE = 'Nexus : Anonymous - venting & roleplay';
+
 // Helper function to generate structured data
 const generateWebPageSchema = (title: string, description: string, url: string) => ({
   '@context': 'https://schema.org',
@@ -255,41 +258,32 @@ export const generateConfessionDetailSEO = (confessionText?: string, collegeId?:
   };
 };
 
-// Get SEO config for current route
+// Get SEO config for current route (always same title on all pages)
 export const getSEOForRoute = (pathname: string): SEOMetadata => {
+  let seo: SEOMetadata;
   // Exact match
   if (SEO_CONFIG[pathname]) {
-    return SEO_CONFIG[pathname];
-  }
-
-  // Pattern matching for dynamic routes
-  if (pathname.startsWith('/campus/')) {
+    seo = SEO_CONFIG[pathname];
+  } else if (pathname.startsWith('/campus/')) {
     const parts = pathname.split('/');
     if (parts.length >= 4 && parts[3] === 'confessions') {
-      return generateCampusSEO(parts[2]);
+      seo = generateCampusSEO(parts[2]);
+    } else if (parts.length >= 5 && parts[3] === 'confessions') {
+      seo = generateConfessionDetailSEO(undefined, parts[2]);
+    } else {
+      seo = SEO_CONFIG['/'];
     }
-    if (parts.length >= 5 && parts[3] === 'confessions') {
-      return generateConfessionDetailSEO(undefined, parts[2]);
-    }
+  } else if (pathname.startsWith('/chat/')) {
+    seo = SEO_CONFIG['/chat/:characterId'];
+  } else if (pathname.startsWith('/character/')) {
+    seo = SEO_CONFIG['/character/:characterId'];
+  } else if (pathname.startsWith('/reels/')) {
+    seo = SEO_CONFIG['/reels'];
+  } else if (pathname.startsWith('/blog/') && pathname !== '/blog') {
+    seo = SEO_CONFIG['/blog'];
+  } else {
+    seo = SEO_CONFIG['/'];
   }
-
-  if (pathname.startsWith('/chat/')) {
-    return SEO_CONFIG['/chat/:characterId'];
-  }
-
-  if (pathname.startsWith('/character/')) {
-    return SEO_CONFIG['/character/:characterId'];
-  }
-
-  if (pathname.startsWith('/reels/')) {
-    return SEO_CONFIG['/reels'];
-  }
-
-  if (pathname.startsWith('/blog/') && pathname !== '/blog') {
-    // Blog post pages use dynamic SEO from BlogPost component
-    return SEO_CONFIG['/blog'];
-  }
-
-  // Default fallback
-  return SEO_CONFIG['/'];
+  // Use same title on every page (browser tab + og:title)
+  return { ...seo, title: SITE_TITLE, ogTitle: SITE_TITLE };
 };

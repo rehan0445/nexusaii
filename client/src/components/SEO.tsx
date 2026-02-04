@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { getSEOForRoute, SEOMetadata } from '../utils/seoConfig';
+import { getSEOForRoute, SEOMetadata, SITE_TITLE } from '../utils/seoConfig';
 
 interface SEOProps {
   override?: Partial<SEOMetadata>;
@@ -17,10 +17,12 @@ export const SEO: React.FC<SEOProps> = ({ override }) => {
     // Get SEO config for current route
     const seoData = getSEOForRoute(location.pathname);
     
-    // Merge with override if provided
+    // Merge with override if provided (keep same title on all pages)
     const finalSEO: SEOMetadata = {
       ...seoData,
       ...override,
+      title: SITE_TITLE,
+      ogTitle: SITE_TITLE,
     };
 
     // Update document title
@@ -131,7 +133,7 @@ export const useSEO = (seoData?: Partial<SEOMetadata>) => {
   useEffect(() => {
     if (seoData) {
       const currentSEO = getSEOForRoute(location.pathname);
-      const finalSEO = { ...currentSEO, ...seoData };
+      const finalSEO = { ...currentSEO, ...seoData, title: SITE_TITLE, ogTitle: SITE_TITLE };
 
       document.title = finalSEO.title;
       
