@@ -1,5 +1,8 @@
 import { supabase } from "../config/supabase.js";
 
+/** Extra views added to every companion character display (before + 1000 + new) */
+const EXTRA_COMPANION_VIEWS = 1000;
+
 // Track a character view
 export const trackCharacterView = async (req, res) => {
   try {
@@ -73,19 +76,24 @@ export const trackCharacterView = async (req, res) => {
       console.log(`⏭️ Skipping duplicate view for character ${character_id}`);
     }
 
-    // Get current view count
+    // Get current view count (total_views + fake_views + extra for display)
     const { data: viewCount } = await supabase
       .from("character_view_counts")
-      .select("total_views, unique_views")
+      .select("total_views, fake_views, unique_views")
       .eq("character_id", character_id)
       .single();
+
+    const totalViews = viewCount?.total_views || 0;
+    const fakeViews = viewCount?.fake_views || 0;
+    const display_views = totalViews + fakeViews + EXTRA_COMPANION_VIEWS;
 
     return res.status(200).json({
       success: true,
       data: {
         character_id,
-        total_views: viewCount?.total_views || 0,
+        total_views: totalViews,
         unique_views: viewCount?.unique_views || 0,
+        display_views,
         was_counted: !duplicateCheck,
       },
     });
@@ -184,10 +192,10 @@ export const getCharacterLeaderboard = async (req, res) => {
       console.error("Leaderboard query error:", error.message || error);
     }
 
-    // Calculate display_views and sort by it (unless using unique_views)
+    // Calculate display_views (before + extra 1000 + new) and sort by it (unless using unique_views)
     let processedCharacters = (rankedCharacters || []).map((character) => ({
       ...character,
-      display_views: (character.total_views || 0) + (character.fake_views || 0),
+      display_views: (character.total_views || 0) + (character.fake_views || 0) + EXTRA_COMPANION_VIEWS,
     }));
 
     // Sort by display_views if not using unique ranking
@@ -280,7 +288,7 @@ export const getBulkViewCounts = async (req, res) => {
       counts[id] = 0;
     });
     (rows || []).forEach((row) => {
-      const display = (row.total_views || 0) + (row.fake_views || 0);
+      const display = (row.total_views || 0) + (row.fake_views || 0) + EXTRA_COMPANION_VIEWS;
       counts[row.character_id] = display;
     });
 
@@ -343,10 +351,10 @@ export const getCharacterViewStats = async (req, res) => {
       viewsByDay[day] = (viewsByDay[day] || 0) + 1;
     });
 
-    // Calculate display_views
+    // Calculate display_views (before + extra 1000 + new)
     const totalViews = viewStats?.total_views || 0;
     const fakeViews = viewStats?.fake_views || 0;
-    const displayViews = totalViews + fakeViews;
+    const displayViews = totalViews + fakeViews + EXTRA_COMPANION_VIEWS;
 
     return res.status(200).json({
       success: true,

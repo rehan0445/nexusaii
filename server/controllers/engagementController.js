@@ -2,6 +2,8 @@ import { supabase } from "../config/supabase.js";
 
 // Max rows to return for "all" / "most liked" / "most viewed" (show everything in storage)
 const ALL_CONFESSIONS_LIMIT = 2000;
+/** Extra views added to every confession display (before + 50 + new) */
+const EXTRA_CONFESSION_VIEWS = 50;
 
 // Helper function to normalize confession data
 // IMPORTANT: Returns combined metrics (fake + real) for display
@@ -15,8 +17,9 @@ const normalizeConfession = (row) => {
   const realViews = row.view_count ?? 0;
   const realScore = row.score ?? 0;
   
-  // Combined totals for display (use pre-calculated if available, otherwise calculate)
-  const totalViews = row.total_views ?? (fakeViews + realViews);
+  // Combined totals for display (pre-calculated or fake+real) + extra views
+  const baseViews = row.total_views ?? (fakeViews + realViews);
+  const totalViews = baseViews + EXTRA_CONFESSION_VIEWS;
   const totalUpvotes = row.total_upvotes ?? Math.max(0, fakeUpvotes + realScore);
   
   return {
@@ -26,7 +29,7 @@ const normalizeConfession = (row) => {
     sessionId: row.sessionId ?? row.session_id ?? row.user_id ?? null,
     campus: row.campus ?? 'general',
     createdAt: row.created_at ?? row.createdAt ?? new Date().toISOString(),
-    // DISPLAY VALUES: Combined fake + real metrics
+    // DISPLAY VALUES: Combined fake + real + extra
     score: totalUpvotes,
     viewCount: totalViews,
     // Keep real score for voting logic (internal use)

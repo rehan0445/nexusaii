@@ -221,6 +221,8 @@ const __dirname = path.dirname(__filename);
 const FALLBACK_FILE = path.join(__dirname, "../data/confessions_fallback.json");
 
 const MAX_CACHE_SIZE = 500;
+/** Extra views added to every confession display (before + 50 + new) */
+const EXTRA_CONFESSION_VIEWS = 50;
 const NSFW_WORDS = [
   // English profanity
   "fuck", "fucking", "fucked", "fucker", "shit", "shitty", "bullshit",
@@ -261,8 +263,9 @@ const normalizeConfession = (row) => {
   const realViews = safeNumber(row.view_count ?? row.viewCount, 0);
   const realScore = safeNumber(row.score ?? row.likes ?? row.meta?.likes, 0);
   
-  // Use pre-calculated totals if available, otherwise calculate
-  const totalViews = row.total_views !== undefined ? safeNumber(row.total_views, 0) : (fakeViews + realViews);
+  // Use pre-calculated totals if available, otherwise calculate; add extra views for display
+  const baseViews = row.total_views !== undefined ? safeNumber(row.total_views, 0) : (fakeViews + realViews);
+  const totalViews = baseViews + EXTRA_CONFESSION_VIEWS;
   const totalUpvotes = row.total_upvotes !== undefined ? safeNumber(row.total_upvotes, 0) : Math.max(0, fakeUpvotes + realScore);
   
   return {
@@ -272,7 +275,7 @@ const normalizeConfession = (row) => {
     sessionId: row.sessionId ?? row.session_id ?? row.user_id ?? null,
     campus: row.campus ?? 'general',
     createdAt, // Always DB value
-    // DISPLAY VALUES: Combined fake + real metrics (never expose breakdown)
+    // DISPLAY VALUES: Combined fake + real + extra (never expose breakdown)
     score: totalUpvotes,
     viewCount: totalViews,
     // Keep real score for voting logic (internal use only)
